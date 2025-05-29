@@ -1,34 +1,30 @@
 # Atari-like Game Factory
 
-A minimal autonomous pipeline to generate and play simple Atari-style games using Node.js, Express, and Phaser 3.
+A minimal autonomous pipeline to generate and play simple Atari-style games using Node.js, Express, and **vanilla JavaScript Canvas** (no frameworks).
 
 ## Setup Instructions
 
-1. **Clone the Phaser 3 repository to get the latest documentation:**
-
-```sh
-git clone https://github.com/photonstorm/phaser.git
-```
-
-2. **Copy or symlink the `phaser/docs` folder into your project as `phaser_docs/`:**
-
-```sh
-cp -r phaser/docs ./phaser_docs
-# or, to keep it up to date automatically:
-ln -s ../phaser/docs ./phaser_docs
-```
-
-3. **Install dependencies:**
+1. **Install dependencies (from the project root):**
 
 ```sh
 npm install
 ```
 
-4. **(Optional) Run the retriever script to test doc search:**
+2. **Start the backend:**
 
 ```sh
-node phaser_retriever.js
+node server.js
 ```
+
+3. **Start the frontend (in a new terminal):**
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+4. **Open the frontend in your browser (usually at http://localhost:5173)**
 
 ---
 
