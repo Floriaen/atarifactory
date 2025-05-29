@@ -4,19 +4,29 @@ A minimal autonomous pipeline to generate and play simple Atari-style games usin
 
 ## Setup Instructions
 
-1. **Install dependencies (from the project root):**
+### 1. Create a `.env` file
+
+Create a file named `.env` in the project root with the following content:
+
+```
+OPENAI_API_KEY=your-openai-api-key-here
+```
+
+Replace `your-openai-api-key-here` with your actual OpenAI API key.
+
+### 2. Install dependencies (from the project root):
 
 ```sh
 npm install
 ```
 
-2. **Start the backend:**
+### 3. Start the backend:
 
 ```sh
 node server.js
 ```
 
-3. **Start the frontend (in a new terminal):**
+### 4. Start the frontend (in a new terminal):
 
 ```sh
 cd frontend
@@ -24,7 +34,7 @@ npm install
 npm run dev
 ```
 
-4. **Open the frontend in your browser (usually at http://localhost:5173)**
+### 5. Open the frontend in your browser (usually at http://localhost:5173)
 
 ---
 
