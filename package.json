@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node agent.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "fetch-phaser-docs": "node scripts/fetch_phaser_docs.js",
+    "postinstall": "node scripts/fetch_phaser_docs.js"
   },
   "keywords": [],
   "author": "",
@@ -12,7 +14,12 @@
   "description": "",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "openai": "^4.103.0",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.27.0"
   }
 }
