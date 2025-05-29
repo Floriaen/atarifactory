@@ -11,7 +11,6 @@ app.innerHTML = `
       <span id="btn-text">Generate Game</span>
       <span id="spinner" style="display:none;">⏳</span>
     </button>
-    <div id="log-area" class="log-area"></div>
   </div>
   <div class="gallery-container">
     <div id="gallery" class="gallery"></div>
@@ -56,6 +55,17 @@ style.textContent = `
   .thumb-bg { width: 80px; height: 80px; background: #333; border-radius: 0.5em; margin: 0 auto; margin-top: 8px; margin-bottom: 4px; }
 `;
 document.head.appendChild(style);
+
+const STEPS = ['Generating', 'Testing', 'Fixing', 'Done'];
+function setStep(idx) {
+  const btnText = document.getElementById('btn-text');
+  btnText.textContent = STEPS[idx] + '...';
+}
+function setReady() {
+  const btnText = document.getElementById('btn-text');
+  btnText.textContent = 'Generate Game';
+}
+setReady();
 
 function setLog(msg, type = '') {
   const log = document.getElementById('log-area');
@@ -113,40 +123,43 @@ document.getElementById('generate-btn').onclick = async function() {
   const btnText = document.getElementById('btn-text');
   const spinner = document.getElementById('spinner');
   btn.disabled = true;
-  btnText.textContent = 'Generating...';
   spinner.style.display = '';
-  setLog('Starting game generation...');
+  setStep(0);
   try {
+    setStep(0);
+    await new Promise(r => setTimeout(r, 400));
+    setStep(1);
+    await new Promise(r => setTimeout(r, 400));
+    setStep(2);
+    await new Promise(r => setTimeout(r, 400));
     const res = await fetch(`${API_BASE}/generate`, { method: 'POST' });
     if (!res.ok) throw new Error('Server error');
+    setStep(3);
     const data = await res.json();
-    setLog('Game generated successfully!');
     const games = await fetchGames();
     renderGallery(games);
-    // Open the newly generated game in the modal
     if (data && data.game && data.game.id) {
       openGame(data.game.id);
     }
-    clearLog();
+    setTimeout(() => setReady(), 1200);
   } catch (err) {
-    setLog('Error: ' + err.message, 'error');
+    alert('Error: ' + err.message);
+    setReady();
   } finally {
     btn.disabled = false;
-    btnText.textContent = 'Generate Game';
     spinner.style.display = 'none';
   }
 };
 
 // Initial load
 document.addEventListener('DOMContentLoaded', async () => {
-  setLog('Loading games...');
   try {
     const games = await fetchGames();
     renderGallery(games);
-    setLog('Ready!');
-    clearLog(1200);
+    setReady();
   } catch (err) {
-    setLog('Error loading games: ' + err.message, 'error');
+    alert('Error loading games: ' + err.message);
+    setReady();
   }
 });
 // For Vite hot reload
