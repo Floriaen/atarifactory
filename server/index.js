@@ -5,6 +5,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
 const { OpenAI } = require('openai');
+const { controlBarHTML, controlBarCSS, controlBarJS } = require('./controlBar');
 dotenv.config();
 
 const app = express();
@@ -124,7 +125,31 @@ async function GameBuilderAgent(gameId, gameSpec, mechanicsBlock) {
     gameJs = '// Simple bouncing ball Canvas game\nconst canvas = document.getElementById(\'game-canvas\');\nconst ctx = canvas.getContext(\'2d\');\nlet x = canvas.width/2, y = canvas.height/2, vx = 3, vy = 2;\nfunction draw() {\n  ctx.clearRect(0,0,canvas.width,canvas.height);\n  ctx.beginPath();\n  ctx.arc(x, y, 20, 0, Math.PI*2);\n  ctx.fillStyle = \'#0074d9\';\n  ctx.fill();\n  if(x+20>canvas.width||x-20<0) vx=-vx;\n  if(y+20>canvas.height||y-20<0) vy=-vy;\n  x+=vx; y+=vy;\n  requestAnimationFrame(draw);\n}\ndraw();\n';
   }
   return {
-    'index.html': `<!DOCTYPE html>\n<html lang='en'>\n<head>\n  <meta charset='utf-8'>\n  <title>${gameSpec.title}</title>\n  <meta name='viewport' content='width=device-width,initial-scale=1.0,user-scalable=no'>\n  <style>body{margin:0;background:#181818;}#game-canvas{display:block;margin:0 auto;background:#222;width:100vw;height:100vh;}#desc{color:#ffb300;text-align:center;font-size:1.1em;margin:0.5em 0 0.2em 0;}#instructions{color:#ccc;text-align:center;font-size:0.95em;margin-bottom:0.5em;}</style>\n</head>\n<body>\n  <canvas id='game-canvas' width='800' height='600'></canvas>\n  <div id='desc'>${gameSpec.description}</div>\n  <div id='instructions'>${instructions}</div>\n  <script src='/games/${gameId}/assets/game.js'></script>\n</body>\n</html>`,
+    'index.html': `<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8'>
+  <title>${gameSpec.title}</title>
+  <meta name='viewport' content='width=device-width,initial-scale=1.0,user-scalable=no'>
+  <style>
+    body{margin:0;background:#181818;}
+    #game-canvas{display:block;margin:0 auto;background:#222;width:100vw;height:100vh;}
+    #desc{color:#ffb300;text-align:center;font-size:1.1em;margin:0.5em 0 0.2em 0;}
+    #instructions{color:#ccc;text-align:center;font-size:0.95em;margin-bottom:0.5em;}
+${controlBarCSS}
+  </style>
+</head>
+<body>
+  <canvas id='game-canvas' width='800' height='600'></canvas>
+  <div id='desc'>${gameSpec.description}</div>
+  <div id='instructions'>${instructions}</div>
+${controlBarHTML}
+  <script>
+${controlBarJS}
+  </script>
+  <script src='/games/${gameId}/assets/game.js'></script>
+</body>
+</html>`,
     'assets/game.js': gameJs
   };
 }
@@ -180,6 +205,84 @@ async function GameCriticAgent(gameId, gameSpec, gameJs) {
   return { fixedJs: null, review: responseText };
 }
 
+// --- NEW: RuleEnforcerAgent ---
+function RuleEnforcerAgent(gameJs) {
+  const violations = [];
+  const lines = gameJs.split('\n');
+  let compliant = true;
+  // 1. No alert/confirm/prompt
+  const forbiddenCalls = [/alert\s*\(/, /confirm\s*\(/, /prompt\s*\(/];
+  forbiddenCalls.forEach((regex) => {
+    lines.forEach((line, i) => {
+      if (regex.test(line)) {
+        compliant = false;
+        violations.push({ rule: 'No alert/confirm/prompt', lines: [`${i+1}: ${line.trim()}`] });
+      }
+    });
+  });
+  // 2. No document.createElement, innerHTML, etc.
+  const forbiddenDom = [/document\.createElement/, /innerHTML/];
+  forbiddenDom.forEach((regex) => {
+    lines.forEach((line, i) => {
+      if (regex.test(line)) {
+        compliant = false;
+        violations.push({ rule: 'No document.createElement/innerHTML', lines: [`${i+1}: ${line.trim()}`] });
+      }
+    });
+  });
+  // 3. No canvas = document.createElement('canvas')
+  lines.forEach((line, i) => {
+    if (/canvas\s*=\s*document\.createElement\(['"]canvas['"]\)/.test(line)) {
+      compliant = false;
+      violations.push({ rule: 'No canvas = document.createElement(\'canvas\')', lines: [`${i+1}: ${line.trim()}`] });
+    }
+  });
+  // 4. Must include ctx.fillText
+  if (!/ctx\.fillText/.test(gameJs)) {
+    compliant = false;
+    violations.push({ rule: 'Must include ctx.fillText', lines: [] });
+  }
+  // 5. Only one getElementById('game-canvas')
+  const getElemMatches = gameJs.match(/getElementById\(['"]game-canvas['"]\)/g) || [];
+  if (getElemMatches.length !== 1) {
+    compliant = false;
+    violations.push({ rule: 'Only one getElementById(\'game-canvas\')', lines: [] });
+  }
+  return { compliant, violations };
+}
+
+// --- NEW: FixerAgent ---
+async function FixerAgent(gameId, gameJs, violationReport) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY not set in .env');
+  const openai = new OpenAI({ apiKey });
+  // Log the violation report and original code
+  const fixerLogPath = path.join(LOGS_DIR, `fixer-${gameId}.log`);
+  fs.writeFileSync(fixerLogPath, JSON.stringify({ violationReport, original: gameJs }, null, 2));
+  // Make the prompt more explicit about ctx.fillText
+  const prompt = `You are a JavaScript code fixer.\n\nThe following code violates some project rules.\nViolation report:\n${JSON.stringify(violationReport, null, 2)}\n\nIf the violation is about missing ctx.fillText, you must add a call to ctx.fillText that displays the score, win/lose message, or instructions in the main game loop.\n\nPlease output a fixed version of the code that complies with all rules.\n\n---\n\n${gameJs}`;
+  const response = await openai.chat.completions.create({
+    model: 'gpt-3.5-turbo',
+    messages: [
+      { role: 'system', content: 'You are a JavaScript code fixer. Only output valid JavaScript code.' },
+      { role: 'user', content: prompt }
+    ],
+    max_tokens: 1800,
+    temperature: 0.5,
+  });
+  const responseText = response.choices[0].message.content;
+  // Log the LLM response
+  fs.appendFileSync(fixerLogPath, '\n\n[LLM RESPONSE]\n' + responseText);
+  // Try to extract a code block
+  const match = responseText.match(/```(?:javascript)?([\s\S]*?)```/);
+  if (match && match[1]) {
+    fs.appendFileSync(fixerLogPath, '\n\n[FIXED CODE]\n' + match[1].trim());
+    return match[1].trim();
+  }
+  fs.appendFileSync(fixerLogPath, '\n\n[FIXED CODE]\n' + responseText.trim());
+  return responseText.trim();
+}
+
 // POST /generate - pipeline with async GameDesignerAgent
 app.post('/generate', async (req, res) => {
   const id = uuidv4();
@@ -189,7 +292,21 @@ app.post('/generate', async (req, res) => {
     console.log('[GameDesignerAgent] Generated gameSpec:', gameSpec);
     const mechanicsBlock = MechanicSynthesizerAgent(gameSpec);
     console.log('[MechanicSynthesizerAgent] mechanicsBlock:', mechanicsBlock);
-    const gameFiles = await GameBuilderAgent(id, gameSpec, mechanicsBlock);
+    let gameFiles = await GameBuilderAgent(id, gameSpec, mechanicsBlock);
+    // --- Rule Enforcer step ---
+    const ruleReport = RuleEnforcerAgent(gameFiles['assets/game.js']);
+    if (!ruleReport.compliant) {
+      console.log(`[RuleEnforcerAgent] Violations found for ${id}:`, ruleReport.violations);
+      const fixedJs = await FixerAgent(id, gameFiles['assets/game.js'], ruleReport);
+      gameFiles['assets/game.js'] = fixedJs;
+      // Re-run rule enforcer after fix (optional, for safety)
+      const ruleReport2 = RuleEnforcerAgent(gameFiles['assets/game.js']);
+      if (!ruleReport2.compliant) {
+        throw new Error('FixerAgent failed to fix all rule violations.');
+      }
+    } else {
+      console.log(`[RuleEnforcerAgent] No violations for ${id}`);
+    }
     // --- Critic Agent step ---
     const criticResult = await GameCriticAgent(id, { ...gameSpec, ...mechanicsBlock }, gameFiles['assets/game.js']);
     if (criticResult.fixedJs) {
@@ -212,6 +329,77 @@ app.post('/generate', async (req, res) => {
   } catch (err) {
     console.error('Error in /generate:', err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// --- SSE /generate-stream endpoint ---
+app.post('/generate-stream', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  function sendStep(step, data = {}) {
+    res.write(`data: ${JSON.stringify({ step, ...data })}\n\n`);
+  }
+  const id = uuidv4();
+  try {
+    // 1. GameDesignerAgent
+    sendStep('Designing');
+    const gameSpec = await GameDesignerAgent();
+    sendStep('Designing', { status: 'done', gameSpec });
+    // 2. MechanicSynthesizerAgent
+    sendStep('Synthesizing');
+    const mechanicsBlock = MechanicSynthesizerAgent(gameSpec);
+    sendStep('Synthesizing', { status: 'done', mechanicsBlock });
+    // 3. GameBuilderAgent
+    sendStep('Building');
+    let gameFiles = await GameBuilderAgent(id, gameSpec, mechanicsBlock);
+    sendStep('Building', { status: 'done' });
+    // 4. RuleEnforcerAgent
+    sendStep('Enforcing Rules');
+    const ruleReport = RuleEnforcerAgent(gameFiles['assets/game.js']);
+    sendStep('Enforcing Rules', { status: 'done', ruleReport });
+    if (!ruleReport.compliant) {
+      sendStep('Fixing');
+      const fixedJs = await FixerAgent(id, gameFiles['assets/game.js'], ruleReport);
+      gameFiles['assets/game.js'] = fixedJs;
+      // Re-run rule enforcer after fix
+      const ruleReport2 = RuleEnforcerAgent(gameFiles['assets/game.js']);
+      sendStep('Fixing', { status: 'done', ruleReport: ruleReport2 });
+      if (!ruleReport2.compliant) {
+        console.error(`[ERROR] FixerAgent failed to fix all rule violations for ${id}`);
+        sendStep('Error', { error: 'FixerAgent failed to fix all rule violations.' });
+        return res.end();
+      }
+    }
+    // 5. GameCriticAgent
+    sendStep('Reviewing');
+    const criticResult = await GameCriticAgent(id, { ...gameSpec, ...mechanicsBlock }, gameFiles['assets/game.js']);
+    if (criticResult.fixedJs) {
+      gameFiles['assets/game.js'] = criticResult.fixedJs;
+      sendStep('Reviewing', { status: 'fixed' });
+    } else {
+      sendStep('Reviewing', { status: 'no-fix' });
+    }
+    // 6. SaveAgent
+    sendStep('Saving');
+    const { thumbnail } = SaveAgent(id, gameSpec, mechanicsBlock, gameFiles);
+    sendStep('Saving', { status: 'done' });
+    // 7. Manifest/log
+    const newGame = {
+      id,
+      name: gameSpec.title,
+      date: new Date().toISOString(),
+      thumbnail,
+    };
+    global.gamesManifest.push(newGame);
+    logGame(id, gameSpec, mechanicsBlock);
+    sendStep('Done', { game: newGame, gameSpec });
+    res.end();
+  } catch (err) {
+    console.error('Error in /generate-stream:', err);
+    sendStep('Error', { error: err.message });
+    res.end();
   }
 });
 

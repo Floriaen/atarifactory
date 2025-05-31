@@ -9,8 +9,8 @@ app.innerHTML = `
     <h1>Atari-like Game Factory</h1>
     <button id="generate-btn">
       <span id="btn-text">Generate Game</span>
-      <span id="spinner" style="display:none;">⏳</span>
     </button>
+    <div id="status-label" class="status-label" style="display:none;"></div>
   </div>
   <div class="gallery-container">
     <div id="gallery" class="gallery"></div>
@@ -30,7 +30,6 @@ style.textContent = `
   .header h1 { font-size: 1.5rem; margin: 0 0 0.5rem 0; }
   #generate-btn { font-size: 1.1rem; padding: 0.7em 1.5em; border-radius: 1.5em; border: none; background: #ffb300; color: #222; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px #0004; display: flex; align-items: center; gap: 0.5em; }
   #generate-btn:active { background: #ffa000; }
-  #spinner { font-size: 1.2em; }
   .log-area { min-height: 1.5em; margin-top: 0.5em; font-size: 0.95em; color: #ffb300; background: #222; border-radius: 0.5em; padding: 0.3em 1em; max-width: 90vw; text-align: center; transition: opacity 0.3s; }
   .log-area.error { color: #ff4444; background: #2a1818; }
   .gallery-container { overflow-x: auto; padding: 1rem 0.5rem; }
@@ -53,19 +52,103 @@ style.textContent = `
     .thumb-title { max-width: 60px; }
   }
   .thumb-bg { width: 80px; height: 80px; background: #333; border-radius: 0.5em; margin: 0 auto; margin-top: 8px; margin-bottom: 4px; }
+  .status-label { text-align: center; font-size: 1.02em; color: #ffb300; font-weight: 500; margin: 0.5em 0 0.2em 0; min-height: 1.2em; transition: opacity 0.2s; }
+  .gamepad-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    background: #222e;
+    border-radius: 1em 1em 0 0;
+    padding: 0.5em 1.2em 0.7em 1.2em;
+    z-index: 100;
+    box-shadow: 0 -2px 12px #0008;
+    user-select: none;
+    touch-action: none;
+    gap: 1.2em;
+  }
+  .dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2em;
+  }
+  .dpad-row {
+    display: flex;
+    flex-direction: row;
+    gap: 0.2em;
+  }
+  .dpad-btn {
+    width: 2.2em;
+    height: 2.2em;
+    font-size: 1.3em;
+    background: #444;
+    color: #ffb300;
+    border: none;
+    border-radius: 0.5em;
+    margin: 0.1em;
+    font-weight: bold;
+    box-shadow: 0 1px 4px #0006;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .dpad-btn:active, .dpad-btn.active {
+    background: #ffb300;
+    color: #222;
+  }
+  .btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    margin-bottom: 0.5em;
+    align-items: flex-end;
+  }
+  .game-btn {
+    width: 2.7em;
+    height: 2.7em;
+    font-size: 1.2em;
+    background: #ffb300;
+    color: #222;
+    border: none;
+    border-radius: 50%;
+    font-weight: bold;
+    box-shadow: 0 1px 4px #0006;
+    cursor: pointer;
+    margin: 0.1em;
+    transition: background 0.15s;
+  }
+  .game-btn:active, .game-btn.active {
+    background: #fff;
+    color: #ffb300;
+  }
 `;
 document.head.appendChild(style);
 
-const STEPS = ['Generating', 'Testing', 'Fixing', 'Done'];
-function setStep(idx) {
-  const btnText = document.getElementById('btn-text');
-  btnText.textContent = STEPS[idx] + '...';
+function setStatusLabel(text) {
+  const statusLabel = document.getElementById('status-label');
+  statusLabel.style.display = '';
+  statusLabel.textContent = text;
 }
 function setReady() {
   const btnText = document.getElementById('btn-text');
+  const statusLabel = document.getElementById('status-label');
   btnText.textContent = 'Generate Game';
+  statusLabel.style.display = 'none';
+  statusLabel.textContent = '';
 }
 setReady();
+
+// Add a log area to the DOM
+const logArea = document.createElement('div');
+logArea.id = 'log-area';
+logArea.className = 'log-area';
+logArea.style.opacity = 0;
+document.querySelector('.header').appendChild(logArea);
 
 function setLog(msg, type = '') {
   const log = document.getElementById('log-area');
@@ -120,34 +203,61 @@ document.getElementById('close-modal').onclick = function() {
 
 document.getElementById('generate-btn').onclick = async function() {
   const btn = this;
-  const btnText = document.getElementById('btn-text');
-  const spinner = document.getElementById('spinner');
   btn.disabled = true;
-  spinner.style.display = '';
-  setStep(0);
+  const btnText = document.getElementById('btn-text');
+  btnText.textContent = 'Generating...';
+  setStatusLabel('Designing...');
   try {
-    setStep(0);
-    await new Promise(r => setTimeout(r, 400));
-    setStep(1);
-    await new Promise(r => setTimeout(r, 400));
-    setStep(2);
-    await new Promise(r => setTimeout(r, 400));
-    const res = await fetch(`${API_BASE}/generate`, { method: 'POST' });
-    if (!res.ok) throw new Error('Server error');
-    setStep(3);
-    const data = await res.json();
-    const games = await fetchGames();
-    renderGallery(games);
-    if (data && data.game && data.game.id) {
-      openGame(data.game.id);
+    // Use fetch to POST and get a ReadableStream for SSE
+    const response = await fetch(`${API_BASE}/generate-stream`, {
+      method: 'POST',
+      headers: { 'Accept': 'text/event-stream' },
+    });
+    if (!response.body) throw new Error('No response body');
+    const reader = response.body.getReader();
+    let buffer = '';
+    let done = false;
+    let gameId = null;
+    while (!done) {
+      const { value, done: streamDone } = await reader.read();
+      done = streamDone;
+      if (value) {
+        buffer += new TextDecoder().decode(value);
+        let idx;
+        while ((idx = buffer.indexOf('\n\n')) !== -1) {
+          const chunk = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + 2);
+          if (chunk.startsWith('data: ')) {
+            const data = JSON.parse(chunk.slice(6));
+            if (data.step === 'Error') {
+              setLog('Error: ' + (data.error || 'Unknown error'), 'error');
+              setReady();
+              btn.disabled = false;
+              clearLog(4000);
+              return;
+            }
+            if (data.step === 'Done') {
+              setStatusLabel('Done!');
+              // Update gallery and open game
+              const games = await fetchGames();
+              renderGallery(games);
+              if (data.game && data.game.id) {
+                openGame(data.game.id);
+              }
+              setTimeout(() => setReady(), 1200);
+              btn.disabled = false;
+              return;
+            }
+            setStatusLabel(data.step + '...');
+          }
+        }
+      }
     }
-    setTimeout(() => setReady(), 1200);
   } catch (err) {
-    alert('Error: ' + err.message);
+    setLog('Error: ' + err.message, 'error');
     setReady();
-  } finally {
     btn.disabled = false;
-    spinner.style.display = 'none';
+    clearLog(4000);
   }
 };
 
@@ -158,9 +268,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGallery(games);
     setReady();
   } catch (err) {
-    alert('Error loading games: ' + err.message);
+    setLog('Error loading games: ' + err.message, 'error');
     setReady();
+    clearLog(4000);
   }
 });
 // For Vite hot reload
 if (import.meta.hot) import.meta.hot.accept(() => location.reload());
+
+// Gamepad event handling
+function emitGamepadEvent(type, key) {
+  const event = new CustomEvent(`gamepad-${type}`, { detail: { key } });
+  window.dispatchEvent(event);
+}
+function handlePadPress(e) {
+  e.preventDefault();
+  const key = e.currentTarget.dataset.key;
+  e.currentTarget.classList.add('active');
+  emitGamepadEvent('press', key);
+}
+function handlePadRelease(e) {
+  e.preventDefault();
+  const key = e.currentTarget.dataset.key;
+  e.currentTarget.classList.remove('active');
+  emitGamepadEvent('release', key);
+}
+[...document.querySelectorAll('.dpad-btn, .game-btn')].forEach(btn => {
+  btn.addEventListener('mousedown', handlePadPress);
+  btn.addEventListener('touchstart', handlePadPress, { passive: false });
+  btn.addEventListener('mouseup', handlePadRelease);
+  btn.addEventListener('mouseleave', handlePadRelease);
+  btn.addEventListener('touchend', handlePadRelease);
+  btn.addEventListener('touchcancel', handlePadRelease);
+});

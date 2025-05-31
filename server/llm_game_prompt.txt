@@ -1,0 +1,8 @@
+You are a JavaScript game developer. Write a complete, playable browser game using the Canvas API.
+
+Title: {{title}}
+Description: {{description}}
+Mechanics: {{mechanics}}
+Win Condition: {{winCondition}}
+
+Output only the JavaScript code for the game logic, using the provided title, description, mechanics, and win condition. The code should use a single <canvas> element with id 'game-canvas'. 
