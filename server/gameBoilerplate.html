@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8'>
+  <title>{{title}}</title>
+  <meta name='viewport' content='width=device-width,initial-scale=1.0,user-scalable=no'>
+  <link rel='stylesheet' href='assets/controlBar.css'>
+  <style>
+    body{margin:0;background:#181818;}
+    #game-container{width:100vw;position:relative;}
+    #game-canvas{display:block;margin:0 auto;background:#222;width:100%;height:100%;}
+    #desc{color:#ffb300;text-align:center;font-size:1.1em;margin:0.5em 0 0.2em 0;}
+    #instructions{color:#ccc;text-align:center;font-size:0.95em;margin-bottom:0.5em;}
+  </style>
+</head>
+<body>
+  <div id='game-container'>
+    <canvas id='game-canvas'></canvas>
+  </div>
+  {{controlBarHTML}}
+  <div id='game-info' style='color:#ffb300;text-align:center;font-size:1em;margin:0.5em 0 0.2em 0;'>{{description}}<br><span style='color:#ccc;font-size:0.95em;'>{{instructions}}</span></div>
+  <script src='/games/{{gameId}}/assets/controlBar.js'></script>
+  <script>
+    // Dynamically resize the game container and canvas to avoid control bar overlap
+    function resizeGameArea() {
+      var bar = document.getElementById('gamepad-bar');
+      var container = document.getElementById('game-container');
+      var canvas = document.getElementById('game-canvas');
+      var barHeight = bar ? bar.offsetHeight : 90;
+      var h = window.innerHeight - barHeight;
+      container.style.height = h + 'px';
+      canvas.width = container.offsetWidth;
+      canvas.height = h;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+    }
+    window.addEventListener('resize', resizeGameArea);
+    window.addEventListener('DOMContentLoaded', resizeGameArea);
+    // Gamepad event state helper
+    window.gamepadState = window.gamepadState || { up: false, down: false, left: false, right: false, btn1: false, btn2: false };
+    window.addEventListener('gamepad-press', function(e) { window.gamepadState[e.detail.key] = true; });
+    window.addEventListener('gamepad-release', function(e) { window.gamepadState[e.detail.key] = false; });
+  </script>
+  <script src='assets/game.js'></script>
+</body>
+</html> 

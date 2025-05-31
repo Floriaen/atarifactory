@@ -1,0 +1,7 @@
+eslint.config.js
+server/eslint.config.js
+server/**/*.json
+server/**/*.html
+server/**/*.css
+server/**/*.log
+server/**/*.txt 
