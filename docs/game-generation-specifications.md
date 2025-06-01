@@ -4,6 +4,8 @@
 
 This system automatically generates playable vanilla JS Canvas games from minimal input. It follows a hybrid strategy combining pattern-based generation, step-by-step code planning, and runtime validation.
 
+**Note:** For all code merging and insertion, the system will use AST-based (Abstract Syntax Tree) code manipulation tools (such as Recast or Babel) to ensure robust, safe, and context-aware code updates.
+
 **Pipeline Summary:**
 
 ```
@@ -70,12 +72,30 @@ GameDesignAgent → PlannerAgent → Step loop:
 **Prompt Template:**
 "Here is the current game code and a step labeled '{{label}}'. Please generate the corresponding function or logic to complete this step."
 
+**Example:**
+
+*Input (currentCode):*
+```js
+function update() {
+  // existing logic
+}
+```
+*Step (label):* "Extend the 'update' function to add collision detection."
+
+*Output (stepCode):*
+```js
+// collision detection logic
+if (player.x < coin.x + coin.width && player.x + player.width > coin.x && player.y < coin.y + coin.height && player.y + player.height > coin.y) {
+  // collect coin
+}
+```
+
 #### 2.4 BlockInserterAgent
 
 **Input:**
 
-* currentCode
-* stepCode
+* currentCode (full function or file)
+* stepCode (code to insert)
 
 **Output:**
 
@@ -83,8 +103,35 @@ GameDesignAgent → PlannerAgent → Step loop:
 
 **Behavior:**
 
+* Uses AST-based (Abstract Syntax Tree) code manipulation to find the correct function and insert or merge the new logic safely.
 * Match function names or code patterns and replace or append safely.
 * Applies internal formatting/linting to the updated code using Prettier or ESLint to ensure consistency and prevent runtime diffs.
+
+**Example:**
+
+*Input (currentCode):*
+```js
+function update() {
+  // existing logic
+}
+```
+*Input (stepCode):*
+```js
+// collision detection logic
+if (player.x < coin.x + coin.width && player.x + player.width > coin.x && player.y < coin.y + coin.height && player.y + player.height > coin.y) {
+  // collect coin
+}
+```
+*Output (new currentCode):*
+```js
+function update() {
+  // collision detection logic
+  if (player.x < coin.x + coin.width && player.x + player.width > coin.x && player.y < coin.y + coin.height && player.y + player.height > coin.y) {
+    // collect coin
+  }
+  // existing logic
+}
+```
 
 #### 2.5 StaticCheckerAgent
 
@@ -119,6 +166,24 @@ GameDesignAgent → PlannerAgent → Step loop:
 **Behavior:**
 
 * After fixing, the corrected code is automatically formatted/linted internally to maintain consistency before merging or testing.
+
+**Example:**
+
+*Input (stepCode):*
+```js
+if (player.x < coin.x + coin.width && player.x + player.width > coin.x) {
+  // collect coin
+}
+```
+*Error List:*
+- ReferenceError: coin is not defined
+
+*Output (corrected stepCode):*
+```js
+if (player && coin && player.x < coin.x + coin.width && player.x + player.width > coin.x) {
+  // collect coin
+}
+```
 
 #### 2.7 RuntimePlayabilityAgent
 
@@ -178,6 +243,20 @@ GameDesignAgent → PlannerAgent → Step loop:
   * Missing canvas binding
   * Unexpected token or EOF
 * Confirms code is loadable as a single executable JS file
+
+**Example:**
+
+*Input (full game.js):*
+```js
+function update() {
+  // ...
+}
+function draw() {
+  // ...
+}
+```
+*Output:*
+- Syntax check passed (no errors)
 
 ---
 
@@ -249,7 +328,33 @@ Formatting is handled internally by agents that modify the code. It is not an ag
 
 ---
 
-### 6. Example Output
+### 6. Error Handling and Recovery
+
+- If a static check fails, **StepFixerAgent** is invoked to correct the step. This loop continues until the step passes or a retry limit (configurable, e.g., 3 attempts) is reached.
+- If a runtime test fails, **FeedbackAgent** analyzes the error and routes to either **FixerAgent** (for code fixes) or **PlannerAgent** (for plan revision).
+- All errors and recovery attempts are logged to `/games/logs/errors.json` for traceability and debugging.
+- If a step or fix fails repeatedly (exceeds retry limit), the pipeline aborts and returns an error to the user/API client.
+- User-facing errors are returned in the API response and may be displayed in the UI for transparency.
+
+**Error Routing Table:**
+
+| Error Type         | Handling Agent      | Next Step if Fails Again         |
+|-------------------|--------------------|----------------------------------|
+| Static error      | StepFixerAgent     | Retry up to N times, then abort  |
+| Runtime error     | FeedbackAgent      | Route to FixerAgent or PlannerAgent |
+| FixerAgent fails  | (Controller)       | Abort and report error           |
+| PlannerAgent fails| (Controller)       | Abort and report error           |
+
+**Logging:**
+- All errors, retries, and agent decisions are logged to `/games/logs/errors.json`.
+
+**User Feedback:**
+- API responses include error details if the pipeline aborts.
+- UI may display error messages or suggestions for retrying or revising input.
+
+---
+
+### 7. Example Output
 
 #### Game Definition
 
@@ -281,7 +386,7 @@ Formatting is handled internally by agents that modify the code. It is not an ag
 
 ---
 
-### 7. Additional Features (Optional / Future Work)
+### 8. Additional Features (Optional / Future Work)
 
 * Config system for setting retry limits, strict mode, timeouts
 * GameTypeAgent for supporting genres: runner, platformer, puzzle, etc.
@@ -290,3 +395,52 @@ Formatting is handled internally by agents that modify the code. It is not an ag
 * Game history / diff tracking
 
 ---
+
+### 9. 5 game generation strategy + hybrid comparison tables
+
+| **Root**                                 | **Description**                                                                                    | **Strengths**                                                          | **Weaknesses**                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **1. Iterative, Plan-Driven Generation** | A PlannerAgent defines atomic build steps, each executed and validated in order.                   | High control; easy to debug step-by-step; modular                      | Brittle if plan is bad; LLM lacks foresight; coordination overhead      |
+| **2. Code-Based Pattern Extraction**     | Extract mechanics and win logic from working game code; generate new games from learned structure. | Grounded in real code; reduces hallucinations; promotes variation      | Needs quality examples; less control per step; hard to fix mid-way      |
+| **3. Behavior-First Game Discovery**     | Start from desired player behavior; design is derived around it.                                   | Human-centered; gameplay-first; fun-driven                             | Very abstract; complex logic generation; needs smart agents             |
+| **4. Asset-Driven Game Construction**    | Starts with assets (sprites, layout); agents infer the logic to support them.                      | Fast to visualize; compatible with creative tools; inspires design     | May lack coherent gameplay; logic is hard to reverse-engineer           |
+| **5. Agent-as-Player Feedback Loop**     | Auto-play the game post-generation to detect failure or boring gameplay.                           | Catch unplayable/broken games; enables real testing; mimics QA         | Needs runtime engine/sim; slower; complex feedback handling             |
+| **6. Hybrid (OpenAI-style)**             | Combines pattern-driven generation, plan-driven building, and agent-based feedback loop.           | Pattern grounding; reliable execution; real-world validation; scalable | Higher system complexity; more agents to manage; orchestration overhead |
+
+---
+
+### 10. Extensibility Guidelines
+
+To add a new agent or swap out an existing one in the pipeline:
+
+1. **Define the Agent Contract:**
+   - Specify the agent's input, output, and expected behavior in the documentation (see Section 2 for examples).
+   - Write prompt templates and test cases if the agent is LLM-driven.
+
+2. **Implement the Agent:**
+   - Create a new module for the agent, following the structure of existing agents.
+   - Ensure the agent is stateless and receives all required context via arguments.
+
+3. **Update the Pipeline:**
+   - Insert the new agent into the orchestration logic at the appropriate step.
+   - If replacing an agent, update all references and ensure the new agent's contract matches or adapts as needed.
+
+4. **Update Validation and Error Handling:**
+   - Add or update static/runtime checks and error routing as needed.
+   - Ensure the agent's errors are logged and surfaced to the user if relevant.
+
+5. **Document the Change:**
+   - Update this specification and any relevant READMEs to reflect the new or updated agent.
+   - Add example inputs/outputs for the new agent.
+
+6. **Test the Integration:**
+   - Add unit and integration tests for the new agent and its pipeline interactions.
+   - Run end-to-end tests to ensure the pipeline remains robust.
+
+**Best Practices:**
+- Keep agents modular and stateless.
+- Use clear, versioned contracts for agent inputs/outputs.
+- Document all changes and update examples.
+- Encourage contributions by providing templates and clear extension points.
+
+This approach ensures the system remains future-proof, maintainable, and welcoming to new contributors.
