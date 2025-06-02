@@ -201,14 +201,17 @@ document.getElementById('close-modal').onclick = function() {
   document.getElementById('game-frame').src = '';
 };
 
+// Restore SSE support for /generate-stream
+// Use fetch to /generate-stream, read the stream, and update status/logs for each step
+// On 'Done', update gallery and open game
+// On 'Error', show error
+// Fallback to /generate if needed
+
 document.getElementById('generate-btn').onclick = async function() {
   const btn = this;
+  setStatusLabel('Generating...');
   btn.disabled = true;
-  const btnText = document.getElementById('btn-text');
-  btnText.textContent = 'Generating...';
-  setStatusLabel('Designing...');
   try {
-    // Use fetch to POST and get a ReadableStream for SSE
     const response = await fetch(`${API_BASE}/generate-stream`, {
       method: 'POST',
       headers: { 'Accept': 'text/event-stream' },
@@ -248,7 +251,7 @@ document.getElementById('generate-btn').onclick = async function() {
               btn.disabled = false;
               return;
             }
-            setStatusLabel(data.step + '...');
+            setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
           }
         }
       }

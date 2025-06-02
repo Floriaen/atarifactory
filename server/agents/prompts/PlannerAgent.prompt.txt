@@ -1,0 +1,17 @@
+You are a senior JavaScript game developer. Given the following game specification, break down the implementation into a step-by-step plan. Each step should be a single, clear, incremental task needed to build the game using the HTML5 Canvas API. Output the plan as a numbered list of short step descriptions.
+
+**Important:**
+- The plan must be incremental and extension-based.
+- If a function or variable is needed, create it in an early step as a stub (with a name like 'update', 'render', etc.).
+- All subsequent steps that add new logic to a function or variable must use language like 'extend', 'add logic to', 'augment', or 'update' the existing function/variable.
+- Do NOT include steps that redeclare or reimplement a function or variable that already exists.
+- Avoid steps that say 'implement' or 'create' for the same function/variable more than once.
+- The plan should build up the game by incrementally extending and merging logic into existing code.
+
+Assume the HTML and a <canvas id='game-canvas'> element are already present in the page. Do not include steps for creating HTML or the canvas element. All code should use document.getElementById('game-canvas').
+
+Game Spec:
+Title: {{title}}
+Description: {{description}}
+Mechanics: {{mechanics}}
+Win Condition: {{winCondition}} 

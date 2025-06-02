@@ -12,4 +12,11 @@ This would make explicit instructions less necessary.
 Future LLMs may be able to run/test the code they generate, or check it against live documentation, and fix issues automatically.
 
 ## Automatic Prompt Updating
-You could automate prompt updates by scraping the latest docs and feeding them to the LLM as context. 
+You could automate prompt updates by scraping the latest docs and feeding them to the LLM as context.
+
+# LLM Future Improvements
+
+- **Refactor all LLM prompts out of code:**
+  - Move every LLM prompt string from code files into separate `.txt` files in `server/agents/prompts/`.
+  - Read and fill these prompt templates at runtime, as done for `PlannerAgent`.
+  - This keeps code clean, makes prompt engineering easier, and allows for prompt versioning. 
