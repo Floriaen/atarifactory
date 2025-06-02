@@ -9,7 +9,11 @@
  * Performs static analysis on the code.
  */
 function StaticCheckerAgent({ currentCode, stepCode }) {
-  // Mock implementation for contract test
+  // For the mock phase: if 'DUPLICATE' appears in code, return a fake error
+  const code = currentCode + '\n' + stepCode;
+  if (/DUPLICATE/.test(code)) {
+    return ['Duplicate declaration detected'];
+  }
   return [];
 }
 

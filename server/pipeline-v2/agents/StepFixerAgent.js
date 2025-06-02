@@ -10,8 +10,10 @@
  * Fixes the code for the current step based on errors.
  */
 async function StepFixerAgent({ currentCode, step, errorList }) {
-  // Mock implementation for contract test
-  return `// Fixed step ${step.id}: ${step.label}\n// ...fixed code...`;
+  if (errorList && errorList.length > 0) {
+    return `// Fixed step ${step.id}: ${step.label}\n// Fixed errors: ${errorList.join(', ')}`;
+  }
+  return `// No fix needed for step ${step.id}: ${step.label}`;
 }
 
 module.exports = StepFixerAgent; 

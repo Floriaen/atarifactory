@@ -9,8 +9,8 @@
  * Uses AST-based code manipulation to insert/merge stepCode into currentCode.
  */
 function BlockInserterAgent({ currentCode, stepCode }) {
-  // Mock implementation for contract test
-  return `${currentCode}\n${stepCode}`;
+  // For the mock phase, just concatenate stepCode to currentCode
+  return currentCode + '\n' + stepCode;
 }
 
 module.exports = BlockInserterAgent; 

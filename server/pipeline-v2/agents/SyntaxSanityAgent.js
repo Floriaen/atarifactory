@@ -6,7 +6,10 @@
  * Checks if the code is syntactically valid using new Function(code).
  */
 function SyntaxSanityAgent({ code }) {
-  // Mock implementation for contract test
+  // For the mock phase: if 'SYNTAX_ERROR' appears in code, return a fake error
+  if (/SYNTAX_ERROR/.test(code)) {
+    return { valid: false, error: 'Syntax error detected' };
+  }
   return { valid: true };
 }
 

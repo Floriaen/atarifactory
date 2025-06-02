@@ -12,7 +12,15 @@
  * Runs the game code in a headless browser and checks playability.
  */
 async function RuntimePlayabilityAgent({ code }) {
-  // Mock implementation for contract test
+  // For the mock phase: if 'UNPLAYABLE' appears in code, return all false
+  if (/UNPLAYABLE/.test(code)) {
+    return {
+      canvasActive: false,
+      inputResponsive: false,
+      playerMoved: false,
+      winConditionReachable: false
+    };
+  }
   return {
     canvasActive: true,
     inputResponsive: true,
