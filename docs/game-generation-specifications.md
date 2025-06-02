@@ -287,28 +287,28 @@ function draw() {
 * Every modification to the source code—whether from a new step or a fix—triggers a validation loop to ensure the updated code is correct before proceeding.
 
 **The validation loop consists of:**
-  - Generating code for the current step
-  - Running a static check
-  - Fixing errors if needed
-  - Merging the code
-  - Repeating static checks and fixes until no issues remain
-  - Proceeding to final testing and runtime validation
+  - Generating code for the current step (**StepBuilderAgent**)
+  - Running a static check (**StaticCheckerAgent**)
+  - Fixing errors if needed (**StepFixerAgent**)
+  - Merging the code (**BlockInserterAgent**)
+  - Repeating static checks and fixes until no issues remain (**StaticCheckerAgent** & **StepFixerAgent**)
+  - Proceeding to final testing and runtime validation (**FinalTesterAgent**, **RuntimePlayabilityAgent**)
 
 * Each step in the plan includes:
-  - generation → static check → fix (if needed) → merge
-  - Then enters a loop: full static check → fix (if needed) → re-check
-  - Loop continues until no static issues remain, then proceeds to FinalTesterAgent and runtime test.
-* After all static validations pass, SyntaxSanityAgent runs a syntax validation on the entire game.js output before any runtime execution.
+  - generation (**StepBuilderAgent**) → static check (**StaticCheckerAgent**) → fix (if needed) (**StepFixerAgent**) → merge (**BlockInserterAgent**)
+  - Then enters a loop: full static check (**StaticCheckerAgent**) → fix (if needed) (**StepFixerAgent**) → re-check
+  - Loop continues until no static issues remain, then proceeds to **FinalTesterAgent** and **RuntimePlayabilityAgent**
+* After all static validations pass, **SyntaxSanityAgent** runs a syntax validation on the entire game.js output before any runtime execution.
 * Before this final check, the complete code is once again formatted to ensure structural and stylistic consistency.
 * Formatter (non-agent) is applied:
-  - Immediately after each BlockInserterAgent merge
-  - Immediately after StepFixerAgent correction
-* This check/fix loop ensures that both the newly generated step and the full integrated source code are statically valid before any runtime test is performed. The SyntaxSanityAgent confirms the final JS is parseable before running it.
+  - Immediately after each **BlockInserterAgent** merge
+  - Immediately after **StepFixerAgent** correction
+* This check/fix loop ensures that both the newly generated step and the full integrated source code are statically valid before any runtime test is performed. The **SyntaxSanityAgent** confirms the final JS is parseable before running it.
 
 If any runtime test fails:
 
-* FeedbackAgent analyzes the issue and routes to FixerAgent or PlannerAgent
-* If sent to FixerAgent, a new static check → fix → re-check loop is started before retrying runtime validation
+* **FeedbackAgent** analyzes the issue and routes to **FixerAgent** or **PlannerAgent**
+* If sent to **FixerAgent**, a new static check (**StaticCheckerAgent**) → fix (**StepFixerAgent**) → re-check loop is started before retrying runtime validation
 * Caching: currentCode is saved after each successful step
 
 ---
