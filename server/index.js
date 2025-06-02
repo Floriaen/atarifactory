@@ -17,6 +17,7 @@ const DuplicateDeclarationChecker = require('./agents/code/DuplicateDeclarationC
 const LLMStaticCheckerAgent = require('./agents/code/LLMStaticCheckerAgent');
 const FinalTesterAgent = require('./agents/code/FinalTesterAgent');
 const AssemblerAgent = require('./agents/code/AssemblerAgent');
+const { runPipeline } = require('./pipeline-v2/controller');
 dotenv.config();
 
 const app = express();
@@ -223,6 +224,31 @@ app.get('/cors-test', (req, res) => {
   res.json({ message: 'CORS test OK' });
 });
 
+// --- pipeline-v2 agent-based endpoint ---
+app.post('/api/pipeline-v2/generate', async (req, res) => {
+  const { title } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Missing game title' });
+  }
+  try {
+    const result = await runPipeline(title);
+    res.json(result);
+  } catch (err) {
+    console.error('Error in /api/pipeline-v2/generate:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-}); 
+});
+
+// Export app for testing
+module.exports = app;
+
+// Only start server if run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+} 
