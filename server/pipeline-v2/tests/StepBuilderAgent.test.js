@@ -1,4 +1,5 @@
 const StepBuilderAgent = require('../agents/StepBuilderAgent');
+const mockLogger = { info: () => {}, error: () => {} };
 
 describe('StepBuilderAgent', () => {
   it('should return a string (code block) for the step', async () => {
@@ -10,7 +11,7 @@ describe('StepBuilderAgent', () => {
       ],
       step: { id: 2, label: 'Add player' }
     };
-    const result = await StepBuilderAgent(input);
+    const result = await StepBuilderAgent(input, { logger: mockLogger, traceId: 'test-trace' });
     expect(typeof result).toBe('string');
   });
 }); 

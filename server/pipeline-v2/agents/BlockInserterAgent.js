@@ -8,9 +8,15 @@
  *
  * Uses AST-based code manipulation to insert/merge stepCode into currentCode.
  */
-function BlockInserterAgent({ currentCode, stepCode }) {
-  // For the mock phase, just concatenate stepCode to currentCode
-  return currentCode + '\n' + stepCode;
+function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
+  logger.info('BlockInserterAgent called', { traceId });
+  try {
+    // For the mock phase, just concatenate stepCode to currentCode
+    return currentCode + '\n' + stepCode;
+  } catch (err) {
+    logger.error('BlockInserterAgent error', { traceId, error: err });
+    throw err;
+  }
 }
 
 module.exports = BlockInserterAgent; 

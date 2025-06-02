@@ -11,22 +11,28 @@
  *
  * Runs the game code in a headless browser and checks playability.
  */
-async function RuntimePlayabilityAgent({ code }) {
-  // For the mock phase: if 'UNPLAYABLE' appears in code, return all false
-  if (/UNPLAYABLE/.test(code)) {
+async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
+  logger.info('RuntimePlayabilityAgent called', { traceId });
+  try {
+    // For the mock phase: if 'UNPLAYABLE' appears in code, return all false
+    if (/UNPLAYABLE/.test(code)) {
+      return {
+        canvasActive: false,
+        inputResponsive: false,
+        playerMoved: false,
+        winConditionReachable: false
+      };
+    }
     return {
-      canvasActive: false,
-      inputResponsive: false,
-      playerMoved: false,
-      winConditionReachable: false
+      canvasActive: true,
+      inputResponsive: true,
+      playerMoved: true,
+      winConditionReachable: true
     };
+  } catch (err) {
+    logger.error('RuntimePlayabilityAgent error', { traceId, error: err });
+    throw err;
   }
-  return {
-    canvasActive: true,
-    inputResponsive: true,
-    playerMoved: true,
-    winConditionReachable: true
-  };
 }
 
 module.exports = RuntimePlayabilityAgent; 

@@ -2,16 +2,22 @@
  * logger utility
  * Provides log, info, and error logging functions.
  */
-function log(...args) {
-  // TODO: Implement logging
-}
+const { createLogger, format, transports } = require('winston');
+const path = require('path');
 
-function info(...args) {
-  // TODO: Implement info logging
-}
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json()
+  ),
+  defaultMeta: { service: 'pipeline-v2' },
+  transports: [
+    new transports.Console({ format: format.simple() }),
+    new transports.File({ filename: path.join(__dirname, '../../../logs/pipeline-v2.log') })
+  ]
+});
 
-function error(...args) {
-  // TODO: Implement error logging
-}
-
-module.exports = { log, info, error }; 
+module.exports = logger; 

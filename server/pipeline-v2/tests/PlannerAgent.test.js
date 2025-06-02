@@ -1,4 +1,5 @@
 const PlannerAgent = require('../agents/PlannerAgent');
+const mockLogger = { info: () => {}, error: () => {} };
 
 describe('PlannerAgent', () => {
   it('should return an array of steps with id and label', async () => {
@@ -9,7 +10,7 @@ describe('PlannerAgent', () => {
       winCondition: 'win',
       entities: ['player']
     };
-    const result = await PlannerAgent(mockGameDef);
+    const result = await PlannerAgent(mockGameDef, { logger: mockLogger, traceId: 'test-trace' });
     expect(Array.isArray(result)).toBe(true);
     if (result.length > 0) {
       expect(result[0]).toEqual(

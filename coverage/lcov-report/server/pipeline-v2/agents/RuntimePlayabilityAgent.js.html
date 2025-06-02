@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.12% </span>
+                <span class="strong">73.68% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>25/32</span>
+                <span class='fraction'>28/38</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>1/3</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.12% </span>
+                <span class="strong">73.68% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>25/32</span>
+                <span class='fraction'>28/38</span>
             </div>
         
             
@@ -94,7 +94,13 @@
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
 <a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -107,6 +113,8 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -123,6 +131,10 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
@@ -138,22 +150,28 @@
  *
  * Runs the game code in a headless browser and checks playability.
  */
-async function RuntimePlayabilityAgent({ code }) {
-  // For the mock phase: if 'UNPLAYABLE' appears in code, return all false
-  if (/UNPLAYABLE/.test(code)) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >    return {</span>
-<span class="cstat-no" title="statement not covered" >      canvasActive: false,</span>
-<span class="cstat-no" title="statement not covered" >      inputResponsive: false,</span>
-<span class="cstat-no" title="statement not covered" >      playerMoved: false,</span>
-<span class="cstat-no" title="statement not covered" >      winConditionReachable: false</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
+async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
+  logger.info('RuntimePlayabilityAgent called', { traceId });
+  try {
+    // For the mock phase: if 'UNPLAYABLE' appears in code, return all false
+    if (/UNPLAYABLE/.test(code)) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      return {</span>
+<span class="cstat-no" title="statement not covered" >        canvasActive: false,</span>
+<span class="cstat-no" title="statement not covered" >        inputResponsive: false,</span>
+<span class="cstat-no" title="statement not covered" >        playerMoved: false,</span>
+<span class="cstat-no" title="statement not covered" >        winConditionReachable: false</span>
+<span class="cstat-no" title="statement not covered" >      };</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+    return {
+      canvasActive: true,
+      inputResponsive: true,
+      playerMoved: true,
+      winConditionReachable: true
+    };
+  } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('RuntimePlayabilityAgent error', { traceId, error: err });</span>
+<span class="cstat-no" title="statement not covered" >    throw err;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
-  return {
-    canvasActive: true,
-    inputResponsive: true,
-    playerMoved: true,
-    winConditionReachable: true
-  };
 }
 &nbsp;
 module.exports = RuntimePlayabilityAgent; </pre></td></tr></table></pre>
@@ -163,7 +181,7 @@ module.exports = RuntimePlayabilityAgent; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-02T16:45:14.781Z
+                at 2025-06-02T17:08:51.893Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

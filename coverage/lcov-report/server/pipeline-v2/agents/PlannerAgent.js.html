@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.23% </span>
+                <span class="strong">82.5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>30/34</span>
+                <span class='fraction'>33/40</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">40% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/4</span>
+                <span class='fraction'>2/5</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.23% </span>
+                <span class="strong">82.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>30/34</span>
+                <span class='fraction'>33/40</span>
             </div>
         
             
@@ -96,13 +96,21 @@
 <a name='L31'></a><a href='#L31'>31</a>
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
-<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -127,6 +135,10 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
@@ -136,30 +148,36 @@
  *
  * Generates an ordered array of build steps for the game.
  */
-async function PlannerAgent(gameDefinition) {
-  const { mechanics = [], entities = [], title = '' } = gameDefinition;
-  let plan = [];
-  let stepId = 1;
+async function PlannerAgent(gameDefinition, { logger, traceId }) {
+  logger.info('PlannerAgent called', { traceId, gameDefinition });
+  try {
+    const { mechanics = [], entities = [], title = '' } = gameDefinition;
+    let plan = [];
+    let stepId = 1;
 &nbsp;
-  // Always start with canvas setup
-  plan.push({ id: stepId++, label: 'Setup canvas and game loop' });
+    // Always start with canvas setup
+    plan.push({ id: stepId++, label: 'Setup canvas and game loop' });
 &nbsp;
-  if (mechanics.includes('move')) {
-    plan.push({ id: stepId++, label: 'Add player and movement controls' });
-  }
-  if (mechanics.includes('jump')) {
-    plan.push({ id: stepId++, label: 'Add jumping/platform logic' });
-  }
-  if (mechanics.includes('collect')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >    plan.push({ id: stepId++, label: 'Add collectible items and scoring' });</span>
+    if (mechanics.includes('move')) {
+      plan.push({ id: stepId++, label: 'Add player and movement controls' });
+    }
+    if (mechanics.includes('jump')) {
+      plan.push({ id: stepId++, label: 'Add jumping/platform logic' });
+    }
+    if (mechanics.includes('collect')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      plan.push({ id: stepId++, label: 'Add collectible items and scoring' });</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+    if (mechanics.includes('avoid')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      plan.push({ id: stepId++, label: 'Add obstacles and collision logic' });</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+    // Always end with win/lose condition
+    plan.push({ id: stepId++, label: 'Implement win/lose condition and display result' });
+&nbsp;
+    return plan;
+  } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('PlannerAgent error', { traceId, error: err, gameDefinition });</span>
+<span class="cstat-no" title="statement not covered" >    throw err;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
-  if (mechanics.includes('avoid')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >    plan.push({ id: stepId++, label: 'Add obstacles and collision logic' });</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-  // Always end with win/lose condition
-  plan.push({ id: stepId++, label: 'Implement win/lose condition and display result' });
-&nbsp;
-  return plan;
 }
 &nbsp;
 module.exports = PlannerAgent; </pre></td></tr></table></pre>
@@ -169,7 +187,7 @@ module.exports = PlannerAgent; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-02T16:45:14.781Z
+                at 2025-06-02T17:08:51.893Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

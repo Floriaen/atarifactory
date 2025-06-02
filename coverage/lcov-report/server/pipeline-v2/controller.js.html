@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.49% </span>
+                <span class="strong">96.1% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>55/57</span>
+                <span class='fraction'>74/77</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.49% </span>
+                <span class="strong">96.1% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>55/57</span>
+                <span class='fraction'>74/77</span>
             </div>
         
             
@@ -119,7 +119,27 @@
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a>
-<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -134,6 +154,13 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -146,15 +173,20 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -174,6 +206,14 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const GameDesignAgent = require('./agents/GameDesignAgent');
 const PlannerAgent = require('./agents/PlannerAgent');
@@ -184,6 +224,8 @@ const BlockInserterAgent = require('./agents/BlockInserterAgent');
 const SyntaxSanityAgent = require('./agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('./agents/RuntimePlayabilityAgent');
 const FeedbackAgent = require('./agents/FeedbackAgent');
+const logger = require('./utils/logger');
+const { v4: uuidv4 } = require('uuid');
 &nbsp;
 /**
  * Orchestrates the agent pipeline for game generation.
@@ -191,44 +233,62 @@ const FeedbackAgent = require('./agents/FeedbackAgent');
  * @returns {Promise&lt;object&gt;} - The final pipeline result
  */
 async function runPipeline(title) {
-  // 1. GameDesignAgent
-  const gameDef = await GameDesignAgent({ title });
+  const traceId = uuidv4();
+  logger.info('Pipeline started', { traceId, title });
+  try {
+    // 1. GameDesignAgent
+    const gameDef = await GameDesignAgent({ title }, { logger, traceId });
+    logger.info('GameDesignAgent output', { traceId, gameDef });
 &nbsp;
-  // 2. PlannerAgent
-  const plan = await PlannerAgent(gameDef);
+    // 2. PlannerAgent
+    const plan = await PlannerAgent(gameDef, { logger, traceId });
+    logger.info('PlannerAgent output', { traceId, plan });
 &nbsp;
-  // 3. Step execution cycle
-  let currentCode = '';
-  for (const step of plan) {
-    // StepBuilderAgent
-    let stepCode = await StepBuilderAgent({ currentCode, plan, step });
-    // StaticCheckerAgent
-    let errors = StaticCheckerAgent({ currentCode, stepCode });
-    // StepFixerAgent (if needed)
-    if (errors.length &gt; 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      stepCode = await StepFixerAgent({ currentCode, step, errorList: errors });</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-    // BlockInserterAgent
-    currentCode = BlockInserterAgent({ currentCode, stepCode });
+    // 3. Step execution cycle
+    let currentCode = '';
+    for (const step of plan) {
+      logger.info('Step execution', { traceId, step });
+      // StepBuilderAgent
+      let stepCode = await StepBuilderAgent({ currentCode, plan, step }, { logger, traceId });
+      logger.info('StepBuilderAgent output', { traceId, step, stepCode });
+      // StaticCheckerAgent
+      let errors = StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId });
+      logger.info('StaticCheckerAgent output', { traceId, step, errors });
+      // StepFixerAgent (if needed)
+      if (errors.length &gt; 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >        stepCode = await StepFixerAgent({ currentCode, step, errorList: errors }, { logger, traceId });</span>
+<span class="cstat-no" title="statement not covered" >        logger.info('StepFixerAgent output', { traceId, step, stepCode });</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+      // BlockInserterAgent
+      currentCode = BlockInserterAgent({ currentCode, stepCode }, { logger, traceId });
+      logger.info('BlockInserterAgent output', { traceId, step, currentCode });
+    }
+&nbsp;
+    // 4. SyntaxSanityAgent
+    const syntaxResult = SyntaxSanityAgent({ code: currentCode }, { logger, traceId });
+    logger.info('SyntaxSanityAgent output', { traceId, syntaxResult });
+&nbsp;
+    // 5. RuntimePlayabilityAgent
+    const runtimeResult = await RuntimePlayabilityAgent({ code: currentCode }, { logger, traceId });
+    logger.info('RuntimePlayabilityAgent output', { traceId, runtimeResult });
+&nbsp;
+    // 6. FeedbackAgent
+    const feedback = FeedbackAgent({ runtimeLogs: runtimeResult, stepId: plan.length }, { logger, traceId });
+    logger.info('FeedbackAgent output', { traceId, feedback });
+&nbsp;
+    logger.info('Pipeline finished', { traceId });
+    return {
+      gameDef,
+      plan,
+      code: currentCode,
+      syntaxResult,
+      runtimeResult,
+      feedback
+    };
+  } catch (err) {
+    logger.error('Pipeline error', { traceId, error: err });
+    throw err;
   }
-&nbsp;
-  // 4. SyntaxSanityAgent
-  const syntaxResult = SyntaxSanityAgent({ code: currentCode });
-&nbsp;
-  // 5. RuntimePlayabilityAgent
-  const runtimeResult = await RuntimePlayabilityAgent({ code: currentCode });
-&nbsp;
-  // 6. FeedbackAgent
-  const feedback = FeedbackAgent({ runtimeLogs: runtimeResult, stepId: plan.length });
-&nbsp;
-  return {
-    gameDef,
-    plan,
-    code: currentCode,
-    syntaxResult,
-    runtimeResult,
-    feedback
-  };
 }
 &nbsp;
 module.exports = { runPipeline }; </pre></td></tr></table></pre>
@@ -238,7 +298,7 @@ module.exports = { runPipeline }; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-02T16:45:14.781Z
+                at 2025-06-02T17:08:51.893Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
