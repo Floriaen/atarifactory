@@ -64,13 +64,22 @@ GameDesignAgent → PlannerAgent → Step loop:
 
 **Input:**
 
-* currentCode
-* step: { id, label }
+* currentCode (the full code generated so far)
+* plan (the full ordered list of build steps)
+* step: { id, label } (the current step description)
+
+**Note:**
+To ensure robust, incremental, and non-redundant code generation, StepBuilderAgent always receives the full plan, the current code, and the current step. This allows the agent to:
+- Avoid redeclaring functions or variables
+- Integrate new logic with existing code
+- Understand the overall structure and dependencies
+
+If the codebase becomes very large, context summarization strategies (such as including only relevant functions, or summarizing unchanged sections) may be used to stay within LLM prompt limits.
 
 **Output:** Code block (new or updated function)
 
 **Prompt Template:**
-"Here is the current game code and a step labeled '{{label}}'. Please generate the corresponding function or logic to complete this step."
+"Here is the current game code, the full plan, and a step labeled '{{label}}'. Please generate the corresponding function or logic to complete this step."
 
 **Example:**
 
@@ -79,6 +88,16 @@ GameDesignAgent → PlannerAgent → Step loop:
 function update() {
   // existing logic
 }
+```
+*Input (plan):*
+```json
+[
+  { "id": 1, "label": "Setup canvas and loop" },
+  { "id": 2, "label": "Add player and controls" },
+  { "id": 3, "label": "Add coins and scoring" },
+  { "id": 4, "label": "Add spikes and loss condition" },
+  { "id": 5, "label": "Display win/lose text" }
+]
 ```
 *Step (label):* "Extend the 'update' function to add collision detection."
 
@@ -91,6 +110,9 @@ if (player.x < coin.x + coin.width && player.x + player.width > coin.x && player
 ```
 
 #### 2.4 BlockInserterAgent
+
+**Note:**
+BlockInserterAgent is not an LLM agent. It is a deterministic, programmatic utility that uses AST-based code manipulation (e.g., Recast, Babel) to merge or insert code blocks safely and reliably.
 
 **Input:**
 
@@ -147,9 +169,12 @@ function update() {
 
 **Input:**
 
-* currentCode
-* step
+* currentCode (the full code generated so far)
+* step (the current step object from the plan, e.g., { id, label })
 * error list
+
+**Note:**
+The 'step' input is the current step object from the plan (see PlannerAgent), typically including an id and label. This provides the agent with the context and intent for the code it is fixing, ensuring the correction matches the step's purpose.
 
 **Output:**
 
@@ -174,6 +199,10 @@ function update() {
 if (player.x < coin.x + coin.width && player.x + player.width > coin.x) {
   // collect coin
 }
+```
+*Input (step):*
+```json
+{ "id": 3, "label": "Add coins and scoring" }
 ```
 *Error List:*
 - ReferenceError: coin is not defined
