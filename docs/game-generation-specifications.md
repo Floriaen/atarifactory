@@ -6,14 +6,6 @@ This system automatically generates playable vanilla JS Canvas games from minima
 
 **Note:** For all code merging and insertion, the system will use AST-based (Abstract Syntax Tree) code manipulation tools (such as Recast or Babel) to ensure robust, safe, and context-aware code updates.
 
-**Pipeline Summary:**
-
-```
-GameDesignAgent → PlannerAgent → Step loop:
-  StepBuilderAgent → StaticCheckerAgent → StepFixerAgent (if needed) → BlockInserterAgent
-  → SyntaxSanityAgent → RuntimePlayabilityAgent (only after all steps complete) → FeedbackAgent (if needed)
-```
-
 ---
 
 ### 2. Agents & Interface Contracts
