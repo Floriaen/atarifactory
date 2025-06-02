@@ -284,18 +284,25 @@ function draw() {
 ### 3. Orchestration Logic
 
 * The main controller manages step execution and agent calls.
-* Every modification to the source code—whether from a new step or a fix—triggers a validation loop:
-* Each step includes:
+* Every modification to the source code—whether from a new step or a fix—triggers a validation loop to ensure the updated code is correct before proceeding.
 
-  * generation → static check → fix (if needed) → merge
-  * Then enters a loop: full static check → fix (if needed) → re-check
-  * Loop continues until no static issues remain, then proceeds to FinalTesterAgent and runtime test.
+**The validation loop consists of:**
+  - Generating code for the current step
+  - Running a static check
+  - Fixing errors if needed
+  - Merging the code
+  - Repeating static checks and fixes until no issues remain
+  - Proceeding to final testing and runtime validation
+
+* Each step in the plan includes:
+  - generation → static check → fix (if needed) → merge
+  - Then enters a loop: full static check → fix (if needed) → re-check
+  - Loop continues until no static issues remain, then proceeds to FinalTesterAgent and runtime test.
 * After all static validations pass, SyntaxSanityAgent runs a syntax validation on the entire game.js output before any runtime execution.
 * Before this final check, the complete code is once again formatted to ensure structural and stylistic consistency.
 * Formatter (non-agent) is applied:
-
-  * Immediately after each BlockInserterAgent merge
-  * Immediately after StepFixerAgent correction
+  - Immediately after each BlockInserterAgent merge
+  - Immediately after StepFixerAgent correction
 * This check/fix loop ensures that both the newly generated step and the full integrated source code are statically valid before any runtime test is performed. The SyntaxSanityAgent confirms the final JS is parseable before running it.
 
 If any runtime test fails:
