@@ -1,5 +1,8 @@
+// Logging: By default, logs are suppressed for clean test output. Set TEST_LOGS=1 to enable console logs for debugging.
+const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
+const logger = process.env.TEST_LOGS ? console : mockLogger;
+
 const StepBuilderAgent = require('../agents/StepBuilderAgent');
-const mockLogger = { info: () => {}, error: () => {} };
 
 describe('StepBuilderAgent', () => {
   it('should return a string (code block) for the step', async () => {
@@ -11,7 +14,7 @@ describe('StepBuilderAgent', () => {
       ],
       step: { id: 2, label: 'Add player' }
     };
-    const result = await StepBuilderAgent(input, { logger: mockLogger, traceId: 'test-trace' });
+    const result = await StepBuilderAgent(input, { logger: logger, traceId: 'test-trace' });
     expect(typeof result).toBe('string');
   });
 }); 

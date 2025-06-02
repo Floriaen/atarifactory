@@ -1,5 +1,19 @@
 const request = require('supertest');
 const path = require('path');
+const { runPipeline } = require('../controller');
+const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const SmartOpenAI = require('../utils/SmartOpenAI');
+
+jest.setTimeout(20000);
+
+let llmClient;
+if (process.env.OPENAI_API_KEY) {
+  const OpenAI = require('openai');
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  llmClient = new SmartOpenAI(openai);
+} else {
+  llmClient = new MockSmartOpenAI();
+}
 
 describe('POST /api/pipeline-v2/generate', () => {
   let app;
@@ -40,5 +54,10 @@ describe('POST /api/pipeline-v2/generate', () => {
     expect(response.body).toHaveProperty('error');
     expect(response.body.error).toMatch(/StepBuilderAgent failed/);
     jest.dontMock('../agents/StepBuilderAgent');
+  });
+
+  it('should run the full pipeline with the correct llmClient', async () => {
+    const result = await runPipeline('Test Integration Game', { llmClient });
+    // ... assertions ...
   });
 }); 

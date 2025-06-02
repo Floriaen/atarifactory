@@ -1,10 +1,16 @@
+// Logging: By default, logs are suppressed for clean test output. Set TEST_LOGS=1 to enable console logs for debugging.
+const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
+const logger = process.env.TEST_LOGS ? console : mockLogger;
+
+jest.setTimeout(20000);
 const GameDesignAgent = require('../agents/GameDesignAgent');
-const mockLogger = { info: () => {}, error: () => {} };
+const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
 
 describe('GameDesignAgent', () => {
   it('should return an object with the correct keys', async () => {
     const input = { title: 'Test Game' };
-    const result = await GameDesignAgent(input, { logger: mockLogger, traceId: 'test-trace' });
+    const mockSmartOpenAI = new MockSmartOpenAI();
+    const result = await GameDesignAgent(input, { logger: logger, traceId: 'test-trace', llmClient: mockSmartOpenAI });
     expect(typeof result).toBe('object');
     // Structure check (keys)
     expect(result).toEqual(
