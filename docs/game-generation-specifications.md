@@ -283,33 +283,68 @@ function draw() {
 
 ### 3. Orchestration Logic
 
-* The main controller manages step execution and agent calls.
-* Every modification to the source code—whether from a new step or a fix—triggers a validation loop to ensure the updated code is correct before proceeding.
+The main controller orchestrates all agent calls and manages the incremental construction of the game code.
 
-**The validation loop consists of:**
-  - Generating code for the current step (**StepBuilderAgent**)
-  - Running a static check (**StaticCheckerAgent**)
-  - Fixing errors if needed (**StepFixerAgent**)
-  - Merging the code (**BlockInserterAgent**)
-  - Repeating static checks and fixes until no issues remain (**StaticCheckerAgent** & **StepFixerAgent**)
-  - Proceeding to final testing and runtime validation (**FinalTesterAgent**, **RuntimePlayabilityAgent**)
+Each **step in the build plan** goes through the following **precise and robust lifecycle**:
 
-* Each step in the plan includes:
-  - generation (**StepBuilderAgent**) → static check (**StaticCheckerAgent**) → fix (if needed) (**StepFixerAgent**) → merge (**BlockInserterAgent**)
-  - Then enters a loop: full static check (**StaticCheckerAgent**) → fix (if needed) (**StepFixerAgent**) → re-check
-  - Loop continues until no static issues remain, then proceeds to **FinalTesterAgent** and **RuntimePlayabilityAgent**
-* After all static validations pass, **SyntaxSanityAgent** runs a syntax validation on the entire game.js output before any runtime execution.
-* Before this final check, the complete code is once again formatted to ensure structural and stylistic consistency.
-* Formatter (non-agent) is applied:
-  - Immediately after each **BlockInserterAgent** merge
-  - Immediately after **StepFixerAgent** correction
-* This check/fix loop ensures that both the newly generated step and the full integrated source code are statically valid before any runtime test is performed. The **SyntaxSanityAgent** confirms the final JS is parseable before running it.
+#### Step Execution Cycle
 
-If any runtime test fails:
+1. **StepBuilderAgent** generates the new code block for the current step.
+2. **StaticCheckerAgent** simulates the post-merge state before committing changes — allowing early detection of incompatibilities. It checks for:
 
-* **FeedbackAgent** analyzes the issue and routes to **FixerAgent** or **PlannerAgent**
-* If sent to **FixerAgent**, a new static check (**StaticCheckerAgent**) → fix (**StepFixerAgent**) → re-check loop is started before retrying runtime validation
-* Caching: currentCode is saved after each successful step
+   * Duplicate declarations
+   * Undeclared variables
+   * Syntax issues
+3. If any issues are found, **StepFixerAgent** corrects only the step code.
+4. The fixed step code is then passed to **BlockInserterAgent**, which:
+
+   * Integrates the step code into currentCode by inserting or replacing blocks
+   * Applies formatter to ensure stylistic consistency
+5. After integration, a **full static validation loop** begins:
+
+   * **StaticCheckerAgent** scans the **entire updated currentCode**
+   * If issues are found, **StepFixerAgent** corrects them strictly within the affected functions or blocks identified by the static checker
+   * **Formatter** is re-applied
+   * Loop continues until no issues remain
+
+#### Syntax Validation and Runtime Execution
+
+6. Once all plan steps are executed and validated, **SyntaxSanityAgent** runs a full syntax check using `new Function(code)`:
+
+   * Confirms code is syntactically valid
+   * Detects unrecoverable errors (e.g. syntax, binding, EOF)
+7. If syntax is valid, the **RuntimePlayabilityAgent** launches:
+
+   * Executes the game in a headless browser context
+   * Validates playability conditions (canvas, controls, win logic)
+   * Outputs a runtime log
+
+#### Handling Failures
+
+8. If runtime validation fails:
+
+   * **FeedbackAgent** analyzes logs and decides next action:
+
+     * Re-route to **StepFixerAgent** if issue is fixable
+     * Re-route to **PlannerAgent** if logic or plan needs revision
+   * A new fix/check loop begins after the routed agent runs
+
+#### Formatting Notes
+
+* Formatting and linting are automatically applied:
+
+  * After each successful **BlockInserterAgent** merge
+  * After each **StepFixerAgent** correction
+
+#### Caching
+
+* `currentCode` is cached after each successful step to enable recovery, rollback, and traceability.
+
+This orchestration ensures that:
+
+* Each step is validated before and after integration
+* The entire codebase remains static-error free before syntax and runtime validation
+* Runtime issues are recoverable through structured agent loops
 
 ---
 
