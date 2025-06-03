@@ -1,3 +1,16 @@
+## Architecture Principles
+
+This project follows CLEAN architecture principles:
+
+- Business logic (agents, pipeline) is decoupled from frameworks and infrastructure.
+- All dependencies (LLM clients, loggers, etc.) are injected, not hardcoded.
+- Controllers/orchestrators handle I/O and dependency wiring.
+- Tests use mocks and dependency injection for fast, reliable feedback.
+- Code is organized for modularity, testability, and future-proofing.
+- **Single Responsibility:** Each module/agent does one thing and does it well.
+
+All contributors and tools must follow these guidelines.
+
 ## Linting
 
 To check code style and errors, run:
