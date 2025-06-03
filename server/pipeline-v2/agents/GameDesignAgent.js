@@ -11,28 +11,50 @@
  *
  * Generates a game design specification from a title.
  */
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
-async function GameDesignAgent(input, { logger, traceId }) {
+async function GameDesignAgent(input, { logger, traceId, llmClient }) {
   logger.info('GameDesignAgent called', { traceId, input });
   try {
     // Load prompt from file
-    const promptPath = path.join(__dirname, 'prompts', 'GameDesignAgent.txt');
-    const prompt = fs.readFileSync(promptPath, 'utf8');
+    const promptPath = path.join(__dirname, 'prompts', 'GameDesignAgent.prompt.txt');
+    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
 
-    // --- LLM call would go here ---
-    // For now, just return the prompt and input for dry-run/testing
-    return {
-      _prompt: prompt,
-      _input: input,
-      // TODO: Replace with real LLM call and parsed output
-      title: input.title || 'Untitled Game',
-      description: 'A fun game.',
-      mechanics: ['move', 'jump'],
-      winCondition: 'Reach the goal',
-      entities: ['player', 'goal']
-    };
+    // If no llmClient, fallback to mock
+    if (!llmClient) {
+      logger.warn('No llmClient provided, using mock output', { traceId });
+      return {
+        _prompt: promptTemplate,
+        _input: input,
+        title: input.title || 'Untitled Game',
+        description: 'A fun game.',
+        mechanics: ['move', 'jump'],
+        winCondition: 'Reach the goal',
+        entities: ['player', 'goal']
+      };
+    }
+
+    // Compose the prompt
+    const prompt = `${promptTemplate.trim()}
+\nInput:\n${JSON.stringify({ title: input.title })}`;
+
+    // Use llmClient for LLM call and output parsing
+    const parsed = await llmClient.chatCompletion({ prompt, outputType: 'json-object' });
+    logger.info('GameDesignAgent LLM parsed output', { traceId, parsed });
+
+    // Validate contract
+    const { title, description, mechanics, winCondition, entities } = parsed;
+    if (!title || !description || !Array.isArray(mechanics) || !winCondition || !Array.isArray(entities)) {
+      logger.error('GameDesignAgent LLM output missing required fields', { traceId, parsed });
+      throw new Error('GameDesignAgent: LLM output missing required fields');
+    }
+
+    return { ...parsed };
   } catch (err) {
     logger.error('GameDesignAgent error', { traceId, error: err, input });
     throw err;

@@ -5,6 +5,9 @@
  *
  * Checks if the code is syntactically valid using new Function(code).
  */
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
 function SyntaxSanityAgent({ code }, { logger, traceId }) {
   logger.info('SyntaxSanityAgent called', { traceId });
   try {

@@ -9,6 +9,17 @@ const RuntimePlayabilityAgent = require('./agents/RuntimePlayabilityAgent');
 const FeedbackAgent = require('./agents/FeedbackAgent');
 const logger = require('./utils/logger');
 const { v4: uuidv4 } = require('uuid');
+const SmartOpenAI = require('./utils/SmartOpenAI');
+let llmClient = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    llmClient = new SmartOpenAI(openai);
+  }
+} catch (err) {
+  logger.warn('OpenAI SDK not available or failed to initialize', { error: err });
+}
 
 /**
  * Orchestrates the agent pipeline for game generation.
@@ -20,11 +31,11 @@ async function runPipeline(title) {
   logger.info('Pipeline started', { traceId, title });
   try {
     // 1. GameDesignAgent
-    const gameDef = await GameDesignAgent({ title }, { logger, traceId });
+    const gameDef = await GameDesignAgent({ title }, { logger, traceId, llmClient });
     logger.info('GameDesignAgent output', { traceId, gameDef });
 
     // 2. PlannerAgent
-    const plan = await PlannerAgent(gameDef, { logger, traceId });
+    const plan = await PlannerAgent(gameDef, { logger, traceId, llmClient });
     logger.info('PlannerAgent output', { traceId, plan });
 
     // 3. Step execution cycle
@@ -32,14 +43,14 @@ async function runPipeline(title) {
     for (const step of plan) {
       logger.info('Step execution', { traceId, step });
       // StepBuilderAgent
-      let stepCode = await StepBuilderAgent({ currentCode, plan, step }, { logger, traceId });
+      let stepCode = await StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient });
       logger.info('StepBuilderAgent output', { traceId, step, stepCode });
       // StaticCheckerAgent
       let errors = StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId });
       logger.info('StaticCheckerAgent output', { traceId, step, errors });
       // StepFixerAgent (if needed)
       if (errors.length > 0) {
-        stepCode = await StepFixerAgent({ currentCode, step, errorList: errors }, { logger, traceId });
+        stepCode = await StepFixerAgent({ currentCode, step, errorList: errors }, { logger, traceId, llmClient });
         logger.info('StepFixerAgent output', { traceId, step, stepCode });
       }
       // BlockInserterAgent

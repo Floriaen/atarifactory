@@ -86,6 +86,17 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 
 ---
 
+## LLM Mocking Policy
+
+- For every agent that calls an LLM, provide a corresponding mock implementation (e.g., MockOpenAI).
+- Whenever you change the LLM prompt, contract, or output parsing, update the mock to match.
+- All tests should use the mock by default, unless explicitly testing real LLM integration.
+- Add a code review checklist item: "If LLM contract changed, was the mock updated?"
+- Document the location and usage of the mock in the codebase.
+- Add a comment in each LLM agent: `// NOTE: If you change this contract, update MockOpenAI accordingly.`
+
+---
+
 ## Summary Table
 
 | Phase         | Deliverable/Goal                                 | Testing Approach                        |

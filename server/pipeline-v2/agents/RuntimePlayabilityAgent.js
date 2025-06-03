@@ -11,6 +11,9 @@
  *
  * Runs the game code in a headless browser and checks playability.
  */
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
 async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
   logger.info('RuntimePlayabilityAgent called', { traceId });
   try {

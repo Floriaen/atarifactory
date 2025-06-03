@@ -1,3 +1,7 @@
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
+
 /**
  * StaticCheckerAgent
  * Input: {
