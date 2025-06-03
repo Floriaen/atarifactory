@@ -1,3 +1,5 @@
+// Logging: By default, logs are suppressed for clean test output. Set TEST_LOGS=1 to enable console logs for debugging.
+// To run real LLM integration, set both TEST_LLM=1 and OPENAI_API_KEY=your-key.
 const request = require('supertest');
 const path = require('path');
 const { runPipeline } = require('../controller');
@@ -6,9 +8,17 @@ const SmartOpenAI = require('../utils/SmartOpenAI');
 
 jest.setTimeout(20000);
 
+const OpenAI = (() => {
+  try {
+    return require('openai');
+  } catch {
+    return null;
+  }
+})();
+const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
+
 let llmClient;
-if (process.env.OPENAI_API_KEY) {
-  const OpenAI = require('openai');
+if (useRealLLM) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   llmClient = new SmartOpenAI(openai);
 } else {

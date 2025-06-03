@@ -14,6 +14,8 @@ const OpenAI = (() => {
   }
 })();
 
+const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
+
 describe('PlannerAgent', () => {
   it('should return an array of steps with id and label (MockSmartOpenAI)', async () => {
     const mockGameDef = {
@@ -37,7 +39,7 @@ describe('PlannerAgent', () => {
     }
   });
 
-  (process.env.OPENAI_API_KEY && OpenAI ? it : it.skip)('should return a valid plan from real OpenAI', async () => {
+  (useRealLLM ? it : it.skip)('should return a valid plan from real OpenAI', async () => {
     const gameDef = {
       title: 'Coin Collector',
       description: 'Collect all coins while avoiding spikes.',
