@@ -20,12 +20,20 @@ describe('StepFixerAgent', () => {
       step: { id: 2, label: 'Add player' },
       errorList: ['ReferenceError']
     };
-    const result = await StepFixerAgent(input, { logger: logger, traceId: 'test-trace' });
+    const mockSmartOpenAI = new MockSmartOpenAI();
+    const result = await StepFixerAgent(input, { logger, traceId: 'mock-test', llmClient: mockSmartOpenAI });
     expect(typeof result).toBe('string');
   });
-  // Placeholder for real LLM test
   (useRealLLM ? it : it.skip)('should return a corrected stepCode from real OpenAI', async () => {
-    // To be implemented if StepFixerAgent becomes LLM-driven
-    expect(true).toBe(true);
+    const input = {
+      currentCode: 'function update() {}',
+      step: { id: 2, label: 'Add player' },
+      errorList: ['ReferenceError']
+    };
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const llmClient = new SmartOpenAI(openai);
+    const result = await StepFixerAgent(input, { logger, traceId: 'real-openai-test', llmClient });
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
   });
 }); 

@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
@@ -11,31 +14,24 @@
  * }
  * Output: string (code block for the step)
  *
- * Generates the code block for the current step.
+ * Generates the code block for the current step using LLM.
  */
-async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId }) {
+async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient }) {
   logger.info('StepBuilderAgent called', { traceId, step });
+  if (!llmClient) {
+    logger.error('StepBuilderAgent: llmClient is required but was not provided', { traceId });
+    throw new Error('StepBuilderAgent: llmClient is required but was not provided');
+  }
   try {
-    const label = step.label.toLowerCase();
-    if (label.includes('setup')) {
-      return `// Setup canvas and game loop\nconst canvas = document.createElement('canvas');\ncanvas.width = 320;\ncanvas.height = 240;\ndocument.body.appendChild(canvas);\nconst ctx = canvas.getContext('2d');\nfunction gameLoop() {\n  requestAnimationFrame(gameLoop);\n}\ngameLoop();`;
-    }
-    if (label.includes('player')) {
-      return `// Add player and movement controls\nconst player = { x: 50, y: 200, w: 16, h: 16, vx: 0, vy: 0 };\ndocument.addEventListener('keydown', e => {\n  if (e.key === 'ArrowLeft') player.vx = -2;\n  if (e.key === 'ArrowRight') player.vx = 2;\n});\ndocument.addEventListener('keyup', e => {\n  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.vx = 0;\n});`;
-    }
-    if (label.includes('jump')) {
-      return `// Add jumping/platform logic\ndocument.addEventListener('keydown', e => {\n  if (e.key === ' ' && player.vy === 0) player.vy = -5;\n});`;
-    }
-    if (label.includes('collectible') || label.includes('coin')) {
-      return `// Add collectible items and scoring\nconst coins = [ { x: 100, y: 200, w: 8, h: 8, collected: false } ];\nlet score = 0;`;
-    }
-    if (label.includes('obstacle')) {
-      return `// Add obstacles and collision logic\nconst obstacles = [ { x: 150, y: 210, w: 16, h: 16 } ];`;
-    }
-    if (label.includes('win/lose') || label.includes('win')) {
-      return `// Implement win/lose condition and display result\nfunction checkWin() {\n  if (score >= coins.length) {\n    ctx.fillText('You win!', 120, 120);\n  }\n}`;
-    }
-    return `// Step ${step.id}: ${step.label}\n// ...code...`;
+    const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.txt');
+    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    const prompt = promptTemplate
+      .replace('{{currentCode}}', currentCode)
+      .replace('{{plan}}', JSON.stringify(plan, null, 2))
+      .replace(/{{label}}/g, step.label);
+    const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
+    return codeBlock;
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step });
     throw err;

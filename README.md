@@ -57,4 +57,25 @@ By default, all agent tests suppress logs for clean test output. To enable logs 
 
     TEST_LOGS=1 npx jest
 
-This will print all agent logs to the terminal. This mechanism is implemented in every agent test file. 
+This will print all agent logs to the terminal. This mechanism is implemented in every agent test file.
+
+## Test Modes: Mock vs. Real LLM
+
+By default, all tests use fast, deterministic mocks for LLM calls.
+
+- To enable logs: set TEST_LOGS=1
+- To run tests with the real LLM: set both TEST_LLM=1 and OPENAI_API_KEY=your-key
+
+Example commands:
+
+- Mock only: `npx jest`
+- Mock + logs: `TEST_LOGS=1 npx jest`
+- Real LLM + logs: `TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx jest`
+- Real LLM only: `TEST_LLM=1 OPENAI_API_KEY=sk-... npx jest`
+
+| Mode         | Env Vars Needed         | LLM Used         | Logs      | Command Example                                      |
+|--------------|------------------------|------------------|-----------|------------------------------------------------------|
+| Mock only    | (none)                 | MockSmartOpenAI  | Off       | npx jest                                             |
+| Mock + logs  | TEST_LOGS=1            | MockSmartOpenAI  | Console   | TEST_LOGS=1 npx jest                                 |
+| Real LLM     | TEST_LLM=1 + OPENAI_API_KEY | SmartOpenAI      | Off       | TEST_LLM=1 OPENAI_API_KEY=sk-... npx jest            |
+| Real LLM+Log | TEST_LLM=1 + OPENAI_API_KEY + TEST_LOGS=1 | SmartOpenAI | Console   | TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx jest | 

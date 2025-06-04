@@ -25,6 +25,34 @@ describe('StaticCheckerAgent', () => {
       expect(typeof result[0]).toBe('string');
     }
   });
+
+  it('should detect duplicate function declarations', () => {
+    const input = {
+      currentCode: 'function update() {}',
+      stepCode: 'function update() {}'
+    };
+    const result = StaticCheckerAgent(input, { logger, traceId: 'dup-fn' });
+    expect(result.some(e => e.includes('Duplicate declaration: update'))).toBe(true);
+  });
+
+  it('should detect undeclared variables', () => {
+    const input = {
+      currentCode: 'function update() {}',
+      stepCode: 'console.log(x);'
+    };
+    const result = StaticCheckerAgent(input, { logger, traceId: 'undeclared' });
+    expect(result.some(e => e.includes('Undeclared variable: x'))).toBe(true);
+  });
+
+  it('should detect syntax errors', () => {
+    const input = {
+      currentCode: 'function update() {}',
+      stepCode: 'function () {'
+    };
+    const result = StaticCheckerAgent(input, { logger, traceId: 'syntax' });
+    expect(result.some(e => e.includes('Syntax error'))).toBe(true);
+  });
+
   // Placeholder for real LLM test
   (useRealLLM ? it : it.skip)('should return a valid static check from real OpenAI', async () => {
     // To be implemented if StaticCheckerAgent becomes LLM-driven

@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.04% </span>
+                <span class="strong">85.36% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>32/41</span>
+                <span class='fraction'>35/41</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/16</span>
+                <span class='fraction'>1/3</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.04% </span>
+                <span class="strong">85.36% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>32/41</span>
+                <span class='fraction'>35/41</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -114,36 +114,43 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const fs = require('fs');
+const path = require('path');
+&nbsp;
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client &amp; Dependency Injection Guidelines' in README.md.
+&nbsp;
+/**
  * StepBuilderAgent
  * Input: {
  *   currentCode: string,
@@ -152,32 +159,25 @@
  * }
  * Output: string (code block for the step)
  *
- * Generates the code block for the current step.
+ * Generates the code block for the current step using LLM.
  */
-async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId }) {
+async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient }) {
   logger.info('StepBuilderAgent called', { traceId, step });
+  if (!llmClient) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('StepBuilderAgent: llmClient is required but was not provided', { traceId });</span>
+<span class="cstat-no" title="statement not covered" >    throw new Error('StepBuilderAgent: llmClient is required but was not provided');</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
   try {
-    const label = step.label.toLowerCase();
-    if (label.includes('setup')) {
-      return `// Setup canvas and game loop\nconst canvas = document.createElement('canvas');\ncanvas.width = 320;\ncanvas.height = 240;\ndocument.body.appendChild(canvas);\nconst ctx = canvas.getContext('2d');\nfunction gameLoop() {\n  requestAnimationFrame(gameLoop);\n}\ngameLoop();`;
-    }
-    if (label.includes('player')) {
-      return `// Add player and movement controls\nconst player = { x: 50, y: 200, w: 16, h: 16, vx: 0, vy: 0 };\ndocument.addEventListener('keydown', e =&gt; {\n  if (e.key === 'ArrowLeft') player.vx = -2;\n  if (e.key === 'ArrowRight') player.vx = 2;\n});\ndocument.addEventListener('keyup', e =&gt; {\n  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') player.vx = 0;\n});`;
-    }
-    if (label.includes('jump')) {
-      return `// Add jumping/platform logic\ndocument.addEventListener('keydown', e =&gt; {\n  if (e.key === ' ' &amp;&amp; player.vy === 0) player.vy = -5;\n});`;
-    }
-    if (label.includes('collectible') || label.includes('coin')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      return `// Add collectible items and scoring\nconst coins = [ { x: 100, y: 200, w: 8, h: 8, collected: false } ];\nlet score = 0;`;</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-    if (label.includes('obstacle')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      return `// Add obstacles and collision logic\nconst obstacles = [ { x: 150, y: 210, w: 16, h: 16 } ];`;</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-    if (label.includes('win/lose')<span class="branch-0 cbranch-no" title="branch not covered" > || label.includes('win'))</span> {
-      return `// Implement win/lose condition and display result\nfunction checkWin() {\n  if (score &gt;= coins.length) {\n    ctx.fillText('You win!', 120, 120);\n  }\n}`;
-<span class="branch-0 cbranch-no" title="branch not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >    return `// Step ${step.id}: ${step.label}\n// ...code...`;</span>
-<span class="cstat-no" title="statement not covered" >  } catch (err) {</span>
+    const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.txt');
+    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    const prompt = promptTemplate
+      .replace('{{currentCode}}', currentCode)
+      .replace('{{plan}}', JSON.stringify(plan, null, 2))
+      .replace(/{{label}}/g, step.label);
+    const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
+    return codeBlock;
+  } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    logger.error('StepBuilderAgent error', { traceId, error: err, step });</span>
 <span class="cstat-no" title="statement not covered" >    throw err;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
@@ -190,7 +190,7 @@ module.exports = StepBuilderAgent; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-02T17:08:51.893Z
+                at 2025-06-04T13:35:25.622Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

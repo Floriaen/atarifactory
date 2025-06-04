@@ -11,14 +11,12 @@
 function SyntaxSanityAgent({ code }, { logger, traceId }) {
   logger.info('SyntaxSanityAgent called', { traceId });
   try {
-    // For the mock phase: if 'SYNTAX_ERROR' appears in code, return a fake error
-    if (/SYNTAX_ERROR/.test(code)) {
-      return { valid: false, error: 'Syntax error detected' };
-    }
+    // Real syntax check using new Function
+    new Function(code);
     return { valid: true };
   } catch (err) {
-    logger.error('SyntaxSanityAgent error', { traceId, error: err });
-    throw err;
+    logger.error('SyntaxSanityAgent syntax error', { traceId, error: err });
+    return { valid: false, error: err.message };
   }
 }
 
