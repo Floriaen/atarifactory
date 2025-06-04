@@ -22,7 +22,7 @@ async function StepFixerAgent({ currentCode, step, errorList }, { logger, traceI
     throw new Error('StepFixerAgent: llmClient is required but was not provided');
   }
   try {
-    const promptPath = path.join(__dirname, 'prompts', 'StepFixerAgent.prompt.txt');
+    const promptPath = path.join(__dirname, 'prompts', 'StepFixerAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     const prompt = promptTemplate
       .replace('{{currentCode}}', currentCode)

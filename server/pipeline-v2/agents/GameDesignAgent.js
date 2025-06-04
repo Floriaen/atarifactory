@@ -22,7 +22,7 @@ async function GameDesignAgent(input, { logger, traceId, llmClient }) {
   logger.info('GameDesignAgent called', { traceId, input });
   try {
     // Load prompt from file
-    const promptPath = path.join(__dirname, 'prompts', 'GameDesignAgent.prompt.txt');
+    const promptPath = path.join(__dirname, 'prompts', 'GameDesignAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
 
     // If no llmClient, fallback to mock

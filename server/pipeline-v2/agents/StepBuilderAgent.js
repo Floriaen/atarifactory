@@ -23,7 +23,7 @@ async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, 
     throw new Error('StepBuilderAgent: llmClient is required but was not provided');
   }
   try {
-    const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.txt');
+    const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     const prompt = promptTemplate
       .replace('{{currentCode}}', currentCode)
