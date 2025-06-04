@@ -4,7 +4,7 @@ const { runPipeline } = require('../controller');
 const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 
-jest.setTimeout(120000);
+jest.setTimeout(300000);
 
 let llmClient;
 if (process.env.OPENAI_API_KEY) {

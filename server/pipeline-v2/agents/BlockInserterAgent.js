@@ -17,23 +17,25 @@ const prettier = require('prettier');
 function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
   logger.info('BlockInserterAgent called', { traceId });
   try {
-    // Parse current code and step code into ASTs
     const currentAst = recast.parse(currentCode);
     const stepAst = recast.parse(stepCode);
-    // Find the first function declaration in stepCode
     let inserted = false;
     recast.types.visit(stepAst, {
       visitFunctionDeclaration(path) {
         const funcName = path.node.id.name;
-        // Try to find a matching function in currentCode
         let found = false;
         recast.types.visit(currentAst, {
           visitFunctionDeclaration(currentPath) {
             if (currentPath.node.id.name === funcName) {
-              // Insert step function body statements at the top of the function
+              // --- Smarter merge: append only new statements, deduplicate ---
+              const existingBody = currentPath.node.body.body;
+              const newBody = path.node.body.body;
+              // Deduplicate: only add statements not already present (by string)
+              const existingStrs = new Set(existingBody.map(stmt => recast.print(stmt).code.trim()));
+              const toAdd = newBody.filter(stmt => !existingStrs.has(recast.print(stmt).code.trim()));
               currentPath.node.body.body = [
-                ...path.node.body.body,
-                ...currentPath.node.body.body
+                ...existingBody,
+                ...toAdd
               ];
               found = true;
               inserted = true;
@@ -42,7 +44,6 @@ function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
             this.traverse(currentPath);
           }
         });
-        // If not found, append the function to the program
         if (!found) {
           currentAst.program.body.push(path.node);
           inserted = true;
@@ -50,17 +51,14 @@ function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
         return false;
       }
     });
-    // If no function found in stepCode, just append the code
     if (!inserted) {
       currentAst.program.body.push(...stepAst.program.body);
     }
-    // Print and format the merged code
     const merged = recast.print(currentAst).code;
     const formatted = prettier.format(merged, { parser: 'babel' });
     return formatted;
   } catch (err) {
     logger.error('BlockInserterAgent error', { traceId, error: err });
-    // Fallback: concatenate
     return currentCode + '\n' + stepCode;
   }
 }

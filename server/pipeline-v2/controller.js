@@ -80,7 +80,7 @@ async function runPipeline(title) {
       feedback
     };
   } catch (err) {
-    logger.error('Pipeline error', { traceId, error: err });
+    logger.error('Pipeline error', { traceId, error: err, errorMessage: err && err.message, errorStack: err && err.stack });
     throw err;
   }
 }

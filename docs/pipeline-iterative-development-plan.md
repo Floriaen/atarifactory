@@ -45,6 +45,26 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 15. **RuntimePlayabilityAgent**:
     - Implement headless runtime validation (Puppeteer/jsdom).
     - Test: Can you detect if a game is playable?
+    
+    **Implementation & Test Plan:**
+    - Use Puppeteer (preferred) or jsdom to run the generated game code in a headless browser.
+    - Input: `{ code: string }` (full game.js)
+    - Output: `{ canvasActive, inputResponsive, playerMoved, winConditionReachable }` (all booleans)
+    - Steps:
+      1. Write code to a temp file.
+      2. Launch Puppeteer, inject code, simulate input.
+      3. Check for canvas, input, movement, win condition.
+      4. Collect logs/errors, return result object.
+      5. Handle timeouts and runtime errors gracefully.
+    - **Test Plan:**
+      - Happy path: valid game code (all true)
+      - No canvas (canvasActive: false)
+      - No input (inputResponsive: false)
+      - No movement (playerMoved: false)
+      - No win logic (winConditionReachable: false)
+      - Runtime error (all false, error present)
+      - Infinite loop (timeout, error present)
+    - Provide a mock for CI and fast tests; run real Puppeteer tests in a separate suite or with a flag.
 16. **FeedbackAgent**:
     - Implement error routing and feedback logic.
     - Test: Can you route errors to the right agent and recover?
@@ -67,6 +87,24 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 23. **Test error cases and recovery** (static errors, runtime failures, etc.).
 24. **Iterate on agent prompts, error handling, and code merging** based on test results.
 25. **Testing:** End-to-end tests, error simulation, and regression tests.
+
+**Sub-plan: Closing the Gap to a Unified, Playable Game**
+- **Smarter Code Merging (AST-based Extension):**
+  - Ensure each new step's logic is inserted or extended into the correct place, never overwriting previous logic.
+  - Use AST tools to append new logic to existing function bodies (e.g., `update()`, `render()`), and insert non-function code appropriately.
+- **Context Summarization for LLM:**
+  - Before each LLM call, generate a summary of all entities, functions, and game state.
+  - Include this summary in the prompt so the LLM can integrate new logic with what's already present.
+- **Final Integration/Refinement Agent:**
+  - After all steps, run a final agent (LLM or deterministic) to review, unify, and polish the code.
+  - Ensure all planned features are present, merge duplicate logic, and add missing win/lose/UI code.
+  - Optionally, run a formatter/linter for style consistency.
+- **More Robust Error Recovery:**
+  - On syntax or runtime error, retry or escalate to a fixer agent.
+  - If the fixer fails, escalate to the planner or abort with a clear error.
+- **Iterative Testing and Prompt Refinement:**
+  - Continuously test the pipeline and refine prompts to improve LLM output quality.
+  - Adjust prompts to encourage the LLM to extend, not replace, and to check for missing features.
 
 ---
 
