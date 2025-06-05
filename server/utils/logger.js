@@ -16,7 +16,8 @@ const logger = createLogger({
   defaultMeta: { service: 'pipeline-v2' },
   transports: [
     new transports.Console({ format: format.simple() }),
-    new transports.File({ filename: path.join(__dirname, '../../../logs/pipeline-v2.log') })
+    // Write logs to server/logs relative to project root
+    new transports.File({ filename: path.join(__dirname, '..', 'logs', 'pipeline-v2.log') })
   ]
 });
 
