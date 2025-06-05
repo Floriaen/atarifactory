@@ -4,13 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
-const GameDesignerAgent = require('./agents/GameDesignerAgent');
-const MechanicSynthesizerAgent = require('./agents/MechanicSynthesizerAgent');
-const GameBuilderAgent = require('./agents/GameBuilderAgent');
-const SaveAgent = require('./agents/SaveAgent');
-const logGame = require('./utils/logGame');
-const PlannerAgent = require('./agents/PlannerAgent');
-const { runPipeline } = require('./pipeline-v2/controller');
+// Legacy imports removed after refactor. Core pipeline lives in controller.js
+const { runPipeline } = require('./controller');
 dotenv.config();
 
 const app = express();
