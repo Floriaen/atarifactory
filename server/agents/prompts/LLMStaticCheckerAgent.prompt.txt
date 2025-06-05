@@ -1,7 +1,0 @@
-Here is the current game code so far:
-{{currentCode}}
-
-Here is the new code for the next step:
-{{stepCode}}
-
-Does the new code reference any variables or functions that are not declared or initialized in the combined code above? If so, list them. Otherwise, say 'All good.' 

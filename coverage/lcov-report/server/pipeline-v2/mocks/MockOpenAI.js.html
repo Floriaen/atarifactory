@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">22.61% </span>
+                <span class="strong">46.42% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>19/84</span>
+                <span class='fraction'>39/84</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">14.28% </span>
+                <span class="strong">90.9% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/7</span>
+                <span class='fraction'>10/11</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">22.61% </span>
+                <span class="strong">46.42% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/84</span>
+                <span class='fraction'>39/84</span>
             </div>
         
             
@@ -195,29 +195,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -225,6 +203,28 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -232,7 +232,7 @@
 <span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">// NOTE: If you change any LLM agent contract, update this mock accordingly.
 // This mock is used in tests to avoid real OpenAI API calls and ensure deterministic, fast, and cheap testing.
 &nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >class MockOpenAI {</span></span></span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >class MockOpenAI {</span></span>
 <span class="cstat-no" title="statement not covered" >  chat = {</span>
 <span class="cstat-no" title="statement not covered" >    completions: {</span>
 <span class="cstat-no" title="statement not covered" >      create: async ({ messages }) =&gt; {</span>
@@ -278,29 +278,29 @@
 &nbsp;
 class MockSmartOpenAI {
   async chatCompletion({ prompt, outputType }) {
-    if (outputType === 'json-array'<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; prompt.includes('step-by-step plan'))</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      // PlannerAgent mock response</span>
-<span class="cstat-no" title="statement not covered" >      return [</span>
-<span class="cstat-no" title="statement not covered" >        { id: 1, label: 'Setup canvas and loop' },</span>
-<span class="cstat-no" title="statement not covered" >        { id: 2, label: 'Add player and controls' },</span>
-<span class="cstat-no" title="statement not covered" >        { id: 3, label: 'Add coins and scoring' },</span>
-<span class="cstat-no" title="statement not covered" >        { id: 4, label: 'Add spikes and loss condition' },</span>
-<span class="cstat-no" title="statement not covered" >        { id: 5, label: 'Display win/lose text' }</span>
-<span class="cstat-no" title="statement not covered" >      ];</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-    if (outputType === 'json-object' &amp;&amp; prompt.includes('game design')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      // GameDesignAgent mock response</span>
-<span class="cstat-no" title="statement not covered" >      return {</span>
-<span class="cstat-no" title="statement not covered" >        title: 'Mock Game',</span>
-<span class="cstat-no" title="statement not covered" >        description: 'A mock game for testing.',</span>
-<span class="cstat-no" title="statement not covered" >        mechanics: ['move', 'jump'],</span>
-<span class="cstat-no" title="statement not covered" >        winCondition: 'Win!',</span>
-<span class="cstat-no" title="statement not covered" >        entities: ['player', 'goal']</span>
-<span class="cstat-no" title="statement not covered" >      };</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-    if (outputType === 'string') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >      return 'mock string output';</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
+    if (outputType === 'json-array' &amp;&amp; prompt.includes('step-by-step plan')) {
+      // PlannerAgent mock response
+      return [
+        { id: 1, label: 'Setup canvas and loop' },
+        { id: 2, label: 'Add player and controls' },
+        { id: 3, label: 'Add coins and scoring' },
+        { id: 4, label: 'Add spikes and loss condition' },
+        { id: 5, label: 'Display win/lose text' }
+      ];
+    }
+    if (outputType === 'json-object' &amp;&amp; prompt.includes('game design')) {
+      // GameDesignAgent mock response
+      return {
+        title: 'Mock Game',
+        description: 'A mock game for testing.',
+        mechanics: ['move', 'jump'],
+        winCondition: 'Win!',
+        entities: ['player', 'goal']
+      };
+    }
+    if (outputType === 'string') {
+      return 'mock string output';
+    }
     if (outputType === 'json-object' &amp;&amp; prompt.includes('feedback agent')) {
       // FeedbackAgent mock response
       return {
@@ -319,7 +319,7 @@ module.exports = { MockOpenAI, MockSmartOpenAI }; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-05T07:50:33.533Z
+                at 2025-06-05T10:53:51.739Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

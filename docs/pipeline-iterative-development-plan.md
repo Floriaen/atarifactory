@@ -95,14 +95,14 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 - **Context Summarization for LLM:**
   - Before each LLM call, generate a summary of all entities, functions, and game state.
   - Include this summary in the prompt so the LLM can integrate new logic with what's already present.
-- **Final Integration/Refinement Agent:**
+- **NOT DONE Final Integration/Refinement Agent:**
   - After all steps, run a final agent (LLM or deterministic) to review, unify, and polish the code.
   - Ensure all planned features are present, merge duplicate logic, and add missing win/lose/UI code.
   - Optionally, run a formatter/linter for style consistency.
-- **More Robust Error Recovery:**
+- **NOT DONE More Robust Error Recovery:**
   - On syntax or runtime error, retry or escalate to a fixer agent.
   - If the fixer fails, escalate to the planner or abort with a clear error.
-- **Iterative Testing and Prompt Refinement:**
+- **NOT DONE Iterative Testing and Prompt Refinement:**
   - Continuously test the pipeline and refine prompts to improve LLM output quality.
   - Adjust prompts to encourage the LLM to extend, not replace, and to check for missing features.
 

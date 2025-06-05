@@ -10,13 +10,6 @@ const GameBuilderAgent = require('./agents/GameBuilderAgent');
 const SaveAgent = require('./agents/SaveAgent');
 const logGame = require('./utils/logGame');
 const PlannerAgent = require('./agents/PlannerAgent');
-const StepBuilderAgent = require('./agents/code/StepBuilderAgent');
-const StepFixerAgent = require('./agents/code/StepFixerAgent');
-const DuplicateFixerAgent = require('./agents/code/DuplicateFixerAgent');
-const DuplicateDeclarationChecker = require('./agents/code/DuplicateDeclarationChecker');
-const LLMStaticCheckerAgent = require('./agents/code/LLMStaticCheckerAgent');
-const FinalTesterAgent = require('./agents/code/FinalTesterAgent');
-const AssemblerAgent = require('./agents/code/AssemblerAgent');
 const { runPipeline } = require('./pipeline-v2/controller');
 dotenv.config();
 
@@ -52,126 +45,13 @@ app.post('/generate-stream', async (req, res) => {
   function sendStep(step, data = {}) {
     res.write(`data: ${JSON.stringify({ step, ...data })}\n\n`);
   }
-  const id = uuidv4();
+  // If no title, generate a random one
+  let title = req.body && req.body.title;
+  if (!title) {
+    title = 'Game-' + uuidv4().slice(0, 8);
+  }
   try {
-    console.log('[Agent] Calling GameDesignerAgent...');
-    sendStep('Designing');
-    const gameSpec = await GameDesignerAgent();
-    console.log('[Agent] GameDesignerAgent output:', gameSpec);
-    sendStep('Designing', { status: 'done', gameSpec });
-    console.log('[Agent] Calling MechanicSynthesizerAgent...');
-    sendStep('Synthesizing');
-    const mechanicsBlock = MechanicSynthesizerAgent(gameSpec);
-    console.log('[Agent] MechanicSynthesizerAgent output:', mechanicsBlock);
-    sendStep('Synthesizing', { status: 'done', mechanicsBlock });
-    console.log('[Agent] Calling PlannerAgent...');
-    sendStep('Planning');
-    const plan = await PlannerAgent({
-      title: gameSpec.title,
-      description: gameSpec.description,
-      mechanics: mechanicsBlock.mechanics,
-      winCondition: mechanicsBlock.winCondition
-    });
-    console.log('[Agent] PlannerAgent output:', plan);
-    sendStep('Planning', { status: 'done', plan });
-    let codeSteps = [];
-    let currentCode = '';
-    for (let i = 0; i < plan.length; i++) {
-      const step = plan[i];
-      const isStub = /stub|create|define/.test(step.toLowerCase()) && /function|variable|const|let/.test(step.toLowerCase());
-      const isExtend = /extend|add logic|augment|update/.test(step.toLowerCase());
-      const mode = isStub ? 'stub' : (isExtend ? 'extend' : 'stub');
-      console.log(`[Agent] Calling StepBuilderAgent for step ${i+1}/${plan.length} [mode=${mode}]:`, step);
-      sendStep('Building', { step: i + 1, total: plan.length, description: step });
-      let stepCode = await StepBuilderAgent(plan, currentCode, step, mode);
-      // Strip code block markers if present
-      stepCode = stepCode.replace(/^```(?:javascript)?\n?|```$/gim, '').trim();
-      if (i === 0) {
-        console.log('[DEBUG] First step currentCode:', JSON.stringify(currentCode));
-        console.log('[DEBUG] First step stepCode:', JSON.stringify(stepCode));
-      }
-      if (mode === 'extend') {
-        // Insert the code into the correct function in currentCode
-        const match = step.match(/'(\w+)'/); // e.g., 'update'
-        const funcName = match ? match[1] : null;
-        if (funcName && currentCode.includes(`function ${funcName}(`)) {
-          currentCode = currentCode.replace(
-            new RegExp(`(function ${funcName}\([^)]*\)\s*{)([\s\S]*?)(^})`, 'm'),
-            (m, start, body, end) => `${start}\n${stepCode}\n${body}${end}`
-          );
-          stepCode = '';
-        } else {
-          console.warn(`[Agent] Could not find function ${funcName} to extend. Skipping insertion.`);
-        }
-      }
-      if (stepCode) {
-        // Only push non-empty code (i.e., for stub steps)
-        codeSteps.push(stepCode);
-        currentCode += '\n' + stepCode;
-      }
-      // For the first step, skip duplicate check if currentCode is empty
-      let duplicates = (i === 0 && !currentCode.trim()) ? [] : DuplicateDeclarationChecker(currentCode, stepCode);
-      if (duplicates.length > 0) {
-        console.warn(`[Agent] Duplicate declaration(s) found in step ${i+1}:`, duplicates);
-        sendStep('FixingDuplicates', { step: i + 1, duplicates });
-        stepCode = await DuplicateFixerAgent(plan, currentCode, stepCode, duplicates);
-        console.log(`[Agent] DuplicateFixerAgent output (step ${i+1}):`, stepCode.slice(0, 120) + (stepCode.length > 120 ? '...' : ''));
-        sendStep('FixedDuplicates', { step: i + 1, code: stepCode.slice(0, 120) + (stepCode.length > 120 ? '...' : '') });
-        duplicates = DuplicateDeclarationChecker(currentCode, stepCode);
-        if (duplicates.length > 0) {
-          console.error(`[Agent] DuplicateFixerAgent could not fix step ${i+1}:`, duplicates);
-          sendStep('Error', { error: `Step ${i+1} duplicate declaration(s): ${duplicates.join(', ')}`, step, plan });
-          return res.end();
-        }
-      }
-      let testResult = await LLMStaticCheckerAgent(currentCode, stepCode);
-      console.log(`[Agent] LLMStaticCheckerAgent result (step ${i+1}):`, testResult);
-      sendStep('Testing', { step: i + 1, result: testResult });
-      if (!testResult.valid) {
-        console.warn(`[Agent] Static check failed in step ${i+1}, calling StepFixerAgent...`, testResult.error);
-        sendStep('Fixing', { step: i + 1, error: testResult.error });
-        stepCode = await StepFixerAgent(plan, currentCode, step, testResult.error);
-        console.log(`[Agent] StepFixerAgent output (step ${i+1}):`, stepCode.slice(0, 120) + (stepCode.length > 120 ? '...' : ''));
-        sendStep('Fixed', { step: i + 1, code: stepCode.slice(0, 120) + (stepCode.length > 120 ? '...' : '') });
-        testResult = await LLMStaticCheckerAgent(currentCode, stepCode);
-        console.log(`[Agent] LLMStaticCheckerAgent result after fix (step ${i+1}):`, testResult);
-        sendStep('Testing', { step: i + 1, result: testResult });
-        if (!testResult.valid) {
-          console.error(`[Agent] StepFixerAgent could not fix step ${i+1}:`, testResult.error);
-          sendStep('Error', { error: `Step ${i+1} failed: ${testResult.error}`, step, plan });
-          return res.end();
-        }
-      }
-    }
-    console.log('[Agent] Calling AssemblerAgent...');
-    sendStep('Assembling');
-    const finalGameJs = AssemblerAgent(codeSteps);
-    console.log('[Agent] AssemblerAgent output (first 200 chars):', finalGameJs.slice(0, 200) + (finalGameJs.length > 200 ? '...' : ''));
-    sendStep('Assembled', { code: finalGameJs.slice(0, 200) + (finalGameJs.length > 200 ? '...' : '') });
-    console.log('[Agent] Calling FinalTesterAgent...');
-    sendStep('FinalTesting');
-    const finalTest = FinalTesterAgent(finalGameJs);
-    console.log('[Agent] FinalTesterAgent result:', finalTest);
-    sendStep('FinalTested', { result: finalTest });
-    if (!finalTest.valid) {
-      console.error('[Agent] FinalTesterAgent: Final game.js is invalid:', finalTest.error);
-      sendStep('Error', { error: `Final game.js invalid: ${finalTest.error}` });
-      return res.end();
-    }
-    console.log('[Agent] Calling GameBuilderAgent for final asset packaging...');
-    sendStep('Packaging');
-    let gameFiles = await GameBuilderAgent(id, gameSpec, mechanicsBlock);
-    gameFiles['assets/game.js'] = finalGameJs;
-    const { thumbnail } = SaveAgent(id, gameSpec, mechanicsBlock, gameFiles);
-    const newGame = {
-      id,
-      name: gameSpec.title,
-      date: new Date().toISOString(),
-      thumbnail,
-    };
-    global.gamesManifest.push(newGame);
-    logGame(id, gameSpec, mechanicsBlock);
-    sendStep('Done', { game: newGame, gameSpec, plan });
+    await runPipeline(title, (step, data) => sendStep(step, data));
     res.end();
   } catch (err) {
     console.error('Error in /generate-stream:', err);
@@ -226,9 +106,9 @@ app.get('/cors-test', (req, res) => {
 
 // --- pipeline-v2 agent-based endpoint ---
 app.post('/api/pipeline-v2/generate', async (req, res) => {
-  const { title } = req.body;
+  let title = req.body && req.body.title;
   if (!title) {
-    return res.status(400).json({ error: 'Missing game title' });
+    title = 'Game-' + uuidv4().slice(0, 8);
   }
   try {
     const result = await runPipeline(title);

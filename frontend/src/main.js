@@ -214,7 +214,9 @@ document.getElementById('generate-btn').onclick = async function() {
   try {
     const response = await fetch(`${API_BASE}/generate-stream`, {
       method: 'POST',
-      headers: { 'Accept': 'text/event-stream' },
+      headers: {
+        'Accept': 'text/event-stream'
+      }
     });
     if (!response.body) throw new Error('No response body');
     const reader = response.body.getReader();

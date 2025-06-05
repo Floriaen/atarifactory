@@ -1,38 +1,38 @@
+/**
+ * PlannerAgent
+ * Input: Game definition object (see GameDesignAgent output)
+ * Output: Array<{ id: number, label: string }>
+ *
+ * Generates an ordered array of build steps for the game.
+ */
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
-const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 
-const PROMPT_TEMPLATE_PATH = path.join(__dirname, 'prompts', 'PlannerAgent.prompt.txt');
+async function PlannerAgent(gameDefinition, { logger, traceId, llmClient }) {
+  logger.info('PlannerAgent called', { traceId, gameDefinition });
+  try {
+    // Load prompt from file
+    const promptPath = path.join(__dirname, 'prompts', 'PlannerAgent.prompt.md');
+    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    const prompt = promptTemplate.replace('{{gameDefinition}}', JSON.stringify(gameDefinition, null, 2));
 
-async function PlannerAgent(gameSpec) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error('OPENAI_API_KEY not set in .env');
-  const openai = new OpenAI({ apiKey });
-  let promptTemplate = fs.readFileSync(PROMPT_TEMPLATE_PATH, 'utf8');
-  const prompt = promptTemplate
-    .replace(/{{title}}/g, gameSpec.title)
-    .replace(/{{description}}/g, gameSpec.description)
-    .replace(/{{mechanics}}/g, (gameSpec.mechanics || []).join(', '))
-    .replace(/{{winCondition}}/g, gameSpec.winCondition);
-  const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
-    messages: [
-      { role: 'system', content: 'You are a helpful game developer.' },
-      { role: 'user', content: prompt }
-    ],
-    max_tokens: 400,
-    temperature: 0.4,
-  });
-  const text = response.choices[0].message.content;
-  // Parse numbered list into array of steps
-  const steps = text
-    .split(/\n+/)
-    .map(line => line.replace(/^\d+\.\s*/, '').trim())
-    .filter(line => line.length > 0);
-  return steps;
+    // If no llmClient, throw an error (no fallback)
+    if (!llmClient) {
+      logger.error('PlannerAgent: llmClient is required but was not provided', { traceId });
+      throw new Error('PlannerAgent: llmClient is required but was not provided');
+    }
+
+    // Use llmClient for LLM call and output parsing
+    const plan = await llmClient.chatCompletion({ prompt, outputType: 'json-array' });
+    logger.info('PlannerAgent output', { traceId, plan });
+    return plan;
+  } catch (err) {
+    logger.error('PlannerAgent error', { traceId, error: err });
+    throw err;
+  }
 }
 
 module.exports = PlannerAgent; 
