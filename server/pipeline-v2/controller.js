@@ -67,7 +67,7 @@ async function runPipeline(title) {
     logger.info('RuntimePlayabilityAgent output', { traceId, runtimeResult });
 
     // 6. FeedbackAgent
-    const feedback = FeedbackAgent({ runtimeLogs: runtimeResult, stepId: plan.length }, { logger, traceId });
+    const feedback = FeedbackAgent({ runtimeLogs: runtimeResult, stepId: plan.length }, { logger, traceId, llmClient });
     logger.info('FeedbackAgent output', { traceId, feedback });
 
     logger.info('Pipeline finished', { traceId });

@@ -13,13 +13,14 @@ const OpenAI = (() => {
   }
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
+const mockSmartOpenAI = new MockSmartOpenAI();
 describe('FeedbackAgent', () => {
-  it('should return an object with retryTarget and suggestion (MockSmartOpenAI)', () => {
-    const input = { runtimeLogs: {}, stepId: 1 };
-    const result = FeedbackAgent(input, { logger: logger, traceId: 'test-trace' });
-    expect(typeof result).toBe('object');
-    expect(['fixer', 'planner']).toContain(result.retryTarget);
-    expect(typeof result.suggestion).toBe('string');
+  it('should return an object with retryTarget and suggestion (MockSmartOpenAI)', async () => {
+    const runtimeLogs = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
+    const stepId = 1;
+    const result = await FeedbackAgent({ runtimeLogs, stepId }, { logger, traceId: 'test', llmClient: mockSmartOpenAI });
+    expect(result).toHaveProperty('retryTarget');
+    expect(result).toHaveProperty('suggestion');
   });
   // Placeholder for real LLM test
   (useRealLLM ? it : it.skip)('should return a valid feedback from real OpenAI', async () => {

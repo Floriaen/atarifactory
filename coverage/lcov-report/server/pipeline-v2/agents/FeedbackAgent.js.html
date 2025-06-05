@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.08% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>30/37</span>
+                <span class='fraction'>30/40</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/6</span>
+                <span class='fraction'>1/3</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.08% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>30/37</span>
+                <span class='fraction'>30/40</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -99,7 +99,12 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -113,29 +118,32 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const fs = require('fs');
+const path = require('path');
+/**
  * FeedbackAgent
  * Input: { runtimeLogs: any, stepId: number }
  * Output: { retryTarget: 'fixer' | 'planner', suggestion: string }
@@ -149,23 +157,24 @@ function FeedbackAgent({ runtimeLogs, stepId }, { logger, traceId, llmClient }) 
   logger.info('FeedbackAgent called', { traceId, runtimeLogs, stepId });
   try {
     if (llmClient) {
-      // Compose prompt for LLM
-      const prompt = `You are a game pipeline feedback agent. Given the following runtime logs and stepId, decide whether the next action should be to retry the fixer agent or the planner agent. Respond with a JSON object: { retryTarget: 'fixer' | 'planner', suggestion: string }\n\nRUNTIME LOGS:\n${JSON.stringify(runtimeLogs, null, 2)}\nSTEP ID: ${stepId}`;
-      // Synchronous fallback for now, but should be async if LLM is used
-      // (for compatibility, we use .then if llmClient returns a promise)
+      // Load prompt from file
+      const promptPath = path.join(__dirname, 'prompts', 'FeedbackAgent.prompt.md');
+      const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+      const prompt = promptTemplate
+        .replace('{{runtimeLogs}}', JSON.stringify(runtimeLogs, null, 2))
+        .replace('{{stepId}}', stepId);
       const result = llmClient.chatCompletion({ prompt, outputType: 'json-object' });
       if (typeof result.then === 'function') {
-        // If it's a promise, return a promise
         return result;
 <span class="branch-0 cbranch-no" title="branch not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >      return result;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    // For the mock phase: if any runtime log value is false, suggest fixer; else planner
-    if (runtimeLogs &amp;&amp; Object.values(runtimeLogs).some(v =&gt; v === false)) {
-      return { retryTarget: 'fixer', suggestion: 'Try fixing the last step.' };
-<span class="branch-0 cbranch-no" title="branch not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >    return { retryTarget: 'planner', suggestion: 'Revise the build plan.' };</span>
-<span class="cstat-no" title="statement not covered" >  } catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >    // If no llmClient, throw an error (no fallback)</span>
+<span class="cstat-no" title="statement not covered" >    if (!llmClient) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('FeedbackAgent: llmClient is required but was not provided', { traceId });</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('FeedbackAgent: llmClient is required but was not provided');</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+  } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    logger.error('FeedbackAgent error', { traceId, error: err, runtimeLogs, stepId });</span>
 <span class="cstat-no" title="statement not covered" >    throw err;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
@@ -178,7 +187,7 @@ module.exports = FeedbackAgent; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-04T19:59:42.578Z
+                at 2025-06-05T07:50:33.533Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

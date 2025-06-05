@@ -19,16 +19,10 @@ async function PlannerAgent(gameDefinition, { logger, traceId, llmClient }) {
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     const prompt = promptTemplate.replace('{{gameDefinition}}', JSON.stringify(gameDefinition, null, 2));
 
-    // If no llmClient, fallback to mock
+    // If no llmClient, throw an error (no fallback)
     if (!llmClient) {
-      logger.warn('No llmClient provided, using mock output', { traceId });
-      return [
-        { id: 1, label: 'Setup canvas and loop' },
-        { id: 2, label: 'Add player and controls' },
-        { id: 3, label: 'Add coins and scoring' },
-        { id: 4, label: 'Add spikes and loss condition' },
-        { id: 5, label: 'Display win/lose text' }
-      ];
+      logger.error('PlannerAgent: llmClient is required but was not provided', { traceId });
+      throw new Error('PlannerAgent: llmClient is required but was not provided');
     }
 
     // Use llmClient for LLM call and output parsing

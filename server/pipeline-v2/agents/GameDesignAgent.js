@@ -25,18 +25,10 @@ async function GameDesignAgent(input, { logger, traceId, llmClient }) {
     const promptPath = path.join(__dirname, 'prompts', 'GameDesignAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
 
-    // If no llmClient, fallback to mock
+    // If no llmClient, throw an error (no fallback)
     if (!llmClient) {
-      logger.warn('No llmClient provided, using mock output', { traceId });
-      return {
-        _prompt: promptTemplate,
-        _input: input,
-        title: input.title || 'Untitled Game',
-        description: 'A fun game.',
-        mechanics: ['move', 'jump'],
-        winCondition: 'Reach the goal',
-        entities: ['player', 'goal']
-      };
+      logger.error('GameDesignAgent: llmClient is required but was not provided', { traceId });
+      throw new Error('GameDesignAgent: llmClient is required but was not provided');
     }
 
     // Compose the prompt

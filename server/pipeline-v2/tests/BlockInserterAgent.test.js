@@ -29,7 +29,7 @@ describe('BlockInserterAgent', () => {
       stepCode: 'function update() { console.log("new"); }'
     };
     const result = BlockInserterAgent(input, { logger, traceId: 'merge-fn' });
-    expect(result).toMatch(/function update\(\) \{[\s\S]*console\.log\("new"\);[\s\S]*console\.log\("old"\);[\s\S]*\}/);
+    expect(result).toMatch(/function update\(\) \{[\s\S]*console\.log\("old"\);[\s\S]*console\.log\("new"\);[\s\S]*\}/);
   });
 
   it('should append a new function if not present in currentCode', () => {

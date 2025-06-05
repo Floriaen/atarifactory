@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.71% </span>
+                <span class="strong">22.61% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/84</span>
+                <span class='fraction'>19/84</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">14.28% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.71% </span>
+                <span class="strong">22.61% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>9/84</span>
+                <span class='fraction'>19/84</span>
             </div>
         
             
@@ -195,6 +195,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -204,6 +205,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -213,18 +215,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -277,8 +277,8 @@
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 class MockSmartOpenAI {
-<span class="fstat-no" title="function not covered" >  async chatCompletion({ prompt, outputType }) {</span>
-<span class="cstat-no" title="statement not covered" >    if (outputType === 'json-array' &amp;&amp; prompt.includes('step-by-step plan')) {</span>
+  async chatCompletion({ prompt, outputType }) {
+    if (outputType === 'json-array'<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; prompt.includes('step-by-step plan'))</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >      // PlannerAgent mock response</span>
 <span class="cstat-no" title="statement not covered" >      return [</span>
 <span class="cstat-no" title="statement not covered" >        { id: 1, label: 'Setup canvas and loop' },</span>
@@ -288,7 +288,7 @@ class MockSmartOpenAI {
 <span class="cstat-no" title="statement not covered" >        { id: 5, label: 'Display win/lose text' }</span>
 <span class="cstat-no" title="statement not covered" >      ];</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >    if (outputType === 'json-object' &amp;&amp; prompt.includes('game design')) {</span>
+    if (outputType === 'json-object' &amp;&amp; prompt.includes('game design')) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >      // GameDesignAgent mock response</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
 <span class="cstat-no" title="statement not covered" >        title: 'Mock Game',</span>
@@ -298,16 +298,16 @@ class MockSmartOpenAI {
 <span class="cstat-no" title="statement not covered" >        entities: ['player', 'goal']</span>
 <span class="cstat-no" title="statement not covered" >      };</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >    if (outputType === 'string') {</span>
+    if (outputType === 'string') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >      return 'mock string output';</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >    if (outputType === 'json-object' &amp;&amp; prompt.includes('feedback agent')) {</span>
-<span class="cstat-no" title="statement not covered" >      // FeedbackAgent mock response</span>
-<span class="cstat-no" title="statement not covered" >      return {</span>
-<span class="cstat-no" title="statement not covered" >        retryTarget: 'fixer',</span>
-<span class="cstat-no" title="statement not covered" >        suggestion: 'Mock: Try fixing the last step.'</span>
-<span class="cstat-no" title="statement not covered" >      };</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
+    if (outputType === 'json-object' &amp;&amp; prompt.includes('feedback agent')) {
+      // FeedbackAgent mock response
+      return {
+        retryTarget: 'fixer',
+        suggestion: 'Mock: Try fixing the last step.'
+      };
+<span class="branch-0 cbranch-no" title="branch not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >    throw new Error('MockSmartOpenAI: No mock for this prompt/outputType');</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 }
@@ -319,7 +319,7 @@ module.exports = { MockOpenAI, MockSmartOpenAI }; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-04T19:59:42.578Z
+                at 2025-06-05T07:50:33.533Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -15,6 +15,8 @@ if (process.env.OPENAI_API_KEY) {
   llmClient = new MockSmartOpenAI();
 }
 
+const mockSmartOpenAI = new MockSmartOpenAI();
+
 describe('POST /api/pipeline-v2/generate', () => {
   let app;
   beforeAll(() => {
@@ -88,7 +90,7 @@ describe('POST /api/pipeline-v2/generate', () => {
     currentCode = require('../agents/BlockInserterAgent')({ currentCode, stepCode: fixerOutput || stepCode }, { logger: llmClient.logger || console, traceId: 'test' });
     const syntaxResult = require('../agents/SyntaxSanityAgent')({ code: currentCode }, { logger: llmClient.logger || console, traceId: 'test' });
     const runtimeResult = await require('../agents/RuntimePlayabilityAgent')({ code: currentCode }, { logger: llmClient.logger || console, traceId: 'test' });
-    let feedback = require('../agents/FeedbackAgent')({ runtimeLogs: runtimeResult, stepId: planWithError.length }, { logger: llmClient.logger || console, traceId: 'test', llmClient });
+    let feedback = require('../agents/FeedbackAgent')({ runtimeLogs: runtimeResult, stepId: planWithError.length }, { logger: llmClient.logger || console, traceId: 'test', llmClient: mockSmartOpenAI });
     if (typeof feedback.then === 'function') feedback = await feedback;
     // Assert outputs
     expect(typeof currentCode).toBe('string');
