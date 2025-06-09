@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const FeedbackAgent = require('../agents/FeedbackAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -13,12 +13,13 @@ const OpenAI = (() => {
   }
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
-const mockSmartOpenAI = new MockSmartOpenAI();
+const mockOpenAI = new MockOpenAI();
+mockOpenAI.setAgent('FeedbackAgent');
 describe('FeedbackAgent', () => {
-  it('should return an object with retryTarget and suggestion (MockSmartOpenAI)', async () => {
+  it('should return an object with retryTarget and suggestion (MockOpenAI)', async () => {
     const runtimeLogs = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
     const stepId = 1;
-    const result = await FeedbackAgent({ runtimeLogs, stepId }, { logger, traceId: 'test', llmClient: mockSmartOpenAI });
+    const result = await FeedbackAgent({ runtimeLogs, stepId }, { logger, traceId: 'test', llmClient: mockOpenAI });
     expect(result).toHaveProperty('retryTarget');
     expect(result).toHaveProperty('suggestion');
   });

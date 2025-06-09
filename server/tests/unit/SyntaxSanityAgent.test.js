@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const SyntaxSanityAgent = require('../agents/SyntaxSanityAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -14,7 +14,7 @@ const OpenAI = (() => {
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 describe('SyntaxSanityAgent', () => {
-  it('should return an object with a boolean valid property (MockSmartOpenAI)', () => {
+  it('should return an object with a boolean valid property (MockOpenAI)', () => {
     const input = { code: 'function update() {}' };
     const result = SyntaxSanityAgent(input, { logger: logger, traceId: 'test-trace' });
     expect(typeof result).toBe('object');

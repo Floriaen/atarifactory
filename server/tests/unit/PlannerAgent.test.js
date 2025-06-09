@@ -1,7 +1,7 @@
 require('dotenv').config();
 jest.setTimeout(20000);
 const PlannerAgent = require('../agents/PlannerAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const SmartOpenAI = require('../utils/SmartOpenAI');

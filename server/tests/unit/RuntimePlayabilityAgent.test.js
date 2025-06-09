@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const RuntimePlayabilityAgent = require('../agents/RuntimePlayabilityAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {

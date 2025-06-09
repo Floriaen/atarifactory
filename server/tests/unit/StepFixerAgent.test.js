@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const StepFixerAgent = require('../agents/StepFixerAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -14,14 +14,15 @@ const OpenAI = (() => {
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 describe('StepFixerAgent', () => {
-  it('should return a string (corrected stepCode) (MockSmartOpenAI)', async () => {
+  it('should return a string (corrected stepCode) (MockOpenAI)', async () => {
     const input = {
       currentCode: 'function update() {}',
       step: { id: 2, label: 'Add player' },
       errorList: ['ReferenceError']
     };
-    const mockSmartOpenAI = new MockSmartOpenAI();
-    const result = await StepFixerAgent(input, { logger, traceId: 'mock-test', llmClient: mockSmartOpenAI });
+    const mockOpenAI = new MockOpenAI();
+    mockOpenAI.setAgent('StepFixerAgent');
+    const result = await StepFixerAgent(input, { logger, traceId: 'mock-test', llmClient: mockOpenAI });
     expect(typeof result).toBe('string');
   });
   (useRealLLM ? it : it.skip)('should return a corrected stepCode from real OpenAI', async () => {

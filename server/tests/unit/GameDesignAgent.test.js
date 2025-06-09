@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const GameDesignAgent = require('../../agents/GameDesignAgent');
-const { MockSmartOpenAI } = require('../../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -36,9 +36,10 @@ describe('GameDesignAgent', () => {
     });
   });
 
-  it('should return an object with the correct keys (MockSmartOpenAI)', async () => {
-    const mockSmartOpenAI = new MockSmartOpenAI();
-    const result = await GameDesignAgent(input, { logger: logger, traceId: 'test-trace', llmClient: mockSmartOpenAI });
+  it('should return an object with the correct keys (MockOpenAI)', async () => {
+    const mockOpenAI = new MockOpenAI();
+    mockOpenAI.setAgent('GameDesignAgent');
+    const result = await GameDesignAgent(input, { logger: logger, traceId: 'test-trace', llmClient: mockOpenAI });
     expect(typeof result).toBe('object');
     // Structure check (keys)
     expect(result).toEqual(

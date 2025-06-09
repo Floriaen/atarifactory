@@ -14,6 +14,7 @@ describe('Agent Chain Integration', () => {
 
   beforeEach(() => {
     mockOpenAI = new MockOpenAI();
+    mockOpenAI.setAgent('StepBuilderAgent');
   });
 
   it('should chain GameDesignAgent -> PlannerAgent -> StepBuilderAgent successfully', async () => {

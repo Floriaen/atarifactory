@@ -4,7 +4,7 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 
 const StepBuilderAgent = require('../agents/StepBuilderAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 
 const OpenAI = (() => {
@@ -18,7 +18,7 @@ const OpenAI = (() => {
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 
 describe('StepBuilderAgent', () => {
-  it('should return a string (code block) for the step (MockSmartOpenAI)', async () => {
+  it('should return a string (code block) for the step (MockOpenAI)', async () => {
     const input = {
       currentCode: '// code so far',
       plan: [
@@ -27,8 +27,9 @@ describe('StepBuilderAgent', () => {
       ],
       step: { id: 2, label: 'Add player' }
     };
-    const mockSmartOpenAI = new MockSmartOpenAI();
-    const result = await StepBuilderAgent(input, { logger, traceId: 'mock-test', llmClient: mockSmartOpenAI });
+    const mockOpenAI = new MockOpenAI();
+    mockOpenAI.setAgent('StepBuilderAgent');
+    const result = await StepBuilderAgent(input, { logger, traceId: 'mock-test', llmClient: mockOpenAI });
     expect(typeof result).toBe('string');
   });
 

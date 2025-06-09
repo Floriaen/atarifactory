@@ -3,7 +3,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const StaticCheckerAgent = require('../agents/StaticCheckerAgent');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -14,7 +14,7 @@ const OpenAI = (() => {
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 describe('StaticCheckerAgent', () => {
-  it('should return an array of error strings (MockSmartOpenAI)', () => {
+  it('should return an array of error strings (MockOpenAI)', () => {
     const input = {
       currentCode: 'function update() {}',
       stepCode: '// new logic'

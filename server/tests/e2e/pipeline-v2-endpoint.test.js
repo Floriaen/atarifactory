@@ -6,7 +6,7 @@
  * 
  * 1. LLM Mode:
  *    - Real LLM: Set OPENAI_API_KEY environment variable
- *    - Mock LLM: Don't set OPENAI_API_KEY (uses MockSmartOpenAI)
+ *    - Mock LLM: Don't set OPENAI_API_KEY (uses MockOpenAI)
  * 
  * 2. Logging Mode:
  *    - Verbose: Set TEST_LOGS=1
@@ -35,7 +35,7 @@
 
 const request = require('supertest');
 const path = require('path');
-const { MockSmartOpenAI } = require('../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../utils/SmartOpenAI');
 
 // Set longer timeout for LLM operations
@@ -49,12 +49,14 @@ if (process.env.OPENAI_API_KEY) {
   llmClient = new SmartOpenAI(openai);
   console.log('Using real OpenAI API');
 } else {
-  llmClient = new MockSmartOpenAI();
-  console.log('Using MockSmartOpenAI');
+  llmClient = new MockOpenAI();
+  console.log('Using MockOpenAI');
 }
+llmClient.setAgent('GameDesignAgent');
 
 // Create a separate mock instance for feedback testing
-const mockSmartOpenAI = new MockSmartOpenAI();
+const mockOpenAI = new MockOpenAI();
+mockOpenAI.setAgent('FeedbackAgent');
 
 // Mock the controller module
 jest.mock('../controller', () => {
@@ -203,7 +205,7 @@ describe('POST /api/pipeline-v2/generate', () => {
     if (process.env.TEST_LOGS) console.log('\nStep 7: Getting feedback...');
     let feedback = require('../agents/FeedbackAgent')(
       { runtimeLogs: runtimeResult, stepId: planWithError.length }, 
-      { logger: llmClient.logger || console, traceId: 'test', llmClient: mockSmartOpenAI }
+      { logger: llmClient.logger || console, traceId: 'test', llmClient: mockOpenAI }
     );
     if (typeof feedback.then === 'function') feedback = await feedback;
 

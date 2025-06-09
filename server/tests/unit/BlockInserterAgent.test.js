@@ -9,7 +9,7 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const BlockInserterAgent = require('../../agents/BlockInserterAgent');
-const { MockSmartOpenAI } = require('../../mocks/MockOpenAI');
+const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
@@ -205,7 +205,7 @@ describe('BlockInserterAgent', () => {
     ).toBe(true);
   });
 
-  it('should return a string (new currentCode) after insertion/merge (MockSmartOpenAI)', async () => {
+  it('should return a string (new currentCode) after insertion/merge (MockOpenAI)', async () => {
     const input = {
       currentCode: 'function update() {}',
       stepCode: '// new logic'
