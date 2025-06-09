@@ -3,7 +3,8 @@ const PlannerAgent = require('./agents/PlannerAgent');
 const StepBuilderAgent = require('./agents/StepBuilderAgent');
 const StaticCheckerAgent = require('./agents/StaticCheckerAgent');
 const StepFixerAgent = require('./agents/StepFixerAgent');
-const BlockInserterAgent = require('./agents/BlockInserterAgent');
+// const BlockInserterAgent = require('./agents/BlockInserterAgent');
+const BlockInserterAgent = require('./agents/BlockInserterAgentLLM');
 const SyntaxSanityAgent = require('./agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('./agents/RuntimePlayabilityAgent');
 const FeedbackAgent = require('./agents/FeedbackAgent');
@@ -105,7 +106,7 @@ async function runPipeline(title, onStatusUpdate) {
     const fs = require('fs');
     const path = require('path');
     // Save to server/games/ so the server can serve the files
-    const GAMES_DIR = path.join(__dirname, '..', 'games');
+    const GAMES_DIR = path.join(__dirname, 'games');
     const gameFolder = path.join(GAMES_DIR, gameId);
     logger.info('About to write game files', { gameId, gameFolder });
     console.log('[DEBUG] About to write game files to:', gameFolder);
@@ -124,7 +125,9 @@ async function runPipeline(title, onStatusUpdate) {
       throw err;
     }
     try {
-      fs.writeFileSync(path.join(gameFolder, 'game.js'), currentCode, 'utf8');
+      // Remove all code block markers from currentCode before saving
+      const cleanCode = currentCode.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+      fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
     } catch (err) {
       logger.error('Failed to write game.js', { gameId, gameFolder, error: err });
       console.error('Failed to write game.js', path.join(gameFolder, 'game.js'), err);
@@ -140,7 +143,7 @@ async function runPipeline(title, onStatusUpdate) {
     }
     // Update manifest
     if (!global.gamesManifest) global.gamesManifest = [];
-    const gameMeta = { id: gameId, name: gameName, date: gameDate };
+    const gameMeta = { id: gameId, name: gameName, date: gameDate, url: `/games/${gameId}/` };
     global.gamesManifest.unshift(gameMeta);
     // Emit final SSE event if callback
     onStatusUpdate && onStatusUpdate('Done', { game: gameMeta });

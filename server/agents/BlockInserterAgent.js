@@ -17,11 +17,25 @@ const prettier = require('prettier');
 async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
   logger.info('BlockInserterAgent called', { traceId });
   try {
-    // Use the new code-merge-module with ast-merge
-    const merged = await mergeCode(currentCode, stepCode);
+    // Log input before merging
+    console.log('--- MERGE INPUT ---');
+    console.log('currentCode:', currentCode);
+    console.log('stepCode:', stepCode);
+
+    let mergedCode;
+    try {
+      mergedCode = await mergeCode(currentCode, stepCode);
+    } catch (e) {
+      logger.error('Error in mergeCode:', e);
+      throw e;
+    }
+
+    // Log output after merging
+    console.log('--- MERGE OUTPUT ---');
+    console.log('mergedCode:', mergedCode);
     
     // Format the merged code
-    const formatted = prettier.format(merged, { parser: 'babel' });
+    const formatted = prettier.format(mergedCode, { parser: 'babel' });
     return formatted;
   } catch (err) {
     logger.error('BlockInserterAgent error', { traceId, error: err });

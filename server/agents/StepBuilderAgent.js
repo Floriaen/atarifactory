@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { extractJsCodeBlocks } = require('../utils/formatter');
 
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
@@ -31,7 +32,9 @@ async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, 
       .replace(/{{label}}/g, step.label);
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
     logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
-    return codeBlock;
+    // Use markdown parser to extract JS code blocks
+    const cleanCode = extractJsCodeBlocks(codeBlock);
+    return cleanCode;
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step });
     throw err;

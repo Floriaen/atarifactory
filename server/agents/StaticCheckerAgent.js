@@ -25,6 +25,12 @@ function StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId }) {
     errors.push('Syntax error: ' + err.message);
     return errors;
   }
+  // Whitelist browser globals (always, since pipeline targets browser code)
+  const browserGlobals = new Set([
+    'window', 'document', 'console', 'requestAnimationFrame', 'cancelAnimationFrame',
+    'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'Image', 'CanvasRenderingContext2D',
+    'Audio', 'localStorage', 'sessionStorage', 'alert', 'prompt', 'confirm', 'performance', 'navigator', 'location'
+  ]);
   // Collect declared variables/functions and check for duplicates
   const declared = new Set();
   const duplicates = new Set();
@@ -39,6 +45,7 @@ function StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId }) {
     }
   }
   function isDeclared(name) {
+    if (browserGlobals.has(name)) return true;
     for (let i = scopeStack.length - 1; i >= 0; i--) {
       if (scopeStack[i][name]) return true;
     }

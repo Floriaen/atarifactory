@@ -36,4 +36,11 @@ describe('StepFixerAgent', () => {
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
   });
+  test('StepFixerAgent strips markdown code block markers from LLM output', async () => {
+    const mockLLM = {
+      chatCompletion: async () => '```js\nconsole.log("fixed");\n```'
+    };
+    const result = await StepFixerAgent({ currentCode: '', step: { id: 1, label: 'Test' }, errorList: [] }, { logger: console, traceId: 'test', llmClient: mockLLM });
+    expect(result).toBe('console.log("fixed");');
+  });
 }); 

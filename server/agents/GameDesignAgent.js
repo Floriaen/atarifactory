@@ -32,8 +32,8 @@ async function GameDesignAgent(input, { logger, traceId, llmClient }) {
     }
 
     // Compose the prompt
-    const prompt = `${promptTemplate.trim()}
-\nInput:\n${JSON.stringify({ title: input.title })}`;
+    const prompt = `Generate a complete game design including title, description, mechanics, and win condition.`;
+    logger.info('GameDesignAgent prompt:', { traceId, prompt });
 
     // Use llmClient for LLM call and output parsing
     const parsed = await llmClient.chatCompletion({ prompt, outputType: 'json-object' });

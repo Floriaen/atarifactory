@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { extractJsCodeBlocks } = require('../utils/formatter');
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
@@ -30,7 +31,9 @@ async function StepFixerAgent({ currentCode, step, errorList }, { logger, traceI
       .replace('{{errorList}}', JSON.stringify(errorList, null, 2));
     const correctedCode = await llmClient.chatCompletion({ prompt, outputType: 'string' });
     logger.info('StepFixerAgent LLM output', { traceId, correctedCode });
-    return correctedCode;
+    // Use markdown parser to extract JS code blocks
+    const cleanCode = extractJsCodeBlocks(correctedCode);
+    return cleanCode;
   } catch (err) {
     logger.error('StepFixerAgent error', { traceId, error: err, step });
     throw err;

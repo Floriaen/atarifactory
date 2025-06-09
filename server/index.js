@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/games', express.static(path.join(__dirname, 'games')));
 
 // Dummy in-memory games list for MVP skeleton
 global.gamesManifest = [];
@@ -78,20 +79,6 @@ app.get('/games/:id/assets/:filename', (req, res) => {
   } else {
     console.log(`[ASSET] NOT FOUND: /games/${gameId}/assets/${filename}`);
     res.status(404).send('File not found');
-  }
-});
-
-// GET /games/:id - serve generated game
-app.get('/games/:id', (req, res) => {
-  const gameId = req.params.id;
-  const gameFolder = path.join(GAMES_DIR, gameId);
-  const indexPath = path.join(gameFolder, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    console.log(`[GAME] Serving /games/${gameId}/index.html`);
-    res.sendFile(indexPath);
-  } else {
-    console.log(`[GAME] NOT FOUND: /games/${gameId}/index.html`);
-    res.status(404).send('Game not found');
   }
 });
 
