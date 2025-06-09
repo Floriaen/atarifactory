@@ -19,4 +19,8 @@ You could automate prompt updates by scraping the latest docs and feeding them t
 - **Refactor all LLM prompts out of code:**
   - Move every LLM prompt string from code files into separate `.txt` files in `server/agents/prompts/`.
   - Read and fill these prompt templates at runtime, as done for `PlannerAgent`.
-  - This keeps code clean, makes prompt engineering easier, and allows for prompt versioning. 
+  - This keeps code clean, makes prompt engineering easier, and allows for prompt versioning.
+
+## Future Improvements
+
+- Consider switching the codebase to ESM (add "type": "module" to package.json) for better compatibility with modern JS tools and libraries, and to simplify usage of ESM-only dependencies. 

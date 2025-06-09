@@ -2,7 +2,7 @@
 
 ### 1. Overview
 
-This system automatically generates playable vanilla JS Canvas games from minimal input. It follows a hybrid strategy combining pattern-based generation, step-by-step code planning, and runtime validation.
+This system automatically generates complete, playable vanilla JS Canvas games from scratch. It follows a hybrid strategy combining pattern-based generation, step-by-step code planning, and runtime validation. The system requires no input - it generates everything including game design, mechanics, and code.
 
 **Note:** For all code merging and insertion, the system will use AST-based (Abstract Syntax Tree) code manipulation tools (such as Recast or Babel) to ensure robust, safe, and context-aware code updates.
 
@@ -13,13 +13,11 @@ This system automatically generates playable vanilla JS Canvas games from minima
 #### 2.1 GameDesignAgent
 
 **Input:**
-
 ```json
-{ "title": "Coin Collector" }
+{}
 ```
 
 **Output:**
-
 ```json
 {
   "title": "Coin Collector",
@@ -31,7 +29,7 @@ This system automatically generates playable vanilla JS Canvas games from minima
 ```
 
 **Example Prompt:**
-"Generate a simple 2D canvas game design for the title 'Coin Collector'. Include description, mechanics, and win condition."
+"Generate a complete game design including title, description, mechanics, and win condition."
 
 #### 2.2 PlannerAgent
 

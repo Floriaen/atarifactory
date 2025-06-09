@@ -1,5 +1,9 @@
 {
   "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/generator": "^7.27.5",
+    "@babel/parser": "^7.27.5",
+    "@babel/traverse": "^7.27.4",
     "jest": "^29.7.0",
     "supertest": "^7.1.1"
   },
@@ -8,10 +12,12 @@
     "test": "jest"
   },
   "dependencies": {
-    "@babel/parser": "^7.27.5",
+    "aicodertool": "^1.0.100",
+    "ast-merge": "github:Floriaen/ast-merge",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "marked": "^15.0.12",
     "openai": "^5.0.1",
     "prettier": "2.8.8",
     "puppeteer": "^24.10.0",

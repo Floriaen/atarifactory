@@ -167,7 +167,10 @@ function clearLog(delay = 2000) {
 
 async function fetchGames() {
   const res = await fetch(`${API_BASE}/games`);
-  return res.json();
+  let games = await res.json();
+  // Always add a Test Game entry for rapid backend testing
+  games.unshift({ id: 'testgame', name: 'Test Game', date: new Date().toISOString() });
+  return games;
 }
 
 function renderGallery(games) {

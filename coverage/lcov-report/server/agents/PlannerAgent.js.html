@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">28.94% </span>
+                <span class="strong">39.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>11/38</span>
+                <span class='fraction'>15/38</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">28.94% </span>
+                <span class="strong">39.47% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/38</span>
+                <span class='fraction'>15/38</span>
             </div>
         
             
@@ -109,10 +109,10 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -137,41 +137,41 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">// IMPORTANT: This agent must receive llmClient via dependency injection.
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * PlannerAgent
+ * Input: Game definition object (see GameDesignAgent output)
+ * Output: Array&lt;{ id: number, label: string }&gt;
+ *
+ * Generates an ordered array of build steps for the game.
+ */
+// IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client &amp; Dependency Injection Guidelines' in README.md.
-const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 &nbsp;
-const PROMPT_TEMPLATE_PATH = path.join(__dirname, 'prompts', 'PlannerAgent.prompt.txt');
-&nbsp;
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async function PlannerAgent(gameSpec) {</span></span>
-<span class="cstat-no" title="statement not covered" >  const apiKey = process.env.OPENAI_API_KEY;</span>
-<span class="cstat-no" title="statement not covered" >  if (!apiKey) throw new Error('OPENAI_API_KEY not set in .env');</span>
-<span class="cstat-no" title="statement not covered" >  const openai = new OpenAI({ apiKey });</span>
-<span class="cstat-no" title="statement not covered" >  let promptTemplate = fs.readFileSync(PROMPT_TEMPLATE_PATH, 'utf8');</span>
-<span class="cstat-no" title="statement not covered" >  const prompt = promptTemplate</span>
-<span class="cstat-no" title="statement not covered" >    .replace(/{{title}}/g, gameSpec.title)</span>
-<span class="cstat-no" title="statement not covered" >    .replace(/{{description}}/g, gameSpec.description)</span>
-<span class="cstat-no" title="statement not covered" >    .replace(/{{mechanics}}/g, (gameSpec.mechanics || []).join(', '))</span>
-<span class="cstat-no" title="statement not covered" >    .replace(/{{winCondition}}/g, gameSpec.winCondition);</span>
-<span class="cstat-no" title="statement not covered" >  const response = await openai.chat.completions.create({</span>
-<span class="cstat-no" title="statement not covered" >    model: 'gpt-3.5-turbo',</span>
-<span class="cstat-no" title="statement not covered" >    messages: [</span>
-<span class="cstat-no" title="statement not covered" >      { role: 'system', content: 'You are a helpful game developer.' },</span>
-<span class="cstat-no" title="statement not covered" >      { role: 'user', content: prompt }</span>
-<span class="cstat-no" title="statement not covered" >    ],</span>
-<span class="cstat-no" title="statement not covered" >    max_tokens: 400,</span>
-<span class="cstat-no" title="statement not covered" >    temperature: 0.4,</span>
-<span class="cstat-no" title="statement not covered" >  });</span>
-<span class="cstat-no" title="statement not covered" >  const text = response.choices[0].message.content;</span>
-<span class="cstat-no" title="statement not covered" >  // Parse numbered list into array of steps</span>
-<span class="cstat-no" title="statement not covered" >  const steps = text</span>
-<span class="cstat-no" title="statement not covered" >    .split(/\n+/)</span>
-<span class="cstat-no" title="statement not covered" >    .map(line =&gt; line.replace(/^\d+\.\s*/, '').trim())</span>
-<span class="cstat-no" title="statement not covered" >    .filter(line =&gt; line.length &gt; 0);</span>
-<span class="cstat-no" title="statement not covered" >  return steps;</span>
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async function PlannerAgent(gameDefinition, { logger, traceId, llmClient }) {</span></span>
+<span class="cstat-no" title="statement not covered" >  logger.info('PlannerAgent called', { traceId, gameDefinition });</span>
+<span class="cstat-no" title="statement not covered" >  try {</span>
+<span class="cstat-no" title="statement not covered" >    // Load prompt from file</span>
+<span class="cstat-no" title="statement not covered" >    const promptPath = path.join(__dirname, 'prompts', 'PlannerAgent.prompt.md');</span>
+<span class="cstat-no" title="statement not covered" >    const promptTemplate = fs.readFileSync(promptPath, 'utf8');</span>
+<span class="cstat-no" title="statement not covered" >    const prompt = promptTemplate.replace('{{gameDefinition}}', JSON.stringify(gameDefinition, null, 2));</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    // If no llmClient, throw an error (no fallback)</span>
+<span class="cstat-no" title="statement not covered" >    if (!llmClient) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('PlannerAgent: llmClient is required but was not provided', { traceId });</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('PlannerAgent: llmClient is required but was not provided');</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    // Use llmClient for LLM call and output parsing</span>
+<span class="cstat-no" title="statement not covered" >    const plan = await llmClient.chatCompletion({ prompt, outputType: 'json-array' });</span>
+<span class="cstat-no" title="statement not covered" >    logger.info('PlannerAgent output', { traceId, plan });</span>
+<span class="cstat-no" title="statement not covered" >    return plan;</span>
+<span class="cstat-no" title="statement not covered" >  } catch (err) {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('PlannerAgent error', { traceId, error: err });</span>
+<span class="cstat-no" title="statement not covered" >    throw err;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" >}</span>
 &nbsp;
 module.exports = PlannerAgent; </pre></td></tr></table></pre>
@@ -181,7 +181,7 @@ module.exports = PlannerAgent; </pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-05T10:53:51.739Z
+                at 2025-06-05T21:50:11.389Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
