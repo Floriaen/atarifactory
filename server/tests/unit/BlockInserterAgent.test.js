@@ -44,8 +44,8 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     expect(result).toContain('player.x += 1');
@@ -61,8 +61,8 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     expect(result).toContain('player.x += 1');
@@ -77,8 +77,8 @@ describe('BlockInserterAgent', () => {
     const stepCode = '';
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     expect(result).toContain('// existing logic');
@@ -97,8 +97,8 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     // Check for prettier formatting (no extra spaces, consistent indentation)
@@ -119,13 +119,14 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     // Should fall back to simple concatenation
     expect(result).toContain('// existing logic');
     expect(result).toContain('player.x += // syntax error');
+    // Do NOT parse result with Babel here, as it is intentionally invalid JS
   });
 
   it('should preserve function declarations', async () => {
@@ -145,8 +146,8 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     expect(result).toContain('function update()');
@@ -170,8 +171,8 @@ describe('BlockInserterAgent', () => {
     `;
 
     const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
+      currentCode,
+      stepCode
     );
 
     const ast = parser.parse(result, { sourceType: 'module' });
@@ -210,7 +211,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function update() {}',
       stepCode: '// new logic'
     };
-    const result = await BlockInserterAgent(input, { logger: logger, traceId: 'test-trace' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(typeof result).toBe('string');
   });
 
@@ -219,7 +220,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function update() { console.log("old"); }',
       stepCode: 'function update() { console.log("new"); }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'merge-fn' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function update\(\) \{[\s\S]*console\.log\("old"\);[\s\S]*console\.log\("new"\);[\s\S]*\}/);
   });
 
@@ -228,7 +229,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function update() {}',
       stepCode: 'function draw() { console.log("draw"); }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'append-fn' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function update\(\) \{\}[\s\S]*function draw\(\) \{[\s\S]*console\.log\("draw"\);[\s\S]*\}/);
   });
 
@@ -237,7 +238,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function update() {}',
       stepCode: 'const x = 42;'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'append-stmt' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function update\(\) \{\}[\s\S]*const x = 42;/);
   });
 
@@ -246,7 +247,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function foo() { if (a) return 1; return 2; }',
       stepCode: 'function foo() { if (b) return 3; }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'early-return' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function foo\(\) \{[\s\S]*if \(a\) return 1;[\s\S]*if \(b\) return 3;[\s\S]*return 2;[\s\S]*\}/);
   });
 
@@ -255,7 +256,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function baz() { for (let i = 0; i < 3; i++) { doA(); } }',
       stepCode: 'function baz() { while (true) { doB(); break; } }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'control-flow' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     const noWS = s => s.replace(/\s+/g, '');
     expect(noWS(result)).toContain(noWS('for (let i = 0; i < 3; i++) { doA(); }'));
     expect(noWS(result)).toContain(noWS('while (true) { doB(); break; }'));
@@ -266,7 +267,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function a() { return 1; } function b() { return 2; }',
       stepCode: 'function a() { doA(); } function c() { return 3; }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'multi-fn' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function a\(\) \{[\s\S]*doA\(\);[\s\S]*return 1;[\s\S]*\}/);
     expect(result).toMatch(/function b\(\) \{[\s\S]*return 2;[\s\S]*\}/);
     expect(result).toMatch(/function c\(\) \{[\s\S]*return 3;[\s\S]*\}/);
@@ -277,7 +278,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function outer() { function inner() { return 1; } }',
       stepCode: 'function outer() { function inner2() { return 2; } }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'nested-fn' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     const noWS = s => s.replace(/\s+/g, '');
     expect(noWS(result)).toContain(noWS('function inner() { return 1; }'));
     expect(noWS(result)).toContain(noWS('function inner2() { return 2; }'));
@@ -288,7 +289,7 @@ describe('BlockInserterAgent', () => {
       currentCode: 'function foo() { /* old comment */ console.log("old"); }',
       stepCode: 'function foo() { // new comment\nconsole.log("new"); }'
     };
-    const result = await BlockInserterAgent(input, { logger, traceId: 'comments' });
+    const result = await BlockInserterAgent(input.currentCode, input.stepCode);
     expect(result).toMatch(/function foo\(\) \{[\s\S]*\/\* old comment \*\/[\s\S]*console\.log\("old"\);[\s\S]*\/\/ new comment[\s\S]*console\.log\("new"\);[\s\S]*\}/);
   });
 
@@ -335,20 +336,20 @@ describe('BlockInserterAgent', () => {
 
     // Merge step 1
     let result = await BlockInserterAgent(
-      { currentCode: '', stepCode: step1Code },
-      { logger, traceId }
+      '',
+      step1Code
     );
 
     // Merge step 2
     result = await BlockInserterAgent(
-      { currentCode: result, stepCode: step2Code },
-      { logger, traceId }
+      result,
+      step2Code
     );
 
     // Merge step 3
     result = await BlockInserterAgent(
-      { currentCode: result, stepCode: step3Code },
-      { logger, traceId }
+      result,
+      step3Code
     );
 
     // Parse the result to verify structure

@@ -4,16 +4,17 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const BlockInserterAgent = require('../agents/BlockInserterAgent');
 const MockOpenAI = require('./mocks/MockOpenAI');
-const SmartOpenAI = require('../utils/SmartOpenAI');
-const OpenAI = (() => {
-  try {
-    return require('openai');
-  } catch {
-    return null;
-  }
-})();
-const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
+const parser = require('@babel/parser');
+
+function extractDeclarations(ast) {
+  return ast.program.body.filter(
+    node => node.type === 'VariableDeclaration' || node.type === 'FunctionDeclaration'
+  );
+}
+
 describe('BlockInserterAgent', () => {
+  const traceId = 'unit-test';
+
   it('should return a string (new currentCode) after insertion/merge (MockSmartOpenAI)', async () => {
     const input = {
       currentCode: 'function update() {}',
@@ -99,11 +100,5 @@ describe('BlockInserterAgent', () => {
     };
     const result = await BlockInserterAgent(input, { logger, traceId: 'comments' });
     expect(result).toMatch(/function foo\(\) \{[\s\S]*\/\* old comment \*\/[\s\S]*console\.log\("old"\);[\s\S]*\/\/ new comment[\s\S]*console\.log\("new"\);[\s\S]*\}/);
-  });
-
-  // Placeholder for real LLM test
-  (useRealLLM ? it : it.skip)('should return a valid code merge from real OpenAI', async () => {
-    // To be implemented if BlockInserterAgent becomes LLM-driven
-    expect(true).toBe(true);
   });
 }); 

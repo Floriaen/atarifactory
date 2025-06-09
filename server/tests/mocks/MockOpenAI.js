@@ -1,6 +1,9 @@
 // NOTE: If you change any LLM agent contract, update this mock accordingly.
 // This mock is used in tests to avoid real OpenAI API calls and ensure deterministic, fast, and cheap testing.
 
+const { mergeCode } = require('../../utils/codeMerge');
+const prettier = require('prettier');
+
 class MockOpenAI {
   constructor() {
     this.agent = null;
@@ -60,7 +63,25 @@ class MockOpenAI {
         }
         return 'function update() {\n  // Player movement code\n  player.x += 5;\n}';
       case 'BlockInserterAgent':
-        return '// Merged code\n' + (prompt || '');
+        // Parse the input to extract currentCode and stepCode
+        const input = JSON.parse(prompt);
+        const { currentCode, stepCode } = input;
+        
+        // Use the actual mergeCode utility for proper merging
+        return mergeCode(currentCode, stepCode)
+          .then(mergedCode => {
+            // Format the merged code
+            try {
+              return prettier.format(mergedCode, {
+                parser: 'babel',
+                semi: true,
+                singleQuote: false,
+                trailingComma: 'es5',
+              });
+            } catch (formatError) {
+              return mergedCode;
+            }
+          });
       case 'StepFixerAgent':
         return 'function update() {\n  // Fixed player movement code\n  player.x += 5;\n}';
       case 'FeedbackAgent':

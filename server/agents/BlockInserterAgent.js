@@ -1,5 +1,6 @@
-const { mergeCode } = require('ast-merge');
+const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
+const logger = require('../utils/logger');
 
 /**
  * BlockInserterAgent
@@ -16,30 +17,31 @@ const prettier = require('prettier');
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
   logger.info('BlockInserterAgent called', { traceId });
+  
   try {
-    // Log input before merging
-    console.log('--- MERGE INPUT ---');
-    console.log('currentCode:', currentCode);
-    console.log('stepCode:', stepCode);
-
-    let mergedCode;
-    try {
-      mergedCode = await mergeCode(currentCode, stepCode, 'js');
-    } catch (e) {
-      logger.error('Error in mergeCode:', e);
-      throw e;
-    }
-
-    // Log output after merging
-    console.log('--- MERGE OUTPUT ---');
-    console.log('mergedCode:', mergedCode);
+    // Merge the code using our new module
+    const mergedCode = await mergeCode(currentCode, stepCode);
     
     // Format the merged code
-    const formatted = prettier.format(mergedCode, { parser: 'babel' });
-    return formatted;
-  } catch (err) {
-    logger.error('BlockInserterAgent error', { traceId, error: err });
-    return currentCode + '\n' + stepCode;
+    let formattedCode;
+    try {
+      formattedCode = prettier.format(mergedCode, {
+        parser: 'babel',
+        semi: true,
+        singleQuote: false,
+        trailingComma: 'es5',
+      });
+    } catch (formatError) {
+      // If formatting fails, return the raw merged code
+      logger.error('Prettier formatting failed:', formatError);
+      formattedCode = mergedCode;
+    }
+    
+    logger.info('BlockInserterAgent output', { traceId, formattedCode });
+    return formattedCode;
+  } catch (error) {
+    logger.error('Error in BlockInserterAgent:', error);
+    throw error;
   }
 }
 
