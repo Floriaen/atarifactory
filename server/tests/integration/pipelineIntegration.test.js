@@ -26,19 +26,19 @@ describe('Pipeline Integration', () => {
     const traceId = 'test-trace';
 
     // 1. Game Design
-    mockLlmClient.setAgent(GameDesignAgent);
+    mockLlmClient.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient, logger, traceId });
     expect(gameDef).toHaveProperty('title');
     expect(gameDef).toHaveProperty('mechanics');
 
     // 2. Plan
-    mockLlmClient.setAgent(PlannerAgent);
+    mockLlmClient.setAgent('PlannerAgent');
     const plan = await PlannerAgent({ gameDef }, { llmClient: mockLlmClient, logger, traceId });
     expect(Array.isArray(plan)).toBe(true);
     expect(plan.length).toBeGreaterThan(0);
 
     // 3. Step code (first step)
-    mockLlmClient.setAgent(StepBuilderAgent);
+    mockLlmClient.setAgent('StepBuilderAgent');
     const stepCode = await StepBuilderAgent(
       { currentCode: '', plan, step: plan[0] },
       { llmClient: mockLlmClient, logger, traceId }
@@ -62,15 +62,15 @@ describe('Pipeline Integration', () => {
     const traceId = 'test-trace';
 
     // 1. Game Design
-    mockLlmClient.setAgent(GameDesignAgent);
+    mockLlmClient.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient, logger, traceId });
 
     // 2. Plan
-    mockLlmClient.setAgent(PlannerAgent);
+    mockLlmClient.setAgent('PlannerAgent');
     const plan = await PlannerAgent({ gameDef }, { llmClient: mockLlmClient, logger, traceId });
 
     // 3. Try to build an invalid step
-    mockLlmClient.setAgent(StepBuilderAgent);
+    mockLlmClient.setAgent('StepBuilderAgent');
     const badStep = { id: 999, label: 'Nonexistent step' };
     await expect(
       StepBuilderAgent({ currentCode: '', plan, step: badStep }, { llmClient: mockLlmClient, logger, traceId })

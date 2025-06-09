@@ -10,7 +10,9 @@
   },
   "scripts": {
     "start": "node server/start.js",
-    "test": "jest"
+    "test": "jest --testPathIgnorePatterns=server/tests/e2e/",
+    "test:unit": "jest server/tests/unit/",
+    "test:integration": "jest server/tests/integration/"
   },
   "dependencies": {
     "aicodertool": "^1.0.100",

@@ -19,9 +19,15 @@ const { extractJsCodeBlocks } = require('../utils/formatter');
  */
 async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient }) {
   logger.info('StepBuilderAgent called', { traceId, step });
+  logger.info('StepBuilderAgent input:', { currentCode, plan, step });
   if (!llmClient) {
     logger.error('StepBuilderAgent: llmClient is required but was not provided', { traceId });
     throw new Error('StepBuilderAgent: llmClient is required but was not provided');
+  }
+  // Validate that the step exists in the plan
+  if (!plan.some(p => p.id === step.id)) {
+    logger.error('StepBuilderAgent: Invalid step ID', { traceId, step, plan });
+    throw new Error(`Invalid step: Step with id ${step.id} does not exist`);
   }
   try {
     const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.md');
@@ -34,6 +40,7 @@ async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, 
     logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);
+    logger.info('StepBuilderAgent output:', { traceId, cleanCode });
     return cleanCode;
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step });

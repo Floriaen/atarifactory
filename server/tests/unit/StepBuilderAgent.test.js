@@ -53,7 +53,11 @@ describe('StepBuilderAgent', () => {
     const mockLLM = {
       chatCompletion: async () => '```js\nconsole.log("hello");\n```'
     };
-    const result = await StepBuilderAgent({ currentCode: '', plan: [], step: { id: 1, label: 'Test' } }, { logger: console, traceId: 'test', llmClient: mockLLM });
+    const result = await StepBuilderAgent({ 
+      currentCode: '', 
+      plan: [{ id: 1, label: 'Test' }], 
+      step: { id: 1, label: 'Test' } 
+    }, { logger: console, traceId: 'test', llmClient: mockLLM });
     expect(result).toBe('console.log("hello");');
   });
 }); 

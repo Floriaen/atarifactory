@@ -21,6 +21,7 @@ async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }
   try {
     // Merge the code using our new module
     const mergedCode = await mergeCode(currentCode, stepCode);
+    logger.info('Merged code before formatting:', { traceId, mergedCode });
     
     // Format the merged code
     let formattedCode;

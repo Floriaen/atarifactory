@@ -36,10 +36,14 @@ class MockOpenAI {
     if (outputType === 'json-object' || outputType === 'json-array') {
       return response;
     }
+    if (response instanceof Promise) {
+      return response;
+    }
     return typeof response === 'string' ? response : JSON.stringify(response);
   }
 
   _getMockResponse(prompt, outputType) {
+    console.log('Agent :', this.agent);
     switch (this.agent) {
       case 'GameDesignAgent':
         return {
@@ -58,27 +62,22 @@ class MockOpenAI {
           { id: 5, label: 'Display win/lose text' }
         ];
       case 'StepBuilderAgent':
-        if (prompt && prompt.includes('nonexistent step')) {
-          throw new Error('StepBuilderAgent: Step not found');
+        // Check if the step is invalid (id: 999)
+        if (prompt && prompt.includes('"id": 999')) {
+          throw new Error('Invalid step: Step with id 999 does not exist');
         }
-        if (prompt && prompt.includes('maze layout')) {
-          return `const mazeLayout = [
-  ['#', '#', '#', '#', '#'],
-  ['#', ' ', ' ', ' ', '#'],
-  ['#', ' ', '#', ' ', '#'],
-  ['#', ' ', ' ', ' ', '#'],
-  ['#', '#', '#', '#', '#']
-];`;
-        }
-        return 'function update() {\n  // Player movement code\n  player.x += 5;\n}';
+        // Return a valid code block for the step
+        return '```javascript\nfunction update() {\n  // Player movement code\n  player.x += 5;\n}\n```';
       case 'BlockInserterAgent':
         // Parse the input to extract currentCode and stepCode
         const input = JSON.parse(prompt);
         const { currentCode, stepCode } = input;
+        console.log('BlockInserterAgent input:', { currentCode, stepCode });
         
         // Use the actual mergeCode utility for proper merging
         return mergeCode(currentCode, stepCode)
           .then(mergedCode => {
+            console.log('Merged code:', mergedCode);
             // Format the merged code
             try {
               return prettier.format(mergedCode, {
@@ -110,25 +109,7 @@ class MockOpenAI {
           winConditionReachable: true
         };
       default:
-        // Fallback: try to infer from prompt
-        if (prompt && prompt.includes('step-by-step plan')) {
-          return [
-            { id: 1, label: 'Setup canvas and loop' },
-            { id: 2, label: 'Add player and controls' },
-            { id: 3, label: 'Add coins and scoring' },
-            { id: 4, label: 'Add spikes and loss condition' },
-            { id: 5, label: 'Display win/lose text' }
-          ];
-        }
-        if (prompt && prompt.includes('game design')) {
-          return {
-            title: 'Mock Game',
-            description: 'A mock game for testing.',
-            mechanics: ['move', 'jump'],
-            winCondition: 'Win!',
-            entities: ['player', 'goal']
-          };
-        }
+        console.warn('MockOpenAI: Falling through to default case', { agent: this.agent, prompt, outputType });
         if (outputType === 'string') {
           return 'mock string output';
         }

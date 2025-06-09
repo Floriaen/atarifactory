@@ -211,7 +211,9 @@ module.exports = function(fileInfo, api, options) {
   });
   
   // Convert the merged AST back to code
-  return recast.print(mergedProgram).code;
+  const mergedCode = generate(mergedProgram).code;
+  // Format the merged code to ensure it's valid JavaScript
+  return prettier.format(mergedCode, { parser: 'babel' });
 };
 
 function mergeFunctionBodies(fnA, fnB) {
@@ -282,11 +284,7 @@ function mergeCode(currentCode, stepCode) {
     },
   };
 
-  let code = generate(mergedAst).code;
-  try {
-    code = prettier.format(code, { parser: 'babel' });
-  } catch (e) {
-    // Fallback: return unformatted code
-  }
-  return code;
+  const mergedCode = generate(mergedAst).code;
+  // Format the merged code to ensure it's valid JavaScript
+  return prettier.format(mergedCode, { parser: 'babel' });
 } 
