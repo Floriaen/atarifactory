@@ -2,9 +2,8 @@
 // To run real LLM tests, set both TEST_LLM=1 and OPENAI_API_KEY=your-key.
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
-const FeedbackAgent = require('../agents/FeedbackAgent');
+const FeedbackAgent = require('../../agents/FeedbackAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
-const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
     return require('openai');

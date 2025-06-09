@@ -1,5 +1,9 @@
 const recast = require('recast');
 const { namedTypes: t } = require('ast-types');
+const babel = require('@babel/core');
+const parser = require('@babel/parser');
+const generate = require('@babel/generator').default;
+const prettier = require('prettier');
 
 module.exports = function(fileInfo, api, options) {
   const j = api.jscodeshift;
@@ -103,8 +107,8 @@ module.exports = function(fileInfo, api, options) {
       mergedFunc.comments = [];
     }
     mergedFunc.comments.push({
-      type: 'CommentBlock',
-      value: ' Merged function body ',
+      type: 'CommentLine',
+      value: ' existing logic ',
       start: mergedFunc.start,
       end: mergedFunc.end,
     });
@@ -210,92 +214,66 @@ module.exports = function(fileInfo, api, options) {
   return recast.print(mergedProgram).code;
 };
 
-function mergeCode(currentCode, stepCode) {
-  try {
-    // Parse both code blocks
-    const currentAST = parse(currentCode);
-    const stepAST = parse(stepCode);
+function mergeFunctionBodies(fnA, fnB) {
+  // Merge the bodies by concatenating the statements, preserving comments
+  const cloneDeep = obj => JSON.parse(JSON.stringify(obj));
+  const bodyA = fnA.body.body || [];
+  const bodyB = fnB.body.body || [];
 
-    // Handle syntax errors in either block
-    if (!currentAST || !stepAST) {
-      return currentCode + '\n' + stepCode;
-    }
+  // Preserve comments from both function bodies
+  let mergedBody = [...bodyA, ...bodyB];
 
-    // Merge the ASTs
-    const mergedAST = mergeASTs(currentAST, stepAST);
+  // Attach leading comments from both function declarations
+  let leadingComments = [];
+  if (fnA.leadingComments) leadingComments = leadingComments.concat(cloneDeep(fnA.leadingComments));
+  if (fnB.leadingComments) leadingComments = leadingComments.concat(cloneDeep(fnB.leadingComments));
 
-    // Generate code from merged AST with double quotes
-    const mergedCode = generate(mergedAST, {
-      quotes: 'double',
-      retainLines: true,
-      compact: false
-    }).code;
-
-    return mergedCode;
-  } catch (error) {
-    // If any error occurs during AST manipulation, fall back to simple concatenation
-    return currentCode + '\n' + stepCode;
+  const mergedFn = {
+    ...fnA,
+    body: {
+      ...fnA.body,
+      body: mergedBody,
+    },
+  };
+  if (leadingComments.length > 0) {
+    mergedFn.leadingComments = leadingComments;
   }
+  return mergedFn;
 }
 
-// Update mergeASTs to collect all function declarations with the same name, then merge all of them into a single declaration per name using mergeFunctionDeclarations in a reducer loop.
-function mergeASTs(currentAST, stepAST) {
-  const t = require('@babel/types');
+function mergeCode(currentCode, stepCode) {
+  const astA = parser.parse(currentCode, { sourceType: 'module' });
+  const astB = parser.parse(stepCode, { sourceType: 'module' });
 
-  // Collect all top-level statements
-  const allStatements = [...currentAST.program.body, ...stepAST.program.body];
+  // Collect function declarations by name
+  const fnMap = new Map();
+  const otherNodes = [];
 
-  // Maps for deduplication
-  const funcMap = new Map(); // name -> array of decls
-  const varMap = new Map();
-  const otherStatements = [];
-
-  for (const stmt of allStatements) {
-    if (t.isFunctionDeclaration(stmt) && stmt.id && stmt.id.name) {
-      const name = stmt.id.name;
-      if (!funcMap.has(name)) {
-        funcMap.set(name, []);
-      }
-      funcMap.get(name).push(stmt);
-    } else if (t.isVariableDeclaration(stmt)) {
-      // Deduplicate variable declarations by name
-      for (const decl of stmt.declarations) {
-        if (t.isIdentifier(decl.id)) {
-          varMap.set(decl.id.name, stmt);
+  // Helper to collect functions and other nodes
+  function collect(ast, isStep) {
+    for (const node of ast.program.body) {
+      if (node.type === 'FunctionDeclaration' && node.id && node.id.name) {
+        if (fnMap.has(node.id.name)) {
+          if (isStep) {
+            // Merge bodies if function exists in both
+            const merged = mergeFunctionBodies(fnMap.get(node.id.name), node);
+            fnMap.set(node.id.name, merged);
+          }
+        } else {
+          fnMap.set(node.id.name, node);
         }
+      } else {
+        otherNodes.push(node);
       }
-    } else {
-      otherStatements.push(stmt);
     }
   }
 
-  // Merge all function declarations with the same name
-  const mergedFuncs = [];
-  for (const [name, decls] of funcMap.entries()) {
-    const merged = decls.reduce((a, b) => mergeFunctionDeclarations(a, b));
-    mergedFuncs.push(merged);
-  }
+  collect(astA, false);
+  collect(astB, true);
 
-  // Compose final body: variables, functions, others
-  let mergedBody = [
-    ...Array.from(varMap.values()),
-    ...mergedFuncs,
-    ...otherStatements,
-  ];
-
-  // Remove duplicate function declarations by name (keep first occurrence, anywhere in mergedBody)
-  const seenFuncNames = new Set();
-  mergedBody = mergedBody.filter(stmt => {
-    if (t.isFunctionDeclaration(stmt) && stmt.id && stmt.id.name) {
-      if (seenFuncNames.has(stmt.id.name)) {
-        return false;
-      }
-      seenFuncNames.add(stmt.id.name);
-    }
-    return true;
-  });
-
-  return {
+  // Rebuild the merged AST
+  const mergedBody = [...fnMap.values(), ...otherNodes];
+  const mergedAst = {
     type: 'File',
     program: {
       type: 'Program',
@@ -303,4 +281,12 @@ function mergeASTs(currentAST, stepAST) {
       sourceType: 'module',
     },
   };
+
+  let code = generate(mergedAst).code;
+  try {
+    code = prettier.format(code, { parser: 'babel' });
+  } catch (e) {
+    // Fallback: return unformatted code
+  }
+  return code;
 } 

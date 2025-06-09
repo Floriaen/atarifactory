@@ -2,9 +2,8 @@
 // To run real LLM tests, set both TEST_LLM=1 and OPENAI_API_KEY=your-key.
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
-const StepFixerAgent = require('../agents/StepFixerAgent');
+const StepFixerAgent = require('../../agents/StepFixerAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
-const SmartOpenAI = require('../utils/SmartOpenAI');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -32,8 +31,7 @@ describe('StepFixerAgent', () => {
       errorList: ['ReferenceError']
     };
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const llmClient = new SmartOpenAI(openai);
-    const result = await StepFixerAgent(input, { logger, traceId: 'real-openai-test', llmClient });
+    const result = await StepFixerAgent(input, { logger, traceId: 'real-openai-test', llmClient: openai });
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
   });

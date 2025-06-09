@@ -32,7 +32,7 @@ async function GameDesignAgent(input, { logger, traceId, llmClient }) {
     }
 
     // Compose the prompt
-    const prompt = `Generate a complete game design including title, description, mechanics, and win condition.`;
+    const prompt = promptTemplate.replace('{title}', input.title);
     logger.info('GameDesignAgent prompt:', { traceId, prompt });
 
     // Use llmClient for LLM call and output parsing

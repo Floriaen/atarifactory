@@ -1,10 +1,9 @@
 require('dotenv').config();
 jest.setTimeout(20000);
-const PlannerAgent = require('../agents/PlannerAgent');
+const PlannerAgent = require('../../agents/PlannerAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
-const SmartOpenAI = require('../utils/SmartOpenAI');
 
 const OpenAI = (() => {
   try {
@@ -17,7 +16,7 @@ const OpenAI = (() => {
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 
 describe('PlannerAgent', () => {
-  it('should return an array of steps with id and label (MockSmartOpenAI)', async () => {
+  it('should return an array of steps with id and label (MockOpenAI)', async () => {
     const mockGameDef = {
       title: 'Test Game',
       description: 'desc',
@@ -25,9 +24,10 @@ describe('PlannerAgent', () => {
       winCondition: 'win',
       entities: ['player']
     };
-    const mockSmartOpenAI = new MockSmartOpenAI();
+    const mockOpenAI = new MockOpenAI();
+    mockOpenAI.setAgent('PlannerAgent');
     const prompt = 'You are a game development planner agent. Given a game definition in JSON, create a step-by-step plan to build the game in vanilla JavaScript using the mechanics and entities listed. Each step should be atomic, build on the previous, and cover all core gameplay features.\n\nGame definition:\n' + JSON.stringify(mockGameDef, null, 2) + '\n\nRespond with a JSON array of steps, each with an id and label. Example:\n[\n  { "id": 1, "label": "Setup canvas and loop" },\n  { "id": 2, "label": "Add player and controls" },\n  { "id": 3, "label": "Add coins and scoring" },\n  { "id": 4, "label": "Add spikes and loss condition" },\n  { "id": 5, "label": "Display win/lose text" }\n]\n\nIMPORTANT: Respond with a JSON array ONLY. Do not include any explanation, formatting, or code block. Output only the JSON array.';
-    const result = await mockSmartOpenAI.chatCompletion({ prompt, outputType: 'json-array' });
+    const result = await mockOpenAI.chatCompletion({ prompt, outputType: 'json-array' });
     expect(Array.isArray(result)).toBe(true);
     if (result.length > 0) {
       expect(result[0]).toEqual(

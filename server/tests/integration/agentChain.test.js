@@ -14,11 +14,11 @@ describe('Agent Chain Integration', () => {
 
   beforeEach(() => {
     mockOpenAI = new MockOpenAI();
-    mockOpenAI.setAgent('StepBuilderAgent');
   });
 
   it('should chain GameDesignAgent -> PlannerAgent -> StepBuilderAgent successfully', async () => {
     // 1. GameDesignAgent
+    mockOpenAI.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent(
       { title: 'Test Game' },
       { logger, traceId, llmClient: mockOpenAI }
@@ -29,6 +29,7 @@ describe('Agent Chain Integration', () => {
     expect(gameDef).toHaveProperty('entities');
 
     // 2. PlannerAgent
+    mockOpenAI.setAgent('PlannerAgent');
     const plan = await PlannerAgent(
       gameDef,
       { logger, traceId, llmClient: mockOpenAI }
@@ -39,6 +40,7 @@ describe('Agent Chain Integration', () => {
     expect(plan[0]).toHaveProperty('label');
 
     // 3. StepBuilderAgent (first step)
+    mockOpenAI.setAgent('StepBuilderAgent');
     const stepCode = await StepBuilderAgent(
       {
         currentCode: '',
@@ -60,6 +62,7 @@ describe('Agent Chain Integration', () => {
     };
 
     // 1. GameDesignAgent should succeed
+    mockOpenAI.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent(
       { title: 'Test Game' },
       { logger, traceId, llmClient: mockOpenAI }
@@ -87,18 +90,21 @@ describe('Agent Chain Integration', () => {
   // The mock needs to know which step is being processed to return the appropriate code (canvas setup vs player controls).
   it.skip('should maintain state between steps in the chain', async () => {
     // 1. Get game design
+    mockOpenAI.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent(
       { title: 'Test Game' },
       { logger, traceId, llmClient: mockOpenAI }
     );
 
     // 2. Get plan
+    mockOpenAI.setAgent('PlannerAgent');
     const plan = await PlannerAgent(
       gameDef,
       { logger, traceId, llmClient: mockOpenAI }
     );
 
     // 3. Execute first step
+    mockOpenAI.setAgent('StepBuilderAgent');
     const firstStepCode = await StepBuilderAgent(
       {
         currentCode: '',

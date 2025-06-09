@@ -3,9 +3,9 @@
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 
-const StepBuilderAgent = require('../agents/StepBuilderAgent');
+const StepBuilderAgent = require('../../agents/StepBuilderAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
-const SmartOpenAI = require('../utils/SmartOpenAI');
+const SmartOpenAI = require('../../utils/SmartOpenAI');
 
 const OpenAI = (() => {
   try {

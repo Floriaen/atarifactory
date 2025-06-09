@@ -33,7 +33,7 @@ class MockOpenAI {
   // For SmartOpenAI compatibility
   async chatCompletion({ prompt, outputType }) {
     const response = this._getMockResponse(prompt, outputType);
-    if (outputType === 'json-object') {
+    if (outputType === 'json-object' || outputType === 'json-array') {
       return response;
     }
     return typeof response === 'string' ? response : JSON.stringify(response);
@@ -60,6 +60,15 @@ class MockOpenAI {
       case 'StepBuilderAgent':
         if (prompt && prompt.includes('nonexistent step')) {
           throw new Error('StepBuilderAgent: Step not found');
+        }
+        if (prompt && prompt.includes('maze layout')) {
+          return `const mazeLayout = [
+  ['#', '#', '#', '#', '#'],
+  ['#', ' ', ' ', ' ', '#'],
+  ['#', ' ', '#', ' ', '#'],
+  ['#', ' ', ' ', ' ', '#'],
+  ['#', '#', '#', '#', '#']
+];`;
         }
         return 'function update() {\n  // Player movement code\n  player.x += 5;\n}';
       case 'BlockInserterAgent':
