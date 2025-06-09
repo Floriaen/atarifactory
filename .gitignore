@@ -1,7 +1,30 @@
+# Coverage files
+coverage/
+*.lcov
+clover.xml
+
+# Node modules
 node_modules/
+
+# Environment variables
+.env
+
+# Logs
 logs/
-games/
+*.log
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
 .DS_Store
+Thumbs.db
+
+games/
 frontend/node_modules/
 frontend/dist/
-.env 
+*aiCoder/llmConfig*key*
+*aiCoder/backups/*
