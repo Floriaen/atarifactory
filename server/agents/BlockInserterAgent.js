@@ -1,4 +1,4 @@
-const { mergeCode } = require('../code-merge-module');
+const { mergeCode } = require('ast-merge');
 const prettier = require('prettier');
 
 /**
@@ -24,7 +24,7 @@ async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }
 
     let mergedCode;
     try {
-      mergedCode = await mergeCode(currentCode, stepCode);
+      mergedCode = await mergeCode(currentCode, stepCode, 'js');
     } catch (e) {
       logger.error('Error in mergeCode:', e);
       throw e;
