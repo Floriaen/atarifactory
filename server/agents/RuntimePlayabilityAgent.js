@@ -1,3 +1,7 @@
+// IMPORTANT: This agent must receive llmClient via dependency injection if needed.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
+
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -5,7 +9,7 @@ const puppeteer = require('puppeteer');
 
 /**
  * RuntimePlayabilityAgent
- * Input: { code: string }
+ * Input: SharedState
  * Output: {
  *   canvasActive: boolean,
  *   inputResponsive: boolean,
@@ -16,10 +20,7 @@ const puppeteer = require('puppeteer');
  *
  * Runs the game code in a headless browser and checks playability.
  */
-// IMPORTANT: This agent must receive llmClient via dependency injection if needed.
-// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
-// See 'LLM Client & Dependency Injection Guidelines' in README.md.
-async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
+async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
   logger.info('RuntimePlayabilityAgent called', { traceId });
   let browser;
   let page;
@@ -28,7 +29,7 @@ async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
     // Write code to a temp file
     const tmpDir = os.tmpdir();
     tmpFile = path.join(tmpDir, `game-${Date.now()}.js`);
-    fs.writeFileSync(tmpFile, code, 'utf8');
+    fs.writeFileSync(tmpFile, sharedState.currentCode, 'utf8');
 
     browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
     page = await browser.newPage();
@@ -120,21 +121,29 @@ async function RuntimePlayabilityAgent({ code }, { logger, traceId }) {
       winConditionReachable = false;
     }
 
-    return {
+    const result = {
       canvasActive,
       inputResponsive,
       playerMoved,
       winConditionReachable
     };
+
+    sharedState.metadata.lastUpdate = new Date();
+    sharedState.metadata.runtimePlayability = result;
+
+    return result;
   } catch (err) {
     logger.error('RuntimePlayabilityAgent error', { traceId, error: err });
-    return {
+    const result = {
       canvasActive: false,
       inputResponsive: false,
       playerMoved: false,
       winConditionReachable: false,
       log: err.message
     };
+    sharedState.metadata.lastUpdate = new Date();
+    sharedState.metadata.runtimePlayability = result;
+    return result;
   } finally {
     if (page) await page.close().catch(() => {});
     if (browser) await browser.close().catch(() => {});

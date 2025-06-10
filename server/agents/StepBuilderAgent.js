@@ -1,23 +1,21 @@
-const fs = require('fs');
-const path = require('path');
-const { extractJsCodeBlocks } = require('../utils/formatter');
-
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 
+const fs = require('fs');
+const path = require('path');
+const { extractJsCodeBlocks } = require('../utils/formatter');
+
 /**
  * StepBuilderAgent
- * Input: {
- *   currentCode: string,
- *   plan: Array<{ id: number, label: string }>,
- *   step: { id: number, label: string }
- * }
+ * Input: SharedState
  * Output: string (code block for the step)
  *
  * Generates the code block for the current step using LLM.
  */
-async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient }) {
+async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
+  const { currentCode, plan, step } = sharedState;
+
   logger.info('StepBuilderAgent called', { traceId, step });
   logger.info('StepBuilderAgent input:', { currentCode, plan, step });
   if (!llmClient) {
@@ -41,6 +39,14 @@ async function StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, 
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);
     logger.info('StepBuilderAgent output:', { traceId, cleanCode });
+    
+    // Update sharedState
+    sharedState.currentCode = cleanCode;
+    if (!sharedState.metadata) {
+      sharedState.metadata = {};
+    }
+    sharedState.metadata.lastUpdate = new Date();
+    
     return cleanCode;
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step });

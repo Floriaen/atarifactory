@@ -10,6 +10,7 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const BlockInserterAgent = require('../../agents/BlockInserterAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
+const { createSharedState } = require('../../types/SharedState');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -30,105 +31,106 @@ describe('BlockInserterAgent', () => {
   const traceId = 'unit-test';
 
   it('should merge new code into existing code', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       function update() {
         // existing logic
       }
     `;
-    const stepCode = `
+    sharedState.stepCode = `
       function update() {
         // new logic
         player.x += 1;
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     expect(result).toContain('player.x += 1');
     expect(result).toContain('// existing logic');
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should handle empty currentCode', async () => {
-    const currentCode = '';
-    const stepCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = '';
+    sharedState.stepCode = `
       function update() {
         player.x += 1;
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     expect(result).toContain('player.x += 1');
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should handle empty stepCode', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       function update() {
         // existing logic
       }
     `;
-    const stepCode = '';
+    sharedState.stepCode = '';
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     expect(result).toContain('// existing logic');
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should format merged code using prettier', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       function update() {
         // existing logic
       }
     `;
-    const stepCode = `
+    sharedState.stepCode = `
       function update() {
         player.x += 1;
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     // Check for prettier formatting (no extra spaces, consistent indentation)
     expect(result).not.toMatch(/\n\s{3,}/); // No more than 2 spaces for indentation
     expect(result).not.toMatch(/\s{2,}\n/); // No trailing spaces
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should handle syntax errors gracefully', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       function update() {
         // existing logic
       }
     `;
-    const stepCode = `
+    sharedState.stepCode = `
       function update() {
         player.x += // syntax error
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     // Should fall back to simple concatenation
     expect(result).toContain('// existing logic');
     expect(result).toContain('player.x += // syntax error');
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should preserve function declarations', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       function update() {
         // existing logic
       }
@@ -136,42 +138,39 @@ describe('BlockInserterAgent', () => {
         // render logic
       }
     `;
-    const stepCode = `
+    sharedState.stepCode = `
       function update() {
         // new logic
         player.x += 1;
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     expect(result).toContain('function update()');
     expect(result).toContain('function render()');
     expect(result).toContain('player.x += 1');
     expect(result).toContain('// render logic');
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should handle variable declarations correctly (AST)', async () => {
-    const currentCode = `
+    const sharedState = createSharedState();
+    sharedState.currentCode = `
       const player = { x: 0, y: 0 };
       function update() {
         // existing logic
       }
     `;
-    const stepCode = `
+    sharedState.stepCode = `
       const speed = 5;
       function update() {
         player.x += speed;
       }
     `;
 
-    const result = await BlockInserterAgent(
-      { currentCode, stepCode },
-      { logger, traceId }
-    );
+    const result = await BlockInserterAgent(sharedState, { logger, traceId });
 
     const ast = parser.parse(result, { sourceType: 'module' });
     const declarations = extractDeclarations(ast);
@@ -202,6 +201,9 @@ describe('BlockInserterAgent', () => {
           node.id.name === 'update'
       )
     ).toBe(true);
+
+    expect(sharedState.currentCode).toBe(result);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
   it('should return a string (new currentCode) after insertion/merge (MockOpenAI)', async () => {

@@ -1,26 +1,24 @@
+// IMPORTANT: This agent must receive llmClient via dependency injection.
+// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
+// See 'LLM Client & Dependency Injection Guidelines' in README.md.
+
 const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
 const logger = require('../utils/logger');
 
 /**
  * BlockInserterAgent
- * Input: {
- *   currentCode: string,
- *   stepCode: string
- * }
+ * Input: SharedState
  * Output: string (new currentCode after safe insertion/merge)
  *
  * Uses AST-based code manipulation to insert/merge stepCode into currentCode.
  */
-// IMPORTANT: This agent must receive llmClient via dependency injection.
-// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
-// See 'LLM Client & Dependency Injection Guidelines' in README.md.
-async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }) {
+async function BlockInserterAgent(sharedState, { logger, traceId }) {
   logger.info('BlockInserterAgent called', { traceId });
   
   try {
     // Merge the code using our new module
-    const mergedCode = await mergeCode(currentCode, stepCode);
+    const mergedCode = await mergeCode(sharedState.currentCode, sharedState.stepCode);
     logger.info('Merged code before formatting:', { traceId, mergedCode });
     
     // Format the merged code
@@ -37,6 +35,13 @@ async function BlockInserterAgent({ currentCode, stepCode }, { logger, traceId }
       logger.error('Prettier formatting failed:', formatError);
       formattedCode = mergedCode;
     }
+    
+    // Update sharedState
+    sharedState.currentCode = formattedCode;
+    if (!sharedState.metadata) {
+      sharedState.metadata = {};
+    }
+    sharedState.metadata.lastUpdate = new Date();
     
     logger.info('BlockInserterAgent output', { traceId, formattedCode });
     return formattedCode;

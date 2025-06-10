@@ -4,6 +4,7 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const SyntaxSanityAgent = require('../../agents/SyntaxSanityAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
+const { createSharedState } = require('../../types/SharedState');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -14,8 +15,9 @@ const OpenAI = (() => {
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 describe('SyntaxSanityAgent', () => {
   it('should return an object with a boolean valid property (MockOpenAI)', () => {
-    const input = { code: 'function update() {}' };
-    const result = SyntaxSanityAgent(input, { logger: logger, traceId: 'test-trace' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function update() {}';
+    const result = SyntaxSanityAgent(sharedState, { logger: logger, traceId: 'test-trace' });
     expect(typeof result).toBe('object');
     expect(typeof result.valid).toBe('boolean');
     if (result.error !== undefined) {
@@ -24,22 +26,25 @@ describe('SyntaxSanityAgent', () => {
   });
 
   it('should return valid: true for syntactically correct code', () => {
-    const input = { code: 'function foo() { return 42; }' };
-    const result = SyntaxSanityAgent(input, { logger, traceId: 'valid' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function foo() { return 42; }';
+    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'valid' });
     expect(result.valid).toBe(true);
     expect(result.error).toBeUndefined();
   });
 
   it('should return valid: false and an error for syntax errors', () => {
-    const input = { code: 'function () {' };
-    const result = SyntaxSanityAgent(input, { logger, traceId: 'syntax' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function () {';
+    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'syntax' });
     expect(result.valid).toBe(false);
     expect(typeof result.error).toBe('string');
   });
 
   it('should return valid: true for code with runtime errors (only syntax checked)', () => {
-    const input = { code: 'throw new Error("fail at runtime");' };
-    const result = SyntaxSanityAgent(input, { logger, traceId: 'runtime' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'throw new Error("fail at runtime");';
+    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'runtime' });
     expect(result.valid).toBe(true);
     expect(result.error).toBeUndefined();
   });

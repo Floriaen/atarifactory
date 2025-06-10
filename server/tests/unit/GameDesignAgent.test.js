@@ -5,6 +5,7 @@ const logger = process.env.TEST_LOGS ? console : mockLogger;
 const GameDesignAgent = require('../../agents/GameDesignAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../../utils/SmartOpenAI');
+const { createSharedState } = require('../../types/SharedState');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -24,7 +25,7 @@ describe('GameDesignAgent', () => {
     error: jest.fn()
   };
   const traceId = 'test-trace';
-  const input = { title: 'Test Game' };
+  const title = 'Test Game';
   const promptTemplate = 'Design a game based on the following title:';
   const promptPath = path.join(__dirname, '../../agents/prompts/GameDesignAgent.prompt.md');
 
@@ -39,7 +40,9 @@ describe('GameDesignAgent', () => {
   it('should return an object with the correct keys (MockOpenAI)', async () => {
     const mockOpenAI = new MockOpenAI();
     mockOpenAI.setAgent('GameDesignAgent');
-    const result = await GameDesignAgent(input, { logger: logger, traceId: 'test-trace', llmClient: mockOpenAI });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    const result = await GameDesignAgent(sharedState, { logger: logger, traceId: 'test-trace', llmClient: mockOpenAI });
     expect(typeof result).toBe('object');
     // Structure check (keys)
     expect(result).toEqual(
@@ -57,7 +60,9 @@ describe('GameDesignAgent', () => {
   (useRealLLM ? it : it.skip)('should return a valid game design from real OpenAI', async () => {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const llmClient = new SmartOpenAI(openai);
-    const result = await GameDesignAgent(input, { logger, traceId: 'real-openai-test', llmClient });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    const result = await GameDesignAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
     expect(typeof result).toBe('object');
     expect(result).toEqual(
       expect.objectContaining({
@@ -74,20 +79,33 @@ describe('GameDesignAgent', () => {
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue({
       title: 'Test Game', description: 'desc', mechanics: ['a'], winCondition: 'win', entities: ['e']
     }) };
-    await GameDesignAgent(input, { logger: mockLogger, traceId, llmClient });
-    expect(mockLogger.info).toHaveBeenCalledWith('GameDesignAgent called', { traceId, input });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient });
+    expect(mockLogger.info).toHaveBeenCalledWith('GameDesignAgent called', { traceId, input: { title } });
   });
 
   it('throws and logs error if llmClient is missing', async () => {
-    await expect(GameDesignAgent(input, { logger: mockLogger, traceId })).rejects.toThrow('GameDesignAgent: llmClient is required but was not provided');
-    expect(mockLogger.error).toHaveBeenCalledWith('GameDesignAgent: llmClient is required but was not provided', { traceId });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await expect(GameDesignAgent(sharedState, { logger: mockLogger, traceId })).rejects.toThrow('GameDesignAgent: llmClient is required but was not provided');
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      'GameDesignAgent error',
+      expect.objectContaining({
+        traceId,
+        error: expect.any(Error),
+        input: { title }
+      })
+    );
   });
 
   it('loads prompt and calls llmClient.chatCompletion with correct prompt', async () => {
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue({
       title: 'Test Game', description: 'desc', mechanics: ['a'], winCondition: 'win', entities: ['e']
     }) };
-    await GameDesignAgent(input, { logger: mockLogger, traceId, llmClient });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient });
     expect(fs.readFileSync).toHaveBeenCalledWith(promptPath, 'utf8');
     expect(llmClient.chatCompletion).toHaveBeenCalledWith({
       prompt: expect.stringContaining(promptTemplate),
@@ -98,7 +116,9 @@ describe('GameDesignAgent', () => {
   it('logs and returns parsed output if contract matches', async () => {
     const parsed = { title: 'Test Game', description: 'desc', mechanics: ['a'], winCondition: 'win', entities: ['e'] };
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue(parsed) };
-    const result = await GameDesignAgent(input, { logger: mockLogger, traceId, llmClient });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    const result = await GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient });
     expect(mockLogger.info).toHaveBeenCalledWith('GameDesignAgent LLM parsed output', { traceId, parsed });
     expect(result).toEqual(parsed);
   });
@@ -106,13 +126,36 @@ describe('GameDesignAgent', () => {
   it('throws and logs error if LLM output is missing required fields', async () => {
     const parsed = { title: 'Test Game', description: 'desc', mechanics: 'not-an-array', winCondition: 'win', entities: ['e'] };
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue(parsed) };
-    await expect(GameDesignAgent(input, { logger: mockLogger, traceId, llmClient })).rejects.toThrow('GameDesignAgent: LLM output missing required fields');
-    expect(mockLogger.error).toHaveBeenCalledWith('GameDesignAgent LLM output missing required fields', { traceId, parsed });
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await expect(GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient })).rejects.toThrow('GameDesignAgent: LLM output missing required fields');
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      'GameDesignAgent error',
+      expect.objectContaining({
+        traceId,
+        error: expect.any(Error),
+        input: { title }
+      })
+    );
   });
 
   it('logs and throws on any other error', async () => {
     const llmClient = { chatCompletion: jest.fn(() => { throw new Error('llm error'); }) };
-    await expect(GameDesignAgent(input, { logger: mockLogger, traceId, llmClient })).rejects.toThrow('llm error');
-    expect(mockLogger.error).toHaveBeenCalledWith('GameDesignAgent error', expect.objectContaining({ traceId, error: expect.any(Error), input }));
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await expect(GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient })).rejects.toThrow('llm error');
+    expect(mockLogger.error).toHaveBeenCalledWith('GameDesignAgent error', expect.objectContaining({ traceId, error: expect.any(Error), input: { title } }));
+  });
+
+  it('updates sharedState with game definition', async () => {
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    const parsed = { title: 'Test Game', description: 'desc', mechanics: ['a'], winCondition: 'win', entities: ['e'] };
+    const llmClient = { chatCompletion: jest.fn().mockResolvedValue(parsed) };
+    
+    await GameDesignAgent(sharedState, { logger: mockLogger, traceId, llmClient });
+    
+    expect(sharedState.gameDef).toEqual(parsed);
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 }); 

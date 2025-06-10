@@ -4,6 +4,7 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const FeedbackAgent = require('../../agents/FeedbackAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
+const { createSharedState } = require('../../types/SharedState');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -16,11 +17,14 @@ const mockOpenAI = new MockOpenAI();
 mockOpenAI.setAgent('FeedbackAgent');
 describe('FeedbackAgent', () => {
   it('should return an object with retryTarget and suggestion (MockOpenAI)', async () => {
-    const runtimeLogs = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
-    const stepId = 1;
-    const result = await FeedbackAgent({ runtimeLogs, stepId }, { logger, traceId: 'test', llmClient: mockOpenAI });
+    const sharedState = createSharedState();
+    sharedState.metadata.runtimePlayability = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
+    sharedState.step = { id: 1, label: 'Test' };
+    const result = await FeedbackAgent(sharedState, { logger, traceId: 'test', llmClient: mockOpenAI });
     expect(result).toHaveProperty('retryTarget');
     expect(result).toHaveProperty('suggestion');
+    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
+    expect(sharedState.metadata.feedback).toBe(result);
   });
   // Placeholder for real LLM test
   (useRealLLM ? it : it.skip)('should return a valid feedback from real OpenAI', async () => {

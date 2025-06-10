@@ -1,23 +1,20 @@
-const parser = require('@babel/parser');
-
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 
+const parser = require('@babel/parser');
+
 /**
  * StaticCheckerAgent
- * Input: {
- *   currentCode: string,
- *   stepCode: string
- * }
+ * Input: SharedState
  * Output: Array<string> (list of errors: duplicate declarations, undeclared variables, syntax issues)
  *
  * Performs static analysis on the code.
  */
-function StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId }) {
+function StaticCheckerAgent(sharedState, { logger, traceId }) {
   logger.info('StaticCheckerAgent called', { traceId });
   const errors = [];
-  const code = currentCode + '\n' + stepCode;
+  const code = sharedState.currentCode + '\n' + sharedState.stepCode;
   let ast;
   try {
     ast = parser.parse(code, { sourceType: 'script', ecmaVersion: 'latest' });

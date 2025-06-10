@@ -5,6 +5,7 @@ const logger = process.env.TEST_LOGS ? console : mockLogger;
 const StaticCheckerAgent = require('../../agents/StaticCheckerAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const SmartOpenAI = require('../../utils/SmartOpenAI');
+const { createSharedState } = require('../../types/SharedState');
 const OpenAI = (() => {
   try {
     return require('openai');
@@ -15,11 +16,10 @@ const OpenAI = (() => {
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 describe('StaticCheckerAgent', () => {
   it('should return an array of error strings (MockOpenAI)', () => {
-    const input = {
-      currentCode: 'function update() {}',
-      stepCode: '// new logic'
-    };
-    const result = StaticCheckerAgent(input, { logger: logger, traceId: 'test-trace' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function update() {}';
+    sharedState.stepCode = '// new logic';
+    const result = StaticCheckerAgent(sharedState, { logger: logger, traceId: 'test-trace' });
     expect(Array.isArray(result)).toBe(true);
     if (result.length > 0) {
       expect(typeof result[0]).toBe('string');
@@ -27,29 +27,26 @@ describe('StaticCheckerAgent', () => {
   });
 
   it('should detect duplicate function declarations', () => {
-    const input = {
-      currentCode: 'function update() {}',
-      stepCode: 'function update() {}'
-    };
-    const result = StaticCheckerAgent(input, { logger, traceId: 'dup-fn' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function update() {}';
+    sharedState.stepCode = 'function update() {}';
+    const result = StaticCheckerAgent(sharedState, { logger, traceId: 'dup-fn' });
     expect(result.some(e => e.includes('Duplicate declaration: update'))).toBe(true);
   });
 
   it('should detect undeclared variables', () => {
-    const input = {
-      currentCode: 'function update() {}',
-      stepCode: 'console.log(x);'
-    };
-    const result = StaticCheckerAgent(input, { logger, traceId: 'undeclared' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function update() {}';
+    sharedState.stepCode = 'console.log(x);';
+    const result = StaticCheckerAgent(sharedState, { logger, traceId: 'undeclared' });
     expect(result.some(e => e.includes('Undeclared variable: x'))).toBe(true);
   });
 
   it('should detect syntax errors', () => {
-    const input = {
-      currentCode: 'function update() {}',
-      stepCode: 'function () {'
-    };
-    const result = StaticCheckerAgent(input, { logger, traceId: 'syntax' });
+    const sharedState = createSharedState();
+    sharedState.currentCode = 'function update() {}';
+    sharedState.stepCode = 'function () {';
+    const result = StaticCheckerAgent(sharedState, { logger, traceId: 'syntax' });
     expect(result.some(e => e.includes('Syntax error'))).toBe(true);
   });
 
