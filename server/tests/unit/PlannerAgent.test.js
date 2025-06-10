@@ -1,5 +1,3 @@
-require('dotenv').config();
-jest.setTimeout(20000);
 const PlannerAgent = require('../../agents/PlannerAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const { createSharedState } = require('../../types/SharedState');
@@ -15,6 +13,8 @@ const OpenAI = (() => {
 })();
 
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
+
+jest.setTimeout(20000);
 
 describe('PlannerAgent', () => {
   const mockGameDef = {

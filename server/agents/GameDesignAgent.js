@@ -20,7 +20,7 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+const { SmartOpenAI } = require('../utils/SmartOpenAI');
 
 async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
   try {

@@ -4,6 +4,8 @@ const SmartOpenAI = require('../../../utils/SmartOpenAI');
 const StepFixerAgent = require('../../../agents/StepFixerAgent');
 const { createSharedState } = require('../../../types/SharedState');
 
+jest.setTimeout(20000);
+
 describe('StepFixerAgent Integration', () => {
   const traceId = 'real-openai-test';
 
