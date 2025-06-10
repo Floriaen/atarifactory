@@ -12,7 +12,7 @@ module.exports = [
   },
   // Node.js backend files
   {
-    files: ['server/**/*.js', '!server/**/assets/*.js', '!server/controlBar/*.js'],
+    files: ['server/**/*.js', '!server/**/assets/*.js'],
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: 'script',

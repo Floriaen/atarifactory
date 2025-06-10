@@ -1,5 +1,7 @@
 const { marked } = require('marked');
 
+// This utility extracts JavaScript code blocks from markdown text, using the marked library to parse and identify code blocks.
+
 function extractJsCodeBlocks(md) {
   const codeBlocks = [];
   marked(md, {

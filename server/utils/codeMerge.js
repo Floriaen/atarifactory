@@ -1,6 +1,6 @@
 const recast = require('recast');
 const jscodeshift = require('jscodeshift');
-const mergeCodeTransform = require('../transforms/mergeCode');
+const mergeCodeTransform = require('../transforms/mergeCodeTransform');
 
 function mergeCode(currentCode, stepCode) {
   try {
