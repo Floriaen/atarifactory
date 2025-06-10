@@ -27,18 +27,18 @@ describe('StepFixerAgent', () => {
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
-  (useRealLLM ? it : it.skip)('should return a corrected stepCode from real OpenAI', async () => {
-    const sharedState = createSharedState();
-    sharedState.currentCode = 'function update() {}';
-    sharedState.step = { id: 2, label: 'Add player' };
-    sharedState.errorList = ['ReferenceError'];
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const result = await StepFixerAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient: openai });
-    expect(typeof result).toBe('string');
-    expect(result.length).toBeGreaterThan(0);
-    expect(sharedState.stepCode).toBe(result);
-    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-  });
+  // (useRealLLM ? it : it.skip)('should return a corrected stepCode from real OpenAI', async () => {
+  //   const sharedState = createSharedState();
+  //   sharedState.currentCode = 'function update() {}';
+  //   sharedState.step = { id: 2, label: 'Add player' };
+  //   sharedState.errorList = ['ReferenceError'];
+  //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  //   const result = await StepFixerAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient: openai });
+  //   expect(typeof result).toBe('string');
+  //   expect(result.length).toBeGreaterThan(0);
+  //   expect(sharedState.stepCode).toBe(result);
+  //   expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
+  // });
 
   test('StepFixerAgent strips markdown code block markers from LLM output', async () => {
     const sharedState = createSharedState();

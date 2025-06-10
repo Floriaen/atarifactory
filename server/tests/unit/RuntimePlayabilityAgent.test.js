@@ -31,10 +31,10 @@ describe('RuntimePlayabilityAgent', () => {
   });
   // More tests will be added as the agent is implemented
   // Placeholder for real LLM test
-  (useRealLLM ? it : it.skip)('should return a valid runtime result from real OpenAI', async () => {
-    // To be implemented if RuntimePlayabilityAgent becomes LLM-driven
-    expect(true).toBe(true);
-  });
+  // (useRealLLM ? it : it.skip)('should return a valid runtime result from real OpenAI', async () => {
+  //   // To be implemented if RuntimePlayabilityAgent becomes LLM-driven
+  //   expect(true).toBe(true);
+  // });
   it('should detect input responsiveness (ArrowRight)', async () => {
     const sharedState = createSharedState();
     sharedState.currentCode = `

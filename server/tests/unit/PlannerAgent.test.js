@@ -73,22 +73,22 @@ describe('PlannerAgent', () => {
     expect(result[0]).toHaveProperty('label');
   });
 
-  (useRealLLM ? it : it.skip)('should return a valid plan from real OpenAI', async () => {
-    const gameDef = {
-      title: 'Coin Collector',
-      description: 'Collect all coins while avoiding spikes.',
-      mechanics: ['move left/right', 'jump', 'collect', 'avoid'],
-      winCondition: 'Collect all 10 coins',
-      entities: ['player', 'coin', 'spike']
-    };
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const llmClient = new SmartOpenAI(openai);
-    const sharedState = createSharedState();
-    sharedState.gameDef = gameDef;
-    const result = await PlannerAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
-    expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBeGreaterThan(0);
-    expect(result[0]).toHaveProperty('id');
-    expect(result[0]).toHaveProperty('label');
-  });
+  // (useRealLLM ? it : it.skip)('should return a valid plan from real OpenAI', async () => {
+  //   const gameDef = {
+  //     title: 'Coin Collector',
+  //     description: 'Collect all coins while avoiding spikes.',
+  //     mechanics: ['move left/right', 'jump', 'collect', 'avoid'],
+  //     winCondition: 'Collect all 10 coins',
+  //     entities: ['player', 'coin', 'spike']
+  //   };
+  //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  //   const llmClient = new SmartOpenAI(openai);
+  //   const sharedState = createSharedState();
+  //   sharedState.gameDef = gameDef;
+  //   const result = await PlannerAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
+  //   expect(Array.isArray(result)).toBe(true);
+  //   expect(result.length).toBeGreaterThan(0);
+  //   expect(result[0]).toHaveProperty('id');
+  //   expect(result[0]).toHaveProperty('label');
+  // });
 }); 

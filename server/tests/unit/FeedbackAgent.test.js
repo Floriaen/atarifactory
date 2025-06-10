@@ -27,8 +27,8 @@ describe('FeedbackAgent', () => {
     expect(sharedState.metadata.feedback).toBe(result);
   });
   // Placeholder for real LLM test
-  (useRealLLM ? it : it.skip)('should return a valid feedback from real OpenAI', async () => {
-    // To be implemented if FeedbackAgent becomes LLM-driven
-    expect(true).toBe(true);
-  });
+  // (useRealLLM ? it : it.skip)('should return a valid feedback from real OpenAI', async () => {
+  //   // To be implemented if FeedbackAgent becomes LLM-driven
+  //   expect(true).toBe(true);
+  // });
 }); 

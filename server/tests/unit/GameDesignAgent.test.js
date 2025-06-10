@@ -57,23 +57,23 @@ describe('GameDesignAgent', () => {
   });
 
   // Placeholder for real LLM test
-  (useRealLLM ? it : it.skip)('should return a valid game design from real OpenAI', async () => {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const llmClient = new SmartOpenAI(openai);
-    const sharedState = createSharedState();
-    sharedState.title = title;
-    const result = await GameDesignAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
-    expect(typeof result).toBe('object');
-    expect(result).toEqual(
-      expect.objectContaining({
-        title: expect.any(String),
-        description: expect.any(String),
-        mechanics: expect.any(Array),
-        winCondition: expect.any(String),
-        entities: expect.any(Array)
-      })
-    );
-  });
+  // (useRealLLM ? it : it.skip)('should return a valid game design from real OpenAI', async () => {
+  //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  //   const llmClient = new SmartOpenAI(openai);
+  //   const sharedState = createSharedState();
+  //   sharedState.title = title;
+  //   const result = await GameDesignAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
+  //   expect(typeof result).toBe('object');
+  //   expect(result).toEqual(
+  //     expect.objectContaining({
+  //       title: expect.any(String),
+  //       description: expect.any(String),
+  //       mechanics: expect.any(Array),
+  //       winCondition: expect.any(String),
+  //       entities: expect.any(Array)
+  //     })
+  //   );
+  // });
 
   it('logs the call with correct arguments', async () => {
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue({

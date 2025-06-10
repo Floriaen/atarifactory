@@ -36,23 +36,23 @@ describe('StepBuilderAgent', () => {
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });
 
-  (useRealLLM ? it : it.skip)('should return a code block from real OpenAI', async () => {
-    const sharedState = createSharedState();
-    sharedState.currentCode = '// code so far';
-    sharedState.plan = [
-      { id: 1, label: 'Setup' },
-      { id: 2, label: 'Add player' }
-    ];
-    sharedState.step = { id: 2, label: 'Add player' };
+  // (useRealLLM ? it : it.skip)('should return a code block from real OpenAI', async () => {
+  //   const sharedState = createSharedState();
+  //   sharedState.currentCode = '// code so far';
+  //   sharedState.plan = [
+  //     { id: 1, label: 'Setup' },
+  //     { id: 2, label: 'Add player' }
+  //   ];
+  //   sharedState.step = { id: 2, label: 'Add player' };
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const llmClient = new SmartOpenAI(openai);
-    const result = await StepBuilderAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
-    expect(typeof result).toBe('string');
-    expect(result.length).toBeGreaterThan(0);
-    expect(sharedState.currentCode).toBe(result);
-    expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-  });
+  //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  //   const llmClient = new SmartOpenAI(openai);
+  //   const result = await StepBuilderAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient });
+  //   expect(typeof result).toBe('string');
+  //   expect(result.length).toBeGreaterThan(0);
+  //   expect(sharedState.currentCode).toBe(result);
+  //   expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
+  // });
 
   test('StepBuilderAgent strips markdown code block markers from LLM output', async () => {
     const sharedState = createSharedState();

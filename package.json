@@ -12,7 +12,7 @@
     "start": "node server/start.js",
     "test": "jest --testPathIgnorePatterns=server/tests/e2e/",
     "test:unit": "jest server/tests/unit/",
-    "test:integration": "jest server/tests/integration/"
+    "test:integration": "jest --config jest.integration.config.js --setupFiles ./jest.setup.js"
   },
   "dependencies": {
     "aicodertool": "^1.0.100",

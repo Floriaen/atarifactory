@@ -20,6 +20,7 @@ const OpenAI = (() => {
 })();
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
 const parser = require('@babel/parser');
+// const { runBlockInserterAgentTest } = require('../common/BlockInserterAgentTest');
 
 function extractDeclarations(ast) {
   return ast.program.body.filter(
@@ -406,8 +407,8 @@ describe('BlockInserterAgent', () => {
   });
 
   // Placeholder for real LLM test
-  (useRealLLM ? it : it.skip)('should return a valid code merge from real OpenAI', async () => {
-    // To be implemented if BlockInserterAgent becomes LLM-driven
-    expect(true).toBe(true);
-  });
+  // (useRealLLM ? it : it.skip)('should return a valid code merge from real OpenAI', async () => {
+  //   // To be implemented if BlockInserterAgent becomes LLM-driven
+  //   expect(true).toBe(true);
+  // });
 }); 
