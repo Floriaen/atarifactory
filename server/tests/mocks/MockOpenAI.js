@@ -55,11 +55,11 @@ class MockOpenAI {
         };
       case 'PlannerAgent':
         return [
-          { id: 1, label: 'Setup canvas and loop' },
-          { id: 2, label: 'Add player and controls' },
-          { id: 3, label: 'Add coins and scoring' },
-          { id: 4, label: 'Add spikes and loss condition' },
-          { id: 5, label: 'Display win/lose text' }
+          { id: 1, description: 'Setup canvas and loop' },
+          { id: 2, description: 'Add player and controls' },
+          { id: 3, description: 'Add coins and scoring' },
+          { id: 4, description: 'Add spikes and loss condition' },
+          { id: 5, description: 'Display win/lose text' }
         ];
       case 'StepBuilderAgent':
         // Check if the step is invalid (id: 999)

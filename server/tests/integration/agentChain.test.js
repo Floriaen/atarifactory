@@ -3,6 +3,7 @@ const PlannerAgent = require('../../agents/PlannerAgent');
 const StepBuilderAgent = require('../../agents/StepBuilderAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const { extractJsCodeBlocks } = require('../../utils/formatter');
+const { createSharedState } = require('../../types/SharedState');
 
 // Mock logger for clean test output
 const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
@@ -11,6 +12,7 @@ const logger = process.env.TEST_LOGS ? console : mockLogger;
 describe('Agent Chain Integration', () => {
   let mockOpenAI;
   const traceId = 'integration-test';
+  const sharedState = createSharedState();
 
   beforeEach(() => {
     mockOpenAI = new MockOpenAI();
@@ -19,10 +21,9 @@ describe('Agent Chain Integration', () => {
   it('should chain GameDesignAgent -> PlannerAgent -> StepBuilderAgent successfully', async () => {
     // 1. GameDesignAgent
     mockOpenAI.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent(
-      { title: 'Test Game' },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    sharedState.title = 'Test Game';
+    const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    sharedState.gameDef = gameDef;
     expect(gameDef).toHaveProperty('title');
     expect(gameDef).toHaveProperty('mechanics');
     expect(gameDef).toHaveProperty('winCondition');
@@ -30,25 +31,17 @@ describe('Agent Chain Integration', () => {
 
     // 2. PlannerAgent
     mockOpenAI.setAgent('PlannerAgent');
-    const plan = await PlannerAgent(
-      gameDef,
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    const plan = await PlannerAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    sharedState.plan = plan;
     expect(Array.isArray(plan)).toBe(true);
     expect(plan.length).toBeGreaterThan(0);
     expect(plan[0]).toHaveProperty('id');
-    expect(plan[0]).toHaveProperty('label');
+    expect(plan[0]).toHaveProperty('description');
 
     // 3. StepBuilderAgent (first step)
+    sharedState.step = sharedState.plan[0];
     mockOpenAI.setAgent('StepBuilderAgent');
-    const stepCode = await StepBuilderAgent(
-      {
-        currentCode: '',
-        plan,
-        step: plan[0]
-      },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    const stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
     expect(typeof stepCode).toBe('string');
     expect(stepCode.length).toBeGreaterThan(0);
   });
@@ -63,20 +56,18 @@ describe('Agent Chain Integration', () => {
 
     // 1. GameDesignAgent should succeed
     mockOpenAI.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent(
-      { title: 'Test Game' },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    sharedState.title = 'Test Game';
+    const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
     expect(gameDef).toBeDefined();
 
     // 2. PlannerAgent should fail
     await expect(
-      PlannerAgent(gameDef, { logger, traceId, llmClient: failingMock })
+      PlannerAgent(sharedState, { logger, traceId, llmClient: failingMock })
     ).rejects.toThrow('Mock LLM failure');
 
     // 3. StepBuilderAgent should not be called
     const plan = [
-      { id: 1, label: 'Test Step' }
+      { id: 1, description: 'Test Step' }
     ];
     await expect(
       StepBuilderAgent(
@@ -91,19 +82,15 @@ describe('Agent Chain Integration', () => {
   it.skip('should maintain state between steps in the chain', async () => {
     // 1. Get game design
     mockOpenAI.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent(
-      { title: 'Test Game' },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    sharedState.title = 'Test Game';
+    const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
 
     // 2. Get plan
     mockOpenAI.setAgent('PlannerAgent');
-    const plan = await PlannerAgent(
-      gameDef,
-      { logger, traceId, llmClient: mockOpenAI }
-    );
+    const plan = await PlannerAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
 
     // 3. Execute first step
+    sharedState.step = sharedState.plan[0];
     mockOpenAI.setAgent('StepBuilderAgent');
     const firstStepCode = await StepBuilderAgent(
       {

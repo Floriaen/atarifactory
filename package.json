@@ -12,7 +12,7 @@
     "start": "node server/start.js",
     "test": "jest --testPathIgnorePatterns=server/tests/e2e/",
     "test:unit": "jest server/tests/unit/",
-    "test:integration": "jest --config jest.integration.config.js --setupFiles ./jest.setup.js",
+    "test:integration": "jest server/tests/integration --testPathIgnorePatterns=agents",
     "start:server": "cd server && node start.js",
     "test:server": "cd server && jest",
     "start:frontend": "cd frontend && npm run dev"

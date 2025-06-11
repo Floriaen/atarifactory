@@ -32,7 +32,7 @@ describe('PlannerAgent', () => {
       expect(result[0]).toEqual(
         expect.objectContaining({
           id: expect.any(Number),
-          label: expect.any(String)
+          description: expect.any(String)
         })
       );
     }
@@ -49,7 +49,7 @@ describe('PlannerAgent', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('id');
-    expect(result[0]).toHaveProperty('label');
+    expect(result[0]).toHaveProperty('description');
     
     // Check that sharedState was updated
     expect(sharedState.plan).toEqual(result);
@@ -67,7 +67,7 @@ describe('PlannerAgent', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty('id');
-    expect(result[0]).toHaveProperty('label');
+    expect(result[0]).toHaveProperty('description');
   });
 
   // (useRealLLM ? it : it.skip)('should return a valid plan from real OpenAI', async () => {
@@ -86,6 +86,6 @@ describe('PlannerAgent', () => {
   //   expect(Array.isArray(result)).toBe(true);
   //   expect(result.length).toBeGreaterThan(0);
   //   expect(result[0]).toHaveProperty('id');
-  //   expect(result[0]).toHaveProperty('label');
+  //   expect(result[0]).toHaveProperty('description');
   // });
 }); 

@@ -3,7 +3,7 @@
  * Input: SharedState
  * Required fields:
  * - gameDef: GameDefinition - The game definition from GameDesignAgent
- * Output: Array<{ id: number, label: string }>
+ * Output: Array<{ id: number, description: string }>
  *
  * Generates an ordered array of build steps for the game.
  */
@@ -61,8 +61,8 @@ async function PlannerAgent(sharedState, { logger, traceId, llmClient }) {
       if (typeof step.id !== 'number' || step.id <= 0) {
         throw new Error(`PlannerAgent: Invalid step.id at index ${index} - must be a positive number`);
       }
-      if (typeof step.label !== 'string' || step.label.trim() === '') {
-        throw new Error(`PlannerAgent: Invalid step.label at index ${index} - must be a non-empty string`);
+      if (typeof step.description !== 'string' || step.description.trim() === '') {
+        throw new Error(`PlannerAgent: Invalid step.description at index ${index} - must be a non-empty string`);
       }
     });
 

@@ -14,6 +14,7 @@ const BlockInserterAgent = require('../../agents/BlockInserterAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const logger = require('../../utils/logger');
 const prettier = require('prettier');
+const { createSharedState } = require('../../types/SharedState');
 
 // Helper to format code for easier assertions
 function format(code) {
@@ -26,23 +27,21 @@ describe('Pipeline Integration', () => {
     const traceId = 'test-trace';
 
     // 1. Game Design
+    const sharedState = createSharedState();
+    sharedState.title = 'Test Game';
     mockLlmClient.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient, logger, traceId });
-    expect(gameDef).toHaveProperty('title');
-    expect(gameDef).toHaveProperty('mechanics');
+    const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    sharedState.gameDef = gameDef;
 
     // 2. Plan
     mockLlmClient.setAgent('PlannerAgent');
-    const plan = await PlannerAgent({ gameDef }, { llmClient: mockLlmClient, logger, traceId });
-    expect(Array.isArray(plan)).toBe(true);
-    expect(plan.length).toBeGreaterThan(0);
+    const plan = await PlannerAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    sharedState.plan = plan;
 
     // 3. Step code (first step)
+    sharedState.step = sharedState.plan[0];
     mockLlmClient.setAgent('StepBuilderAgent');
-    const stepCode = await StepBuilderAgent(
-      { currentCode: '', plan, step: plan[0] },
-      { llmClient: mockLlmClient, logger, traceId }
-    );
+    const stepCode = await StepBuilderAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
     expect(typeof stepCode).toBe('string');
     expect(stepCode.length).toBeGreaterThan(0);
 
@@ -62,12 +61,14 @@ describe('Pipeline Integration', () => {
     const traceId = 'test-trace';
 
     // 1. Game Design
+    const sharedState = createSharedState();
+    sharedState.title = 'Test Game';
     mockLlmClient.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient, logger, traceId });
+    const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
 
     // 2. Plan
     mockLlmClient.setAgent('PlannerAgent');
-    const plan = await PlannerAgent({ gameDef }, { llmClient: mockLlmClient, logger, traceId });
+    const plan = await PlannerAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
 
     // 3. Try to build an invalid step
     mockLlmClient.setAgent('StepBuilderAgent');

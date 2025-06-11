@@ -21,7 +21,7 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
     const { currentCode, plan, step } = sharedState;
-    if (!currentCode) {
+    if (currentCode === undefined) {
       throw new Error('StepBuilderAgent: currentCode is required in sharedState');
     }
     if (!plan || !Array.isArray(plan)) {
