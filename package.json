@@ -13,12 +13,11 @@
     "test": "jest --testPathIgnorePatterns=server/tests/e2e/",
     "test:unit": "jest server/tests/unit/",
     "test:integration": "jest --config jest.integration.config.js --setupFiles ./jest.setup.js",
-    "start:server": "cd server && node index.js",
+    "start:server": "cd server && node start.js",
     "test:server": "cd server && jest",
     "start:frontend": "cd frontend && npm run dev"
   },
   "dependencies": {
-    "aicodertool": "^1.0.100",
     "ast-merge": "github:Floriaen/ast-merge",
     "ast-types": "^0.16.1",
     "cors": "^2.8.5",
