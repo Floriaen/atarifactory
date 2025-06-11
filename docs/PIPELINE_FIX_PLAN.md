@@ -49,9 +49,9 @@ The controller is not properly following the agent contract where each agent sho
 ### 3. Specific Agent Fixes
 
 #### PlannerAgent
-- [ ] Ensure it properly handles `sharedState.gameDef`
-- [ ] Validate plan array before returning
-- [ ] Update `sharedState.plan` with generated plan
+- [x] Ensure it properly handles `sharedState.gameDef`
+- [x] Validate plan array before returning
+- [x] Update `sharedState.plan` with generated plan
 
 #### StepFixerAgent
 - [ ] Initialize metadata if not present
