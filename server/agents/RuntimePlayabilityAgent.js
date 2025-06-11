@@ -26,6 +26,10 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
   let page;
   let tmpFile;
   try {
+    // Initialize metadata if it doesn't exist
+    if (!sharedState.metadata) {
+      sharedState.metadata = {};
+    }
     // Write code to a temp file
     const tmpDir = os.tmpdir();
     tmpFile = path.join(tmpDir, `game-${Date.now()}.js`);

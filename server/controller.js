@@ -11,6 +11,7 @@ const FeedbackAgent = require('./agents/FeedbackAgent');
 const logger = require('./utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const SmartOpenAI = require('./utils/SmartOpenAI');
+const { createSharedState } = require('./types/SharedState');
 let llmClient = null;
 try {
   if (process.env.OPENAI_API_KEY) {
@@ -32,39 +33,42 @@ async function runPipeline(title, onStatusUpdate) {
   const traceId = uuidv4();
   logger.info('Pipeline started', { traceId, title });
   try {
+    const sharedState = createSharedState();
+    
     // 1. GameDesignAgent
     onStatusUpdate && onStatusUpdate('Designing');
-    const gameDef = await GameDesignAgent({ title }, { logger, traceId, llmClient });
-    logger.info('GameDesignAgent output', { traceId, gameDef });
-    onStatusUpdate && onStatusUpdate('Designing', { status: 'done', gameDef });
+    sharedState.gameDef = await GameDesignAgent({ title }, { logger, traceId, llmClient });
+    logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
+    onStatusUpdate && onStatusUpdate('Designing', { status: 'done', gameDef: sharedState.gameDef });
 
     // 2. PlannerAgent
     onStatusUpdate && onStatusUpdate('Planning');
-    const plan = await PlannerAgent(gameDef, { logger, traceId, llmClient });
-    logger.info('PlannerAgent output', { traceId, plan });
-    onStatusUpdate && onStatusUpdate('Planning', { status: 'done', plan });
+    sharedState.plan = await PlannerAgent(sharedState, { logger, traceId, llmClient });
+    logger.info('PlannerAgent output', { traceId, plan: sharedState.plan });
+    onStatusUpdate && onStatusUpdate('Planning', { status: 'done', plan: sharedState.plan });
 
     // 3. Step execution cycle
-    let currentCode = '';
     const STATIC_FIX_RETRY_LIMIT = 3;
     let stepIndex = 0;
-    for (const step of plan) {
+    for (const step of sharedState.plan) {
       stepIndex++;
-      onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: plan.length, label: step.label });
+      sharedState.currentStep = step;
+      onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: sharedState.plan.length, label: step.label });
       logger.info('Step execution', { traceId, step });
       // StepBuilderAgent
-      let stepCode = await StepBuilderAgent({ currentCode, plan, step }, { logger, traceId, llmClient });
+      let stepCode = await StepBuilderAgent({ currentCode: sharedState.currentCode, plan: sharedState.plan, step }, { logger, traceId, llmClient });
       logger.info('StepBuilderAgent output', { traceId, step, stepCode });
       // Repeat-until-clean static validation loop
-      let errors = StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId });
+      let errors = StaticCheckerAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
       logger.info('StaticCheckerAgent output', { traceId, step, errors });
       let retryCount = 0;
       while (errors.length > 0 && retryCount < STATIC_FIX_RETRY_LIMIT) {
         onStatusUpdate && onStatusUpdate('Fixing', { step: stepIndex, error: errors, retry: retryCount });
         logger.warn('Static check failed, calling StepFixerAgent', { traceId, step, errors, retryCount });
-        stepCode = await StepFixerAgent({ currentCode, step, errorList: errors }, { logger, traceId, llmClient });
+        sharedState.errorList = errors;
+        stepCode = await StepFixerAgent(sharedState, { logger, traceId, llmClient });
         logger.info('StepFixerAgent output', { traceId, step, stepCode, retryCount });
-        errors = StaticCheckerAgent({ currentCode, stepCode }, { logger, traceId });
+        errors = StaticCheckerAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
         logger.info('StaticCheckerAgent output after fix', { traceId, step, errors, retryCount });
         retryCount++;
       }
@@ -74,26 +78,26 @@ async function runPipeline(title, onStatusUpdate) {
         throw new Error(`Static validation failed for step ${JSON.stringify(step)} after ${STATIC_FIX_RETRY_LIMIT} retries: ${errors.join('; ')}`);
       }
       // BlockInserterAgent
-      currentCode = BlockInserterAgent({ currentCode, stepCode }, { logger, traceId });
-      logger.info('BlockInserterAgent output', { traceId, step, currentCode });
+      sharedState.currentCode = BlockInserterAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
+      logger.info('BlockInserterAgent output', { traceId, step, currentCode: sharedState.currentCode });
       onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, status: 'done', label: step.label });
     }
 
     // 4. SyntaxSanityAgent
     onStatusUpdate && onStatusUpdate('SyntaxCheck');
-    const syntaxResult = SyntaxSanityAgent({ code: currentCode }, { logger, traceId });
+    const syntaxResult = SyntaxSanityAgent({ code: sharedState.currentCode }, { logger, traceId });
     logger.info('SyntaxSanityAgent output', { traceId, syntaxResult });
     onStatusUpdate && onStatusUpdate('SyntaxCheck', { status: 'done', syntaxResult });
 
     // 5. RuntimePlayabilityAgent
     onStatusUpdate && onStatusUpdate('RuntimeCheck');
-    const runtimeResult = await RuntimePlayabilityAgent({ code: currentCode }, { logger, traceId });
+    const runtimeResult = await RuntimePlayabilityAgent(sharedState, { logger, traceId });
     logger.info('RuntimePlayabilityAgent output', { traceId, runtimeResult });
     onStatusUpdate && onStatusUpdate('RuntimeCheck', { status: 'done', runtimeResult });
 
     // 6. FeedbackAgent
     onStatusUpdate && onStatusUpdate('Feedback');
-    const feedback = FeedbackAgent({ runtimeLogs: runtimeResult, stepId: plan.length }, { logger, traceId, llmClient });
+    const feedback = FeedbackAgent(sharedState, { logger, traceId, llmClient });
     logger.info('FeedbackAgent output', { traceId, feedback });
     onStatusUpdate && onStatusUpdate('Feedback', { status: 'done', feedback });
 
@@ -101,7 +105,7 @@ async function runPipeline(title, onStatusUpdate) {
 
     // --- Save generated game to disk and update manifest ---
     const gameId = uuidv4();
-    const gameName = gameDef.title || title;
+    const gameName = sharedState.gameDef.title || title;
     const gameDate = new Date().toISOString();
     const fs = require('fs');
     const path = require('path');
@@ -126,7 +130,7 @@ async function runPipeline(title, onStatusUpdate) {
     }
     try {
       // Remove all code block markers from currentCode before saving
-      const cleanCode = currentCode.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+      const cleanCode = sharedState.currentCode.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
     } catch (err) {
       logger.error('Failed to write game.js', { gameId, gameFolder, error: err });
@@ -148,9 +152,9 @@ async function runPipeline(title, onStatusUpdate) {
     // Emit final SSE event if callback
     onStatusUpdate && onStatusUpdate('Done', { game: gameMeta });
     return {
-      gameDef,
-      plan,
-      code: currentCode,
+      gameDef: sharedState.gameDef,
+      plan: sharedState.plan,
+      code: sharedState.currentCode,
       syntaxResult,
       runtimeResult,
       feedback,

@@ -4,7 +4,7 @@
 Some LLMs (like GPT-4 with browsing, or models with retrieval plugins) can check the latest docs and adapt to new APIs.
 
 In the future, you could prompt the LLM:
-> “Check the latest Phaser 3 documentation and generate a game using only supported APIs.”
+> "Check the latest Phaser 3 documentation and generate a game using only supported APIs."
 
 This would make explicit instructions less necessary.
 
@@ -24,3 +24,9 @@ You could automate prompt updates by scraping the latest docs and feeding them t
 ## Future Improvements
 
 - Consider switching the codebase to ESM (add "type": "module" to package.json) for better compatibility with modern JS tools and libraries, and to simplify usage of ESM-only dependencies. 
+
+- Refactor SharedState to use proper class-based approach:
+  - Convert `createSharedState()` function to a proper `SharedState` class
+  - Add methods for state management and validation
+  - Improve type safety and encapsulation
+  - Make the state structure more explicit and maintainable 
