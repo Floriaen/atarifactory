@@ -27,8 +27,8 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     if (!plan || !Array.isArray(plan)) {
       throw new Error('StepBuilderAgent: plan array is required in sharedState');
     }
-    if (!step || !step.id || !step.label) {
-      throw new Error('StepBuilderAgent: step with id and label is required in sharedState');
+    if (!step || !step.id || !step.description) {
+      throw new Error('StepBuilderAgent: step with id and description is required in sharedState');
     }
 
     logger.info('StepBuilderAgent called', { traceId, step });
@@ -50,7 +50,7 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     const prompt = promptTemplate
       .replace('{{currentCode}}', currentCode)
       .replace('{{plan}}', JSON.stringify(plan, null, 2))
-      .replace(/{{label}}/g, step.label);
+      .replace(/{{label}}/g, step.description);
 
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
     logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });

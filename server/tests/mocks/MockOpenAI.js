@@ -98,6 +98,22 @@ class MockOpenAI {
           suggestion: 'Mock: Try fixing the last step.'
         };
       case 'StaticCheckerAgent':
+        console.log('StaticCheckerAgent prompt:', JSON.stringify(prompt));
+        if (prompt.match(/^Analyze this code for static errors:\n\n$/)) {
+          return [];
+        }
+        if (prompt.includes('function update() {')) {
+          return ['Syntax error: Missing closing brace'];
+        }
+        if (prompt.includes('function update() {}') && prompt.includes('console.log(x);')) {
+          return ['Undeclared variable: x'];
+        }
+        if (
+          prompt.includes('function update() {}') &&
+          prompt.split('function update() {}').length > 2
+        ) {
+          return ['Duplicate declaration: update'];
+        }
         return ['No errors'];
       case 'SyntaxSanityAgent':
         return { valid: true };

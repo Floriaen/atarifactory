@@ -18,8 +18,9 @@ mockOpenAI.setAgent('FeedbackAgent');
 describe('FeedbackAgent', () => {
   it('should return an object with retryTarget and suggestion (MockOpenAI)', async () => {
     const sharedState = createSharedState();
-    sharedState.metadata.runtimePlayability = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
-    sharedState.step = { id: 1, label: 'Test' };
+    sharedState.runtimeResults = { canvasActive: false, inputResponsive: false, playerMoved: false, winConditionReachable: false };
+    const Step = require('../../types/Step');
+    sharedState.currentStep = new Step('1', 'Test step', 'feedback');
     const result = await FeedbackAgent(sharedState, { logger, traceId: 'test', llmClient: mockOpenAI });
     expect(result).toHaveProperty('retryTarget');
     expect(result).toHaveProperty('suggestion');

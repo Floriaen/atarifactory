@@ -18,10 +18,10 @@ async function StaticCheckerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
     const { currentCode, stepCode } = sharedState;
-    if (!currentCode) {
+    if (!currentCode && currentCode !== '') {
       throw new Error('StaticCheckerAgent: currentCode is required in sharedState');
     }
-    if (!stepCode) {
+    if (!stepCode && stepCode !== '') {
       throw new Error('StaticCheckerAgent: stepCode is required in sharedState');
     }
     if (!llmClient) {
@@ -30,18 +30,22 @@ async function StaticCheckerAgent(sharedState, { logger, traceId, llmClient }) {
 
     logger.info('StaticCheckerAgent called', { traceId });
     
-    // Combine code for analysis
-    const combinedCode = `${currentCode}\n${stepCode}`;
+    // Combine current code and step code for analysis
+    const combinedCode = `${currentCode}\n${stepCode}`.trim();
     
     // Get static analysis from LLM
-    const errors = await llmClient.analyzeCode(combinedCode);
-    
-    // Update sharedState
-    sharedState.staticAnalysis = errors;
-    sharedState.metadata.lastUpdate = new Date();
-    
-    logger.info('StaticCheckerAgent output', { traceId, errorCount: errors.length });
-    return errors;
+    const analysis = await llmClient.chatCompletion({
+      prompt: `Analyze this code for static errors:\n\n${combinedCode}`,
+      outputType: 'json-array'
+    });
+
+    if (Array.isArray(analysis)) {
+      sharedState.errors = analysis;
+      sharedState.metadata.lastUpdate = new Date();
+      logger.info('StaticCheckerAgent output', { traceId, errorCount: analysis.length });
+      return analysis;
+    }
+    return analysis;
   } catch (error) {
     logger.error('Error in StaticCheckerAgent:', error);
     throw error;

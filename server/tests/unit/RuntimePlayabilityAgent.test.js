@@ -27,7 +27,7 @@ describe('RuntimePlayabilityAgent', () => {
     expect(typeof result.playerMoved).toBe('boolean');
     expect(typeof result.winConditionReachable).toBe('boolean');
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-    expect(sharedState.metadata.runtimePlayability).toBe(result);
+    expect(sharedState.runtimeResults).toBe(result);
   });
   // More tests will be added as the agent is implemented
   // Placeholder for real LLM test
@@ -48,7 +48,7 @@ describe('RuntimePlayabilityAgent', () => {
     expect(result.canvasActive).toBe(true);
     expect(result.inputResponsive).toBe(true);
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-    expect(sharedState.metadata.runtimePlayability).toBe(result);
+    expect(sharedState.runtimeResults).toBe(result);
   });
   it('should detect player movement in response to input', async () => {
     const sharedState = createSharedState();
@@ -68,7 +68,7 @@ describe('RuntimePlayabilityAgent', () => {
     expect(result.inputResponsive).toBe(true);
     expect(result.playerMoved).toBe(true);
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-    expect(sharedState.metadata.runtimePlayability).toBe(result);
+    expect(sharedState.runtimeResults).toBe(result);
   });
   it('should detect win condition after simulated input', async () => {
     const sharedState = createSharedState();
@@ -93,6 +93,6 @@ describe('RuntimePlayabilityAgent', () => {
     expect(result.playerMoved).toBe(true);
     expect(result.winConditionReachable).toBe(true);
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
-    expect(sharedState.metadata.runtimePlayability).toBe(result);
+    expect(sharedState.runtimeResults).toBe(result);
   });
 }); 

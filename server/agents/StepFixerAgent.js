@@ -3,9 +3,9 @@
  * Input: SharedState
  * Required fields:
  * - currentCode: string - The current game code
- * - step: {id: number, label: string} - The current step being fixed
- * - errorList: Array<string> - List of errors to fix
- * Output: string (corrected stepCode)
+ * - step: Step - The current step being processed
+ * - errors: Array<string> - List of errors to fix
+ * Output: string (fixed step code)
  *
  * Fixes the code for the current step based on errors using LLM.
  */
@@ -13,84 +13,61 @@
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 
+const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
-const { extractJsCodeBlocks } = require('../utils/formatter');
 
 async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
-    const { currentCode, step, errorList } = sharedState;
+    const { currentCode, step, errors } = sharedState;
     if (!currentCode) {
       throw new Error('StepFixerAgent: currentCode is required in sharedState');
     }
-    if (!step || !step.id || !step.label) {
-      throw new Error('StepFixerAgent: step with id and label is required in sharedState');
+    if (!step) {
+      throw new Error('StepFixerAgent: step is required in sharedState');
     }
-    if (!errorList || !Array.isArray(errorList)) {
-      throw new Error('StepFixerAgent: errorList array is required in sharedState');
+    if (!errors || !Array.isArray(errors)) {
+      throw new Error('StepFixerAgent: errors array is required in sharedState');
+    }
+    if (!llmClient) {
+      throw new Error('StepFixerAgent: llmClient is required');
     }
 
-    // Validate error messages
-    errorList.forEach((error, index) => {
-      if (typeof error !== 'string' || error.trim() === '') {
-        throw new Error(`StepFixerAgent: Invalid error message at index ${index} - must be a non-empty string`);
-      }
+    // Log each error for debugging
+    errors.forEach((error, index) => {
+      logger.debug(`Error ${index + 1}:`, { error });
     });
 
-    logger.info('StepFixerAgent called', { traceId, step, errorCount: errorList.length });
-
-    if (!llmClient) {
-      logger.error('StepFixerAgent: llmClient is required but was not provided', { traceId });
-      throw new Error('StepFixerAgent: llmClient is required but was not provided');
-    }
-
+    logger.info('StepFixerAgent called', { traceId, step, errorCount: errors.length });
+    
+    // Read the prompt template
     const promptPath = path.join(__dirname, 'prompts', 'StepFixerAgent.prompt.md');
-    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
-    const prompt = promptTemplate
+    let promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    
+    // Replace placeholders in the prompt
+    promptTemplate = promptTemplate
       .replace('{{currentCode}}', currentCode)
       .replace('{{step}}', JSON.stringify(step, null, 2))
-      .replace('{{errorList}}', JSON.stringify(errorList, null, 2));
-
-    const correctedCode = await llmClient.chatCompletion({ prompt, outputType: 'string' });
-    logger.info('StepFixerAgent LLM output received', { traceId, outputLength: correctedCode.length });
-
-    // Validate corrected code
-    if (!correctedCode || typeof correctedCode !== 'string' || correctedCode.trim() === '') {
-      throw new Error('StepFixerAgent: LLM returned empty or invalid code');
-    }
-
-    // Use markdown parser to extract JS code blocks
-    const cleanCode = extractJsCodeBlocks(correctedCode);
-    if (!cleanCode || cleanCode.trim() === '') {
-      throw new Error('StepFixerAgent: No valid JavaScript code blocks found in LLM output');
-    }
-
+      .replace('{{errors}}', JSON.stringify(errors, null, 2));
+    
+    // Get fixed code from LLM
+    const fixedCode = await llmClient.chatCompletion({ prompt: promptTemplate, outputType: 'string' });
+    
     // Update sharedState
-    sharedState.stepCode = cleanCode;
+    sharedState.stepCode = fixedCode;
     sharedState.metadata.lastUpdate = new Date();
-    sharedState.metadata.lastFix = {
-      stepId: step.id,
-      errorCount: errorList.length,
-      timestamp: new Date()
-    };
-
-    logger.info('StepFixerAgent completed', { 
+    
+    logger.info('StepFixerAgent output', { 
       traceId, 
-      stepId: step.id,
-      codeLength: cleanCode.length,
-      errorCount: errorList.length
+      step, 
+      errorCount: errors.length,
+      fixedCodeLength: fixedCode.length 
     });
-
-    return cleanCode;
-  } catch (err) {
-    logger.error('StepFixerAgent error', { 
-      traceId, 
-      error: err, 
-      step: sharedState.step,
-      errorCount: sharedState.errorList?.length
-    });
-    throw err;
+    return fixedCode;
+  } catch (error) {
+    logger.error('Error in StepFixerAgent:', error);
+    throw error;
   }
 }
 

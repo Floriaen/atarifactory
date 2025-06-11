@@ -58,19 +58,19 @@ The controller is not properly following the agent contract where each agent sho
 - [x] Update `sharedState.stepCode` with fixed code
 
 #### FeedbackAgent
-- [ ] Add proper checks for `runtimePlayability`
-- [ ] Handle missing runtime results gracefully
-- [ ] Update `sharedState.feedback` with analysis
+- [x] Add proper checks for `runtimePlayability`
+- [x] Handle missing runtime results gracefully
+- [x] Update `sharedState.feedback` with analysis
 
 #### BlockInserterAgent
-- [ ] Fix code merging logic
-- [ ] Handle code block extraction properly
-- [ ] Update `sharedState.currentCode` with merged code
+- [x] Fix code merging logic
+- [x] Handle code block extraction properly
+- [x] Update `sharedState.currentCode` with merged code
 
 #### StaticCheckerAgent
-- [ ] Improve error reporting
-- [ ] Add more detailed syntax error messages
-- [ ] Update `sharedState.errorList` with validation results
+- [x] Improve error reporting
+- [x] Add more detailed syntax error messages
+- [x] Update `sharedState.errorList` with validation results
 
 ### 4. Testing Plan
 

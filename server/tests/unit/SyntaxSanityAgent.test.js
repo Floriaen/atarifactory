@@ -1,44 +1,30 @@
 // Logging: By default, logs are suppressed for clean test output. Set TEST_LOGS=1 to print logs to the terminal for debugging. Logs are not persisted to a file by default.
 // To run real LLM tests, set both TEST_LLM=1 and OPENAI_API_KEY=your-key.
-const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
-const logger = process.env.TEST_LOGS ? console : mockLogger;
 const SyntaxSanityAgent = require('../../agents/SyntaxSanityAgent');
-const MockOpenAI = require('../mocks/MockOpenAI');
-const { createSharedState } = require('../../types/SharedState');
-const OpenAI = (() => {
-  try {
-    return require('openai');
-  } catch {
-    return null;
-  }
-})();
-const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
-describe('SyntaxSanityAgent', () => {
-  it('should return an object with a boolean valid property (MockOpenAI)', () => {
-    const sharedState = createSharedState();
-    sharedState.currentCode = 'function update() {}';
-    const result = SyntaxSanityAgent(sharedState, { logger: logger, traceId: 'test-trace' });
-    expect(typeof result).toBe('object');
-    expect(typeof result.valid).toBe('boolean');
-    if (result.error !== undefined) {
-      expect(typeof result.error).toBe('string');
-    }
-  });
+const createSharedState = require('../../types/SharedState').createSharedState;
 
+// Suppress logs by default unless TEST_LOGS=1
+const logger = {
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+};
+
+describe('SyntaxSanityAgent', () => {
   it('should return valid: true for syntactically correct code', () => {
     const sharedState = createSharedState();
     sharedState.currentCode = 'function foo() { return 42; }';
-    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'valid' });
-    expect(result.valid).toBe(true);
-    expect(result.error).toBeUndefined();
+    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'test' });
+    expect(result).toEqual({ valid: true });
   });
 
-  it('should return valid: false and an error for syntax errors', () => {
+  it('should return valid: false and error for invalid code', () => {
     const sharedState = createSharedState();
-    sharedState.currentCode = 'function () {';
-    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'syntax' });
+    sharedState.currentCode = 'function foo( {';
+    const result = SyntaxSanityAgent(sharedState, { logger, traceId: 'test' });
     expect(result.valid).toBe(false);
-    expect(typeof result.error).toBe('string');
+    expect(result.error).toBeDefined();
   });
 
   it('should return valid: true for code with runtime errors (only syntax checked)', () => {

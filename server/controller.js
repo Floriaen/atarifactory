@@ -66,7 +66,7 @@ async function runPipeline(title, onStatusUpdate) {
       while (errors.length > 0 && retryCount < STATIC_FIX_RETRY_LIMIT) {
         onStatusUpdate && onStatusUpdate('Fixing', { step: stepIndex, error: errors, retry: retryCount });
         logger.warn('Static check failed, calling StepFixerAgent', { traceId, step, errors, retryCount });
-        sharedState.errorList = errors;
+        sharedState.errors = errors;
         stepCode = await StepFixerAgent(sharedState, { logger, traceId, llmClient });
         logger.info('StepFixerAgent output', { traceId, step, stepCode, retryCount });
         sharedState.stepCode = stepCode;

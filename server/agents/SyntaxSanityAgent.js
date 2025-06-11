@@ -1,43 +1,20 @@
 /**
  * SyntaxSanityAgent
  * Input: SharedState
- * Required fields:
- * - currentCode: string - The current game code
- * Output: { isValid: boolean, errors: Array<string> }
+ * Output: { valid: boolean, error?: string }
  *
- * Performs basic syntax validation on the code.
+ * Checks if the code is syntactically valid using new Function(code).
  */
-// IMPORTANT: This agent must receive llmClient via dependency injection.
-// Never import or instantiate OpenAI/SmartOpenAI directly in this file.
-// See 'LLM Client & Dependency Injection Guidelines' in README.md.
-
-const logger = require('../utils/logger');
-
-async function SyntaxSanityAgent(sharedState, { logger, traceId, llmClient }) {
+// IMPORTANT: This agent must NOT use LLM for syntax checking.
+function SyntaxSanityAgent(sharedState, { logger, traceId }) {
+  logger.info('SyntaxSanityAgent called', { traceId });
   try {
-    // Extract and validate required fields
-    const { currentCode } = sharedState;
-    if (!currentCode) {
-      throw new Error('SyntaxSanityAgent: currentCode is required in sharedState');
-    }
-    if (!llmClient) {
-      throw new Error('SyntaxSanityAgent: llmClient is required');
-    }
-
-    logger.info('SyntaxSanityAgent called', { traceId });
-    
-    // Get syntax validation from LLM
-    const result = await llmClient.validateSyntax(currentCode);
-    
-    // Update sharedState
-    sharedState.syntaxValidation = result;
-    sharedState.metadata.lastUpdate = new Date();
-    
-    logger.info('SyntaxSanityAgent output', { traceId, isValid: result.isValid });
-    return result;
-  } catch (error) {
-    logger.error('Error in SyntaxSanityAgent:', error);
-    throw error;
+    // Real syntax check using new Function
+    new Function(sharedState.currentCode);
+    return { valid: true };
+  } catch (err) {
+    logger.error('SyntaxSanityAgent syntax error', { traceId, error: err });
+    return { valid: false, error: err.message };
   }
 }
 

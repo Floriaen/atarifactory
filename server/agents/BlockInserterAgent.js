@@ -20,10 +20,10 @@ async function BlockInserterAgent(sharedState, { logger, traceId }) {
   try {
     // Extract and validate required fields
     const { currentCode, stepCode } = sharedState;
-    if (!currentCode) {
+    if (currentCode === undefined || currentCode === null) {
       throw new Error('BlockInserterAgent: currentCode is required in sharedState');
     }
-    if (!stepCode) {
+    if (stepCode === undefined || stepCode === null) {
       throw new Error('BlockInserterAgent: stepCode is required in sharedState');
     }
 
@@ -50,7 +50,16 @@ async function BlockInserterAgent(sharedState, { logger, traceId }) {
     
     // Update sharedState
     sharedState.currentCode = formattedCode;
-    sharedState.metadata.lastUpdate = new Date();
+    
+    // Initialize metadata if it doesn't exist
+    if (!sharedState.metadata) {
+      sharedState.metadata = {
+        startTime: new Date(),
+        lastUpdate: new Date()
+      };
+    } else {
+      sharedState.metadata.lastUpdate = new Date();
+    }
     
     logger.info('BlockInserterAgent output', { traceId, formattedCode });
     return formattedCode;

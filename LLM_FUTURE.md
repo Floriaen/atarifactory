@@ -29,4 +29,11 @@ You could automate prompt updates by scraping the latest docs and feeding them t
   - Convert `createSharedState()` function to a proper `SharedState` class
   - Add methods for state management and validation
   - Improve type safety and encapsulation
-  - Make the state structure more explicit and maintainable 
+  - Make the state structure more explicit and maintainable
+
+- Create dedicated type for RuntimePlayability:
+  - Create `server/types/RuntimePlayability.js` with proper class definition
+  - Add validation methods and type safety
+  - Update RuntimePlayabilityAgent and FeedbackAgent to use the new type
+  - Update all related tests and mocks
+  - This will improve type safety and make the runtime playability results more maintainable 

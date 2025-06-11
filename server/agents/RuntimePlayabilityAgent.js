@@ -133,7 +133,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
     };
 
     sharedState.metadata.lastUpdate = new Date();
-    sharedState.metadata.runtimePlayability = result;
+    sharedState.runtimeResults = result;
 
     return result;
   } catch (err) {
@@ -146,7 +146,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
       log: err.message
     };
     sharedState.metadata.lastUpdate = new Date();
-    sharedState.metadata.runtimePlayability = result;
+    sharedState.runtimeResults = result;
     return result;
   } finally {
     if (page) await page.close().catch(() => {});
