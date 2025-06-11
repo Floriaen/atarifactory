@@ -3,7 +3,7 @@
  * Input: SharedState
  * Required fields:
  * - currentCode: string - The current game code
- * - step: Step - The current step being processed
+ * - currentStep: Step - The current step being processed
  * - errors: Array<string> - List of errors to fix
  * Output: string (fixed step code)
  *
@@ -20,12 +20,12 @@ const path = require('path');
 async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
-    const { currentCode, step, errors } = sharedState;
+    const { currentCode, currentStep, errors } = sharedState;
     if (!currentCode) {
       throw new Error('StepFixerAgent: currentCode is required in sharedState');
     }
-    if (!step) {
-      throw new Error('StepFixerAgent: step is required in sharedState');
+    if (!currentStep) {
+      throw new Error('StepFixerAgent: currentStep is required in sharedState');
     }
     if (!errors || !Array.isArray(errors)) {
       throw new Error('StepFixerAgent: errors array is required in sharedState');
@@ -39,7 +39,7 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
       logger.debug(`Error ${index + 1}:`, { error });
     });
 
-    logger.info('StepFixerAgent called', { traceId, step, errorCount: errors.length });
+    logger.info('StepFixerAgent called', { traceId, currentStep, errorCount: errors.length });
     
     // Read the prompt template
     const promptPath = path.join(__dirname, 'prompts', 'StepFixerAgent.prompt.md');
@@ -48,11 +48,20 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
     // Replace placeholders in the prompt
     promptTemplate = promptTemplate
       .replace('{{currentCode}}', currentCode)
-      .replace('{{step}}', JSON.stringify(step, null, 2))
-      .replace('{{errors}}', JSON.stringify(errors, null, 2));
+      .replace('{{step}}', JSON.stringify(currentStep, null, 2))
+      .replace('{{errorList}}', JSON.stringify(errors, null, 2));
     
     // Get fixed code from LLM
-    const fixedCode = await llmClient.chatCompletion({ prompt: promptTemplate, outputType: 'string' });
+    const fixedCode = await llmClient.chatCompletion({ 
+      prompt: promptTemplate, 
+      outputType: 'string',
+      temperature: 0.1 // Lower temperature for more deterministic fixes
+    });
+    
+    // Validate that we got actual code back
+    if (!fixedCode || fixedCode.trim().length === 0) {
+      throw new Error('StepFixerAgent: LLM returned empty code');
+    }
     
     // Update sharedState
     sharedState.stepCode = fixedCode;
@@ -60,7 +69,7 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
     
     logger.info('StepFixerAgent output', { 
       traceId, 
-      step, 
+      currentStep, 
       errorCount: errors.length,
       fixedCodeLength: fixedCode.length 
     });

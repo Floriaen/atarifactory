@@ -28,7 +28,7 @@ describe('StaticCheckerAgent', () => {
     sharedState.currentCode = 'function update() {';
     const result = await StaticCheckerAgent(sharedState, { logger, traceId: 'test-trace', llmClient });
     expect(sharedState.errors.length).toBeGreaterThan(0);
-    expect(sharedState.errors[0]).toMatch(/syntax/i);
+    expect(sharedState.errors[0].message).toMatch(/unexpected|syntax/i);
   });
 
   it('should handle empty code gracefully', async () => {

@@ -24,7 +24,7 @@ describe('StepFixerAgent', () => {
   it('should return a string (corrected stepCode) (MockOpenAI)', async () => {
     const sharedState = createSharedState();
     sharedState.currentCode = 'function update() {}';
-    sharedState.step = { id: 2, label: 'Add player' };
+    sharedState.currentStep = { id: 2, label: 'Add player' };
     sharedState.errors = ['ReferenceError'];
     const mockOpenAI = new MockOpenAI();
     mockOpenAI.setAgent('StepFixerAgent');
@@ -37,7 +37,7 @@ describe('StepFixerAgent', () => {
   // (useRealLLM ? it : it.skip)('should return a corrected stepCode from real OpenAI', async () => {
   //   const sharedState = createSharedState();
   //   sharedState.currentCode = 'function update() {}';
-  //   sharedState.step = { id: 2, label: 'Add player' };
+  //   sharedState.currentStep = { id: 2, label: 'Add player' };
   //   sharedState.errorList = ['ReferenceError'];
   //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   //   const result = await StepFixerAgent(sharedState, { logger, traceId: 'real-openai-test', llmClient: openai });
@@ -58,7 +58,7 @@ describe('StepFixerAgent', () => {
 function setupTestState() {
   const sharedState = createSharedState();
   sharedState.currentCode = 'function update() { player.x += 5; }';
-  sharedState.step = new Step('step1', 'Update player movement', 'code');
+  sharedState.currentStep = new Step('step1', 'Update player movement', 'code');
   sharedState.errors = ['Syntax error: Missing closing brace'];
   
   const llmClient = new MockOpenAI();
