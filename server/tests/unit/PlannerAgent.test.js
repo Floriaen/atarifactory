@@ -13,9 +13,6 @@ const OpenAI = (() => {
 })();
 
 const useRealLLM = process.env.TEST_LLM === '1' && process.env.OPENAI_API_KEY && OpenAI;
-
-jest.setTimeout(20000);
-
 describe('PlannerAgent', () => {
   const mockGameDef = {
     title: 'Test Game',

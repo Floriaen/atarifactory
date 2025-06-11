@@ -51,6 +51,78 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 
 **All contributors must read and follow these guidelines.**
 
+## Running the Server
+
+- Navigate to the `server` directory:
+
+  ```bash
+  cd server
+  ```
+
+- Start the server:
+
+  ```bash
+  node index.js
+  ```
+
+- Alternatively, from the root directory, you can run:
+
+  ```bash
+  npm run start:server
+  ```
+
+## Running Tests
+
+- Tests are located in the `server/tests` directory and are intended for the server code only.
+
+- To run tests, navigate to the `server` directory and run:
+
+  ```bash
+  npm test
+  ```
+
+- Alternatively, from the root directory, you can run:
+
+  ```bash
+  npm run test:server
+  ```
+
+- The Jest configuration is located in the `server` directory and loads environment variables from `server/.env`.
+
+- End-to-end tests (`e2e`) are currently excluded from the default test runs.
+
+## Running the Frontend
+
+- Navigate to the `frontend` directory:
+
+  ```bash
+  cd frontend
+  ```
+
+- Install dependencies if not already done:
+
+  ```bash
+  npm install
+  ```
+
+- Start the frontend development server:
+
+  ```bash
+  npm run dev
+  ```
+
+- Alternatively, from the root directory, you can run:
+
+  ```bash
+  npm run start:frontend
+  ```
+
+## Environment Variables
+
+- Environment variables for the server are stored in `server/.env`.
+
+- Ensure to set `OPENAI_API_KEY` in `server/.env` for tests and server functionality that require it.
+
 ## Test Logging Mechanism
 
 By default, all agent tests suppress logs for clean test output. To enable logs (for debugging, LLM prompt inspection, etc.), run your tests with:
@@ -79,3 +151,12 @@ Example commands:
 | Mock + logs  | TEST_LOGS=1            | MockSmartOpenAI  | Console   | TEST_LOGS=1 npx jest                                 |
 | Real LLM     | TEST_LLM=1 + OPENAI_API_KEY | SmartOpenAI      | Off       | TEST_LLM=1 OPENAI_API_KEY=sk-... npx jest            |
 | Real LLM+Log | TEST_LLM=1 + OPENAI_API_KEY + TEST_LOGS=1 | SmartOpenAI | Console   | TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx jest | 
+
+## Summary
+
+- Server and tests are isolated in the `server` directory.
+- Frontend is isolated in the `frontend` directory.
+- Root directory scripts provide convenient commands to run server, tests, and frontend.
+- Jest configuration and environment loading are handled within the `server` directory.
+
+This setup ensures clear separation of concerns and consistent workflows.
