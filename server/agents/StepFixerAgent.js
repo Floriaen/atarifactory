@@ -31,7 +31,14 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
       throw new Error('StepFixerAgent: errorList array is required in sharedState');
     }
 
-    logger.info('StepFixerAgent called', { traceId, step, errorList });
+    // Validate error messages
+    errorList.forEach((error, index) => {
+      if (typeof error !== 'string' || error.trim() === '') {
+        throw new Error(`StepFixerAgent: Invalid error message at index ${index} - must be a non-empty string`);
+      }
+    });
+
+    logger.info('StepFixerAgent called', { traceId, step, errorCount: errorList.length });
 
     if (!llmClient) {
       logger.error('StepFixerAgent: llmClient is required but was not provided', { traceId });
@@ -46,15 +53,43 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
       .replace('{{errorList}}', JSON.stringify(errorList, null, 2));
 
     const correctedCode = await llmClient.chatCompletion({ prompt, outputType: 'string' });
-    logger.info('StepFixerAgent LLM output', { traceId, correctedCode });
+    logger.info('StepFixerAgent LLM output received', { traceId, outputLength: correctedCode.length });
+
+    // Validate corrected code
+    if (!correctedCode || typeof correctedCode !== 'string' || correctedCode.trim() === '') {
+      throw new Error('StepFixerAgent: LLM returned empty or invalid code');
+    }
 
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(correctedCode);
+    if (!cleanCode || cleanCode.trim() === '') {
+      throw new Error('StepFixerAgent: No valid JavaScript code blocks found in LLM output');
+    }
+
+    // Update sharedState
     sharedState.stepCode = cleanCode;
     sharedState.metadata.lastUpdate = new Date();
+    sharedState.metadata.lastFix = {
+      stepId: step.id,
+      errorCount: errorList.length,
+      timestamp: new Date()
+    };
+
+    logger.info('StepFixerAgent completed', { 
+      traceId, 
+      stepId: step.id,
+      codeLength: cleanCode.length,
+      errorCount: errorList.length
+    });
+
     return cleanCode;
   } catch (err) {
-    logger.error('StepFixerAgent error', { traceId, error: err, step: sharedState.step });
+    logger.error('StepFixerAgent error', { 
+      traceId, 
+      error: err, 
+      step: sharedState.step,
+      errorCount: sharedState.errorList?.length
+    });
     throw err;
   }
 }

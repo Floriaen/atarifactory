@@ -54,9 +54,8 @@ The controller is not properly following the agent contract where each agent sho
 - [x] Update `sharedState.plan` with generated plan
 
 #### StepFixerAgent
-- [ ] Initialize metadata if not present
-- [ ] Properly handle error list
-- [ ] Update `sharedState.stepCode` with fixed code
+- [x] Properly handle error list
+- [x] Update `sharedState.stepCode` with fixed code
 
 #### FeedbackAgent
 - [ ] Add proper checks for `runtimePlayability`
