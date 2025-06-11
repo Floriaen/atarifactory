@@ -41,10 +41,10 @@ The controller is not properly following the agent contract where each agent sho
 
 ### 2. Agent Contract Enforcement
 
-- [ ] Each agent should receive the full `sharedState` object
-- [ ] Agents should extract needed fields from `sharedState`
-- [ ] Agents should update `sharedState` with their results
-- [ ] Agents should handle undefined fields gracefully
+- [x] Each agent should receive the full `sharedState` object
+- [x] Agents should extract needed fields from `sharedState`
+- [x] Agents should update `sharedState` with their results
+- [x] Agents should handle undefined fields gracefully
 
 ### 3. Specific Agent Fixes
 
