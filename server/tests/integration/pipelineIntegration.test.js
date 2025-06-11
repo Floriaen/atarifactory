@@ -39,9 +39,9 @@ describe('Pipeline Integration', () => {
     sharedState.plan = plan;
 
     // 3. Step code (first step)
-    sharedState.step = sharedState.plan[0];
+    sharedState.currentStep = sharedState.plan[0];
     mockLlmClient.setAgent('StepBuilderAgent');
-    const stepCode = await StepBuilderAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    const stepCode = await StepBuilderAgent(sharedState, { logger, traceId: 'test-trace', llmClient: mockLlmClient });
     expect(typeof stepCode).toBe('string');
     expect(stepCode.length).toBeGreaterThan(0);
 

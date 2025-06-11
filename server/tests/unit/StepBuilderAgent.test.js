@@ -24,7 +24,7 @@ function setupTestState() {
   sharedState.plan = [
     { id: 'step1', description: 'Update player movement', type: 'code' }
   ];
-  sharedState.step = new Step('step1', 'Update player movement', 'code');
+  sharedState.currentStep = new Step('step1', 'Update player movement', 'code');
   
   const llmClient = new MockOpenAI();
   llmClient.setAgent('StepBuilderAgent');
@@ -44,10 +44,10 @@ describe('StepBuilderAgent', () => {
   //   const sharedState = createSharedState();
   //   sharedState.currentCode = '// code so far';
   //   sharedState.plan = [
-  //     { id: 1, label: 'Setup' },
-  //     { id: 2, label: 'Add player' }
+  //     { id: 1, description: 'Setup' },
+  //     { id: 2, description: 'Add player' }
   //   ];
-  //   sharedState.step = { id: 2, label: 'Add player' };
+  //   sharedState.currentStep = { id: 2, description: 'Add player' };
 
   //   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   //   const llmClient = new SmartOpenAI(openai);

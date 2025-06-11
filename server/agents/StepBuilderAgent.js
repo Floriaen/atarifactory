@@ -4,7 +4,7 @@
  * Required fields:
  * - currentCode: string - The current game code
  * - plan: Array<{id: number, label: string}> - The full build plan
- * - step: {id: number, label: string} - The current step to build
+ * - currentStep: {id: number, label: string} - The current step to build
  * Output: string (code block for the step)
  *
  * Generates the code block for the current step using LLM.
@@ -20,19 +20,19 @@ const { extractJsCodeBlocks } = require('../utils/formatter');
 async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
-    const { currentCode, plan, step } = sharedState;
+    const { currentCode, plan, currentStep } = sharedState;
     if (currentCode === undefined) {
       throw new Error('StepBuilderAgent: currentCode is required in sharedState');
     }
     if (!plan || !Array.isArray(plan)) {
       throw new Error('StepBuilderAgent: plan array is required in sharedState');
     }
-    if (!step || !step.id || !step.description) {
-      throw new Error('StepBuilderAgent: step with id and description is required in sharedState');
+    if (!currentStep || !currentStep.id || !currentStep.description) {
+      throw new Error('StepBuilderAgent: currentStep with id and description is required in sharedState');
     }
 
-    logger.info('StepBuilderAgent called', { traceId, step });
-    logger.info('StepBuilderAgent input:', { currentCode, plan, step });
+    logger.info('StepBuilderAgent called', { traceId, step: currentStep });
+    logger.info('StepBuilderAgent input:', { currentCode, plan, step: currentStep });
 
     if (!llmClient) {
       logger.error('StepBuilderAgent: llmClient is required but was not provided', { traceId });
@@ -40,9 +40,9 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     }
 
     // Validate that the step exists in the plan
-    if (!plan.some(p => p.id === step.id)) {
-      logger.error('StepBuilderAgent: Invalid step ID', { traceId, step, plan });
-      throw new Error(`Invalid step: Step with id ${step.id} does not exist`);
+    if (!plan.some(p => p.id === currentStep.id)) {
+      logger.error('StepBuilderAgent: Invalid step ID', { traceId, step: currentStep, plan });
+      throw new Error(`Invalid step: Step with id ${currentStep.id} does not exist`);
     }
 
     const promptPath = path.join(__dirname, 'prompts', 'StepBuilderAgent.prompt.md');
@@ -50,7 +50,7 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     const prompt = promptTemplate
       .replace('{{currentCode}}', currentCode)
       .replace('{{plan}}', JSON.stringify(plan, null, 2))
-      .replace(/{{label}}/g, step.description);
+      .replace(/{{label}}/g, currentStep.description);
 
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
     logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
@@ -64,7 +64,7 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     sharedState.metadata.lastUpdate = new Date();
     return cleanCode;
   } catch (err) {
-    logger.error('StepBuilderAgent error', { traceId, error: err, step: sharedState.step });
+    logger.error('StepBuilderAgent error', { traceId, error: err, step: sharedState.currentStep });
     throw err;
   }
 }

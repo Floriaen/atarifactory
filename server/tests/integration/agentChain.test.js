@@ -39,7 +39,7 @@ describe('Agent Chain Integration', () => {
     expect(plan[0]).toHaveProperty('description');
 
     // 3. StepBuilderAgent (first step)
-    sharedState.step = sharedState.plan[0];
+    sharedState.currentStep = plan[0];
     mockOpenAI.setAgent('StepBuilderAgent');
     const stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
     expect(typeof stepCode).toBe('string');
@@ -69,11 +69,9 @@ describe('Agent Chain Integration', () => {
     const plan = [
       { id: 1, description: 'Test Step' }
     ];
+    sharedState.currentStep = plan[0];
     await expect(
-      StepBuilderAgent(
-        { currentCode: '', plan, step: plan[0] },
-        { logger, traceId, llmClient: failingMock }
-      )
+      StepBuilderAgent(sharedState, { logger, traceId, llmClient: failingMock })
     ).rejects.toThrow('Mock LLM failure');
   });
 
@@ -90,7 +88,7 @@ describe('Agent Chain Integration', () => {
     const plan = await PlannerAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
 
     // 3. Execute first step
-    sharedState.step = sharedState.plan[0];
+    sharedState.currentStep = plan[0];
     mockOpenAI.setAgent('StepBuilderAgent');
     const firstStepCode = await StepBuilderAgent(
       {

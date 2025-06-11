@@ -34,6 +34,7 @@ async function runPipeline(title, onStatusUpdate) {
   logger.info('Pipeline started', { traceId, title });
   try {
     const sharedState = createSharedState();
+    sharedState.title = title;
     
     // 1. GameDesignAgent
     onStatusUpdate && onStatusUpdate('Designing');
@@ -53,14 +54,14 @@ async function runPipeline(title, onStatusUpdate) {
     for (const step of sharedState.plan) {
       stepIndex++;
       sharedState.currentStep = step;
-      onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: sharedState.plan.length, label: step.label });
+      onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: sharedState.plan.length, description: step.description });
       logger.info('Step execution', { traceId, step });
       // StepBuilderAgent
       let stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient });
       logger.info('StepBuilderAgent output', { traceId, step, stepCode });
       sharedState.stepCode = stepCode;
       // Repeat-until-clean static validation loop
-      let errors = StaticCheckerAgent(sharedState, { logger, traceId });
+      let errors = await StaticCheckerAgent(sharedState, { logger, traceId, llmClient });
       logger.info('StaticCheckerAgent output', { traceId, step, errors });
       let retryCount = 0;
       while (errors.length > 0 && retryCount < STATIC_FIX_RETRY_LIMIT) {
@@ -70,7 +71,7 @@ async function runPipeline(title, onStatusUpdate) {
         stepCode = await StepFixerAgent(sharedState, { logger, traceId, llmClient });
         logger.info('StepFixerAgent output', { traceId, step, stepCode, retryCount });
         sharedState.stepCode = stepCode;
-        errors = StaticCheckerAgent(sharedState, { logger, traceId });
+        errors = await StaticCheckerAgent(sharedState, { logger, traceId, llmClient });
         logger.info('StaticCheckerAgent output after fix', { traceId, step, errors, retryCount });
         retryCount++;
       }

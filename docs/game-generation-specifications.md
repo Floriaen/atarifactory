@@ -39,11 +39,11 @@ This system automatically generates complete, playable vanilla JS Canvas games f
 
 ```json
 [
-  { "id": 1, "label": "Setup canvas and loop" },
-  { "id": 2, "label": "Add player and controls" },
-  { "id": 3, "label": "Add coins and scoring" },
-  { "id": 4, "label": "Add spikes and loss condition" },
-  { "id": 5, "label": "Display win/lose text" }
+  { "id": 1, "description": "Setup canvas and loop" },
+  { "id": 2, "description": "Add player and controls" },
+  { "id": 3, "description": "Add coins and scoring" },
+  { "id": 4, "description": "Add spikes and loss condition" },
+  { "id": 5, "description": "Display win/lose text" }
 ]
 ```
 
@@ -56,7 +56,7 @@ This system automatically generates complete, playable vanilla JS Canvas games f
 
 * currentCode (the full code generated so far)
 * plan (the full ordered list of build steps)
-* step: { id, label } (the current step description)
+* step: { id, description } (the current step description)
 
 **Note:**
 To ensure robust, incremental, and non-redundant code generation, StepBuilderAgent always receives the full plan, the current code, and the current step. This allows the agent to:
@@ -69,7 +69,7 @@ If the codebase becomes very large, context summarization strategies (such as in
 **Output:** Code block (new or updated function)
 
 **Prompt Template:**
-"Here is the current game code, the full plan, and a step labeled '{{label}}'. Please generate the corresponding function or logic to complete this step."
+"Here is the current game code, the full plan, and a step described as '{{description}}'. Please generate the corresponding function or logic to complete this step."
 
 **Example:**
 
@@ -82,14 +82,14 @@ function update() {
 *Input (plan):*
 ```json
 [
-  { "id": 1, "label": "Setup canvas and loop" },
-  { "id": 2, "label": "Add player and controls" },
-  { "id": 3, "label": "Add coins and scoring" },
-  { "id": 4, "label": "Add spikes and loss condition" },
-  { "id": 5, "label": "Display win/lose text" }
+  { "id": 1, "description": "Setup canvas and loop" },
+  { "id": 2, "description": "Add player and controls" },
+  { "id": 3, "description": "Add coins and scoring" },
+  { "id": 4, "description": "Add spikes and loss condition" },
+  { "id": 5, "description": "Display win/lose text" }
 ]
 ```
-*Step (label):* "Extend the 'update' function to add collision detection."
+*Step (description):* "Extend the 'update' function to add collision detection."
 
 *Output (stepCode):*
 ```js
@@ -160,11 +160,11 @@ function update() {
 **Input:**
 
 * currentCode (the full code generated so far)
-* step (the current step object from the plan, e.g., { id, label })
+* step (the current step object from the plan, e.g., { id, description })
 * error list
 
 **Note:**
-The 'step' input is the current step object from the plan (see PlannerAgent), typically including an id and label. This provides the agent with the context and intent for the code it is fixing, ensuring the correction matches the step's purpose.
+The 'step' input is the current step object from the plan (see PlannerAgent), typically including an id and description. This provides the agent with the context and intent for the code it is fixing, ensuring the correction matches the step's purpose.
 
 **Output:**
 
@@ -176,7 +176,7 @@ The 'step' input is the current step object from the plan (see PlannerAgent), ty
 * Does **not** modify or rewrite the full currentCode — only the faulty part from StepBuilderAgent
 
 **Prompt Template:**
-"Fix the step code for '{{label}}'. Here are the errors found: {{errorList}}"
+"Fix the step code for '{{description}}'. Here are the errors found: {{errorList}}"
 
 **Behavior:**
 
@@ -192,7 +192,7 @@ if (player.x < coin.x + coin.width && player.x + player.width > coin.x) {
 ```
 *Input (step):*
 ```json
-{ "id": 3, "label": "Add coins and scoring" }
+{ "id": 3, "description": "Add coins and scoring" }
 ```
 *Error List:*
 - ReferenceError: coin is not defined
@@ -432,11 +432,11 @@ Formatting is handled internally by agents that modify the code. It is not an ag
 
 ```json
 [
-  { "id": 1, "label": "Setup canvas" },
-  { "id": 2, "label": "Add player and jump" },
-  { "id": 3, "label": "Add platforms" },
-  { "id": 4, "label": "Add gems and collect logic" },
-  { "id": 5, "label": "Display score and win" }
+  { "id": 1, "description": "Setup canvas" },
+  { "id": 2, "description": "Add player and jump" },
+  { "id": 3, "description": "Add platforms" },
+  { "id": 4, "description": "Add gems and collect logic" },
+  { "id": 5, "description": "Display score and win" }
 ]
 ```
 
