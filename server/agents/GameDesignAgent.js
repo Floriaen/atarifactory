@@ -1,6 +1,8 @@
 /**
  * GameDesignAgent
  * Input: SharedState
+ * Required fields:
+ * - title: string - The game title to generate design for
  * Output: {
  *   title: string,
  *   description: string,
@@ -24,7 +26,13 @@ const { SmartOpenAI } = require('../utils/SmartOpenAI');
 
 async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
   try {
-    logger.info('GameDesignAgent called', { traceId, input: { title: sharedState.title } });
+    // Extract and validate required fields
+    const { title } = sharedState;
+    if (!title) {
+      throw new Error('GameDesignAgent: title is required in sharedState');
+    }
+
+    logger.info('GameDesignAgent called', { traceId, input: { title } });
 
     if (!llmClient) {
       throw new Error('GameDesignAgent: llmClient is required but was not provided');

@@ -3,45 +3,47 @@ const path = require('path');
 /**
  * FeedbackAgent
  * Input: SharedState
- * Output: { retryTarget: 'fixer' | 'planner', suggestion: string }
+ * Required fields:
+ * - runtimePlayability: object - Runtime playability results
+ * - stepId: string - Current step ID
+ * Output: string (feedback message)
  *
- * Analyzes runtime logs and suggests the next agent/action.
+ * Analyzes runtime logs and suggests actions based on playability results.
  */
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
-function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
-  const runtimePlayability = sharedState.metadata.runtimePlayability;
-  const stepId = sharedState.currentStep.id;
-  logger.info('FeedbackAgent called', { traceId, runtimeLogs: runtimePlayability, stepId });
+
+const logger = require('../utils/logger');
+
+async function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
   try {
-    if (llmClient) {
-      // Load prompt from file
-      const promptPath = path.join(__dirname, 'prompts', 'FeedbackAgent.prompt.md');
-      const promptTemplate = fs.readFileSync(promptPath, 'utf8');
-      const prompt = promptTemplate
-        .replace('{{runtimeLogs}}', JSON.stringify(runtimePlayability, null, 2))
-        .replace('{{stepId}}', stepId);
-      const result = llmClient.chatCompletion({ prompt, outputType: 'json-object' });
-      if (typeof result.then === 'function') {
-        return result.then(feedback => {
-          sharedState.metadata.lastUpdate = new Date();
-          sharedState.metadata.feedback = feedback;
-          return feedback;
-        });
-      }
-      sharedState.metadata.lastUpdate = new Date();
-      sharedState.metadata.feedback = result;
-      return result;
+    // Extract and validate required fields
+    const { runtimePlayability, stepId } = sharedState;
+    if (!runtimePlayability) {
+      throw new Error('FeedbackAgent: runtimePlayability is required in sharedState');
     }
-    // If no llmClient, throw an error (no fallback)
+    if (!stepId) {
+      throw new Error('FeedbackAgent: stepId is required in sharedState');
+    }
     if (!llmClient) {
-      logger.error('FeedbackAgent: llmClient is required but was not provided', { traceId });
-      throw new Error('FeedbackAgent: llmClient is required but was not provided');
+      throw new Error('FeedbackAgent: llmClient is required');
     }
-  } catch (err) {
-    logger.error('FeedbackAgent error', { traceId, error: err, runtimeLogs: sharedState.metadata.runtimePlayability, stepId: sharedState.step?.id });
-    throw err;
+
+    logger.info('FeedbackAgent called', { traceId });
+    
+    // Get feedback from LLM
+    const feedback = await llmClient.getFeedback(runtimePlayability, stepId);
+    
+    // Update sharedState
+    sharedState.feedback = feedback;
+    sharedState.metadata.lastUpdate = new Date();
+    
+    logger.info('FeedbackAgent output', { traceId, feedback });
+    return feedback;
+  } catch (error) {
+    logger.error('Error in FeedbackAgent:', error);
+    throw error;
   }
 }
 

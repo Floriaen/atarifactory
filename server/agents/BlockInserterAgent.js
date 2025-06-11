@@ -1,3 +1,13 @@
+/**
+ * BlockInserterAgent
+ * Input: SharedState
+ * Required fields:
+ * - currentCode: string - The current game code
+ * - stepCode: string - The code block to insert
+ * Output: string (new currentCode after safe insertion/merge)
+ *
+ * Uses AST-based code manipulation to insert/merge stepCode into currentCode.
+ */
 // IMPORTANT: This agent must receive llmClient via dependency injection.
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
@@ -6,19 +16,21 @@ const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
 const logger = require('../utils/logger');
 
-/**
- * BlockInserterAgent
- * Input: SharedState
- * Output: string (new currentCode after safe insertion/merge)
- *
- * Uses AST-based code manipulation to insert/merge stepCode into currentCode.
- */
 async function BlockInserterAgent(sharedState, { logger, traceId }) {
-  logger.info('BlockInserterAgent called', { traceId });
-  
   try {
+    // Extract and validate required fields
+    const { currentCode, stepCode } = sharedState;
+    if (!currentCode) {
+      throw new Error('BlockInserterAgent: currentCode is required in sharedState');
+    }
+    if (!stepCode) {
+      throw new Error('BlockInserterAgent: stepCode is required in sharedState');
+    }
+
+    logger.info('BlockInserterAgent called', { traceId });
+    
     // Merge the code using our new module
-    const mergedCode = await mergeCode(sharedState.currentCode, sharedState.stepCode);
+    const mergedCode = await mergeCode(currentCode, stepCode);
     logger.info('Merged code before formatting:', { traceId, mergedCode });
     
     // Format the merged code
