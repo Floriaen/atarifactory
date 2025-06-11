@@ -20,6 +20,7 @@ function StaticCheckerAgent(sharedState, { logger, traceId }) {
     ast = parser.parse(code, { sourceType: 'script', ecmaVersion: 'latest' });
   } catch (err) {
     errors.push('Syntax error: ' + err.message);
+    sharedState.errorList = errors;
     return errors;
   }
   // Whitelist browser globals (always, since pipeline targets browser code)
@@ -132,6 +133,8 @@ function StaticCheckerAgent(sharedState, { logger, traceId }) {
   if (undeclared.size > 0) {
     for (const name of undeclared) errors.push(`Undeclared variable: ${name}`);
   }
+  // At the end, update sharedState.errorList
+  sharedState.errorList = errors;
   return errors;
 }
 

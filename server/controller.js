@@ -37,13 +37,13 @@ async function runPipeline(title, onStatusUpdate) {
     
     // 1. GameDesignAgent
     onStatusUpdate && onStatusUpdate('Designing');
-    sharedState.gameDef = await GameDesignAgent({ title }, { logger, traceId, llmClient });
+    await GameDesignAgent(sharedState, { logger, traceId, llmClient });
     logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
     onStatusUpdate && onStatusUpdate('Designing', { status: 'done', gameDef: sharedState.gameDef });
 
     // 2. PlannerAgent
     onStatusUpdate && onStatusUpdate('Planning');
-    sharedState.plan = await PlannerAgent(sharedState, { logger, traceId, llmClient });
+    await PlannerAgent(sharedState, { logger, traceId, llmClient });
     logger.info('PlannerAgent output', { traceId, plan: sharedState.plan });
     onStatusUpdate && onStatusUpdate('Planning', { status: 'done', plan: sharedState.plan });
 
@@ -56,10 +56,11 @@ async function runPipeline(title, onStatusUpdate) {
       onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: sharedState.plan.length, label: step.label });
       logger.info('Step execution', { traceId, step });
       // StepBuilderAgent
-      let stepCode = await StepBuilderAgent({ currentCode: sharedState.currentCode, plan: sharedState.plan, step }, { logger, traceId, llmClient });
+      let stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient });
       logger.info('StepBuilderAgent output', { traceId, step, stepCode });
+      sharedState.stepCode = stepCode;
       // Repeat-until-clean static validation loop
-      let errors = StaticCheckerAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
+      let errors = StaticCheckerAgent(sharedState, { logger, traceId });
       logger.info('StaticCheckerAgent output', { traceId, step, errors });
       let retryCount = 0;
       while (errors.length > 0 && retryCount < STATIC_FIX_RETRY_LIMIT) {
@@ -68,7 +69,8 @@ async function runPipeline(title, onStatusUpdate) {
         sharedState.errorList = errors;
         stepCode = await StepFixerAgent(sharedState, { logger, traceId, llmClient });
         logger.info('StepFixerAgent output', { traceId, step, stepCode, retryCount });
-        errors = StaticCheckerAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
+        sharedState.stepCode = stepCode;
+        errors = StaticCheckerAgent(sharedState, { logger, traceId });
         logger.info('StaticCheckerAgent output after fix', { traceId, step, errors, retryCount });
         retryCount++;
       }
@@ -78,14 +80,14 @@ async function runPipeline(title, onStatusUpdate) {
         throw new Error(`Static validation failed for step ${JSON.stringify(step)} after ${STATIC_FIX_RETRY_LIMIT} retries: ${errors.join('; ')}`);
       }
       // BlockInserterAgent
-      sharedState.currentCode = BlockInserterAgent({ currentCode: sharedState.currentCode, stepCode }, { logger, traceId });
+      sharedState.currentCode = await BlockInserterAgent(sharedState, { logger, traceId });
       logger.info('BlockInserterAgent output', { traceId, step, currentCode: sharedState.currentCode });
       onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, status: 'done', label: step.label });
     }
 
     // 4. SyntaxSanityAgent
     onStatusUpdate && onStatusUpdate('SyntaxCheck');
-    const syntaxResult = SyntaxSanityAgent({ code: sharedState.currentCode }, { logger, traceId });
+    const syntaxResult = SyntaxSanityAgent(sharedState, { logger, traceId });
     logger.info('SyntaxSanityAgent output', { traceId, syntaxResult });
     onStatusUpdate && onStatusUpdate('SyntaxCheck', { status: 'done', syntaxResult });
 
@@ -97,7 +99,7 @@ async function runPipeline(title, onStatusUpdate) {
 
     // 6. FeedbackAgent
     onStatusUpdate && onStatusUpdate('Feedback');
-    const feedback = FeedbackAgent(sharedState, { logger, traceId, llmClient });
+    const feedback = await FeedbackAgent(sharedState, { logger, traceId, llmClient });
     logger.info('FeedbackAgent output', { traceId, feedback });
     onStatusUpdate && onStatusUpdate('Feedback', { status: 'done', feedback });
 

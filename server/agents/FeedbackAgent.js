@@ -11,15 +11,17 @@ const path = require('path');
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
-  logger.info('FeedbackAgent called', { traceId, runtimeLogs: sharedState.metadata.runtimePlayability, stepId: sharedState.step?.id });
+  const runtimePlayability = sharedState.metadata.runtimePlayability;
+  const stepId = sharedState.currentStep.id;
+  logger.info('FeedbackAgent called', { traceId, runtimeLogs: runtimePlayability, stepId });
   try {
     if (llmClient) {
       // Load prompt from file
       const promptPath = path.join(__dirname, 'prompts', 'FeedbackAgent.prompt.md');
       const promptTemplate = fs.readFileSync(promptPath, 'utf8');
       const prompt = promptTemplate
-        .replace('{{runtimeLogs}}', JSON.stringify(sharedState.metadata.runtimePlayability, null, 2))
-        .replace('{{stepId}}', sharedState.step?.id);
+        .replace('{{runtimeLogs}}', JSON.stringify(runtimePlayability, null, 2))
+        .replace('{{stepId}}', stepId);
       const result = llmClient.chatCompletion({ prompt, outputType: 'json-object' });
       if (typeof result.then === 'function') {
         return result.then(feedback => {

@@ -15,8 +15,7 @@ const { extractJsCodeBlocks } = require('../utils/formatter');
  */
 async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
   const { currentCode, plan, step } = sharedState;
-
-  logger.info('StepBuilderAgent called', { traceId, step });
+  logger.info('StepBuilderAgent called', { traceId, step: sharedState.step });
   logger.info('StepBuilderAgent input:', { currentCode, plan, step });
   if (!llmClient) {
     logger.error('StepBuilderAgent: llmClient is required but was not provided', { traceId });
@@ -39,14 +38,9 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);
     logger.info('StepBuilderAgent output:', { traceId, cleanCode });
-    
     // Update sharedState
     sharedState.currentCode = cleanCode;
-    if (!sharedState.metadata) {
-      sharedState.metadata = {};
-    }
     sharedState.metadata.lastUpdate = new Date();
-    
     return cleanCode;
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step });

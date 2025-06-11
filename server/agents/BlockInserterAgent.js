@@ -38,9 +38,6 @@ async function BlockInserterAgent(sharedState, { logger, traceId }) {
     
     // Update sharedState
     sharedState.currentCode = formattedCode;
-    if (!sharedState.metadata) {
-      sharedState.metadata = {};
-    }
     sharedState.metadata.lastUpdate = new Date();
     
     logger.info('BlockInserterAgent output', { traceId, formattedCode });

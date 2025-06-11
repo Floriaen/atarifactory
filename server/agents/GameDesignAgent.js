@@ -50,11 +50,6 @@ async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
       throw new Error('GameDesignAgent: LLM output missing required fields');
     }
 
-    // Initialize metadata if it doesn't exist
-    if (!sharedState.metadata) {
-      sharedState.metadata = {};
-    }
-
     // Update sharedState
     sharedState.gameDef = { ...parsed };
     sharedState.metadata.lastUpdate = new Date();
