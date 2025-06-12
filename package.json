@@ -5,6 +5,7 @@
     "@babel/parser": "^7.27.5",
     "@babel/preset-env": "^7.27.2",
     "@babel/traverse": "^7.27.4",
+    "eslint": "^9.28.0",
     "jest": "^29.7.0",
     "supertest": "^7.1.1"
   },
@@ -15,7 +16,9 @@
     "test:integration": "jest server/tests/integration --testPathIgnorePatterns=agents",
     "start:server": "cd server && node start.js",
     "test:server": "cd server && jest",
-    "start:frontend": "cd frontend && npm run dev"
+    "start:frontend": "cd frontend && npm run dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "ast-merge": "github:Floriaen/ast-merge",
