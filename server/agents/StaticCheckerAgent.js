@@ -14,10 +14,24 @@
 
 const logger = require('../utils/logger');
 const { ESLint } = require('eslint');
+const BlockInserterAgent = require('./BlockInserterAgent');
 
 async function StaticCheckerAgent(sharedState, { logger, traceId }) {
   const { currentCode, stepCode } = sharedState;
-  const codeToCheck = currentCode + stepCode;
+  
+  logger.info('StaticCheckerAgent input:', { 
+    traceId, 
+    currentCode: currentCode || '(empty)', 
+    stepCode: stepCode || '(empty)'
+  });
+
+  // Get simulated merged code using the same merge logic
+  const codeToCheck = await BlockInserterAgent.mergeAndFormat(currentCode, stepCode);
+  
+  logger.info('StaticCheckerAgent merged code:', { 
+    traceId, 
+    codeToCheck: codeToCheck || '(empty)'
+  });
 
   const eslint = new ESLint();
   const results = await eslint.lintText(codeToCheck);

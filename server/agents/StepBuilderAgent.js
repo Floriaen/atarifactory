@@ -50,17 +50,26 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     const prompt = promptTemplate
       .replace('{{currentCode}}', currentCode)
       .replace('{{plan}}', JSON.stringify(plan, null, 2))
-      .replace(/{{label}}/g, currentStep.description);
+      .replace(/{{description}}/g, currentStep.description);
+
+    logger.info('StepBuilderAgent prompt:', { 
+      traceId,
+      prompt,
+      currentCode: currentCode || '(empty)',
+      plan: JSON.stringify(plan),
+      step: currentStep
+    });
 
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
-    logger.info('StepBuilderAgent LLM output', { traceId, codeBlock });
 
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);
-    logger.info('StepBuilderAgent output:', { traceId, cleanCode });
+    logger.info('StepBuilderAgent cleaned code:', { 
+      traceId,
+      cleanCode
+    });
 
     // Update sharedState
-    sharedState.currentCode = cleanCode;
     sharedState.metadata.lastUpdate = new Date();
     return cleanCode;
   } catch (err) {

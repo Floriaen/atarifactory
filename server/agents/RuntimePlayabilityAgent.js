@@ -37,8 +37,23 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
 
     browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
     page = await browser.newPage();
-    await page.setContent('<html><body></body></html>');
-    // Inject the code
+    
+    // Read and prepare the boilerplate template
+    const boilerplatePath = path.join(__dirname, '..', 'gameBoilerplate.html');
+    let html = fs.readFileSync(boilerplatePath, 'utf8');
+    
+    // Replace template variables with test values
+    html = html
+      .replace('{{title}}', 'Test Game')
+      .replace('{{description}}', 'Test game for runtime validation')
+      .replace('{{instructions}}', 'Test instructions')
+      .replace('{{gameId}}', 'test')
+      .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, '..', 'controlBar/controlBar.html'), 'utf8'));
+    
+    // Set the HTML content
+    await page.setContent(html);
+    
+    // Inject the game code
     await page.addScriptTag({ path: tmpFile });
     // Wait a bit for the code to run and create canvas
     await new Promise(res => setTimeout(res, 500));

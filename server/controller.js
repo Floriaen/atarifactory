@@ -49,13 +49,15 @@ async function runPipeline(title, onStatusUpdate) {
     onStatusUpdate && onStatusUpdate('Planning', { status: 'done', plan: sharedState.plan });
 
     // 3. Step execution cycle
-    const STATIC_FIX_RETRY_LIMIT = 3;
+    const MAX_STATIC_CHECK_RETRIES = 0;
     let stepIndex = 0;
     for (const step of sharedState.plan) {
       stepIndex++;
       sharedState.currentStep = step;
       onStatusUpdate && onStatusUpdate('Step', { step: stepIndex, total: sharedState.plan.length, description: step.description });
       logger.info('Step execution', { traceId, step });
+      // Debug log to show current code state
+      logger.info('Current code state:', { traceId, currentCode: sharedState.currentCode });
       // StepBuilderAgent
       let stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient });
       logger.info('StepBuilderAgent output', { traceId, step, stepCode });
@@ -64,7 +66,7 @@ async function runPipeline(title, onStatusUpdate) {
       let errors = await StaticCheckerAgent(sharedState, { logger, traceId, llmClient });
       logger.info('StaticCheckerAgent output', { traceId, step, errors });
       let retryCount = 0;
-      while (errors.length > 0 && retryCount < STATIC_FIX_RETRY_LIMIT) {
+      while (errors.length > 0 && retryCount < MAX_STATIC_CHECK_RETRIES) {
         onStatusUpdate && onStatusUpdate('Fixing', { step: stepIndex, error: errors, retry: retryCount });
         logger.warn('Static check failed, calling StepFixerAgent', { traceId, step, errors, retryCount });
         sharedState.errors = errors;
@@ -77,8 +79,10 @@ async function runPipeline(title, onStatusUpdate) {
       }
       if (errors.length > 0) {
         logger.error('Static validation failed after max retries, escalating to PlannerAgent or aborting', { traceId, step, errors });
+        // Debug log to show current code state on failure
+        logger.info('Current code state on failure:', { traceId, currentCode: sharedState.currentCode });
         onStatusUpdate && onStatusUpdate('Error', { step: stepIndex, error: errors });
-        throw new Error(`Static validation failed for step ${JSON.stringify(step)} after ${STATIC_FIX_RETRY_LIMIT} retries: ${errors.join('; ')}`);
+        throw new Error(`Static validation failed for step ${JSON.stringify(step)} after ${MAX_STATIC_CHECK_RETRIES} retries: ${errors.join('; ')}`);
       }
       // BlockInserterAgent
       sharedState.currentCode = await BlockInserterAgent(sharedState, { logger, traceId });
@@ -141,7 +145,18 @@ async function runPipeline(title, onStatusUpdate) {
       throw err;
     }
     try {
-      const html = `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>${gameName}</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"></head><body style='margin:0;background:#222;'><script src=\"game.js\"></script></body></html>`;
+      // Read the boilerplate template
+      const boilerplatePath = path.join(__dirname, 'gameBoilerplate.html');
+      let html = fs.readFileSync(boilerplatePath, 'utf8');
+      
+      // Replace template variables
+      html = html
+        .replace('{{title}}', gameName)
+        .replace('{{description}}', sharedState.gameDef.description || '')
+        .replace('{{instructions}}', sharedState.gameDef.mechanics?.join(', ') || '')
+        .replace('{{gameId}}', gameId)
+        .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'controlBar/controlBar.html'), 'utf8'));
+
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
     } catch (err) {
       logger.error('Failed to write index.html', { gameId, gameFolder, error: err });

@@ -18,17 +18,36 @@ class SmartOpenAI {
    * @returns {Promise<any>} Parsed output.
    */
   async chatCompletion({ prompt, outputType, model = 'gpt-4o', temperature = 0.2, max_tokens = 1024 }) {
+    const messages = [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: prompt }
+    ];
+    /*
+    console.log('\n=== LLM REQUEST ===');
+    console.log('Model:', model);
+    console.log('Temperature:', temperature);
+    console.log('Max Tokens:', max_tokens);
+    console.log('\nMessages:');
+    messages.forEach(msg => {
+      console.log(`\n[${msg.role.toUpperCase()}]`);
+      console.log(msg.content);
+    });
+    console.log('\n=== END REQUEST ===\n');
+*/
     const response = await this.openai.chat.completions.create({
       model,
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: prompt }
-      ],
+      messages,
       temperature,
       max_tokens
     });
+
     const raw = response.choices[0].message.content;
-    // console.log('SmartOpenAI RAW OUTPUT:', raw);
+    
+    console.log('\n=== LLM RESPONSE ===');
+    console.log('Raw output:');
+    console.log(raw);
+    console.log('\n=== END RESPONSE ===\n');
+
     if (outputType === 'string') {
       return raw;
     }

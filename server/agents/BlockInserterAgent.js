@@ -16,6 +16,29 @@ const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
 const logger = require('../utils/logger');
 
+async function mergeAndFormat(currentCode, stepCode) {
+  try {
+    // Merge the code using our module
+    const mergedCode = await mergeCode(currentCode, stepCode);
+    
+    // Format the merged code
+    try {
+      return prettier.format(mergedCode, {
+        parser: 'babel',
+        semi: true,
+        singleQuote: false,
+        trailingComma: 'es5',
+      });
+    } catch (formatError) {
+      logger.error('Prettier formatting failed:', formatError);
+      return mergedCode;
+    }
+  } catch (error) {
+    logger.error('Error in merge:', error);
+    throw error;
+  }
+}
+
 async function BlockInserterAgent(sharedState, { logger, traceId }) {
   try {
     // Extract and validate required fields
@@ -29,24 +52,8 @@ async function BlockInserterAgent(sharedState, { logger, traceId }) {
 
     logger.info('BlockInserterAgent called', { traceId });
     
-    // Merge the code using our new module
-    const mergedCode = await mergeCode(currentCode, stepCode);
-    logger.info('Merged code before formatting:', { traceId, mergedCode });
-    
-    // Format the merged code
-    let formattedCode;
-    try {
-      formattedCode = prettier.format(mergedCode, {
-        parser: 'babel',
-        semi: true,
-        singleQuote: false,
-        trailingComma: 'es5',
-      });
-    } catch (formatError) {
-      // If formatting fails, return the raw merged code
-      logger.error('Prettier formatting failed:', formatError);
-      formattedCode = mergedCode;
-    }
+    // Merge and format the code
+    const formattedCode = await mergeAndFormat(currentCode, stepCode);
     
     // Update sharedState
     sharedState.currentCode = formattedCode;
@@ -68,5 +75,8 @@ async function BlockInserterAgent(sharedState, { logger, traceId }) {
     throw error;
   }
 }
+
+// Add mergeAndFormat as a property of BlockInserterAgent
+BlockInserterAgent.mergeAndFormat = mergeAndFormat;
 
 module.exports = BlockInserterAgent; 
