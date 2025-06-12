@@ -37,7 +37,6 @@ async function runPipeline(title, onStatusUpdate) {
   try {
     // --- Save generated game to disk and update manifest ---
     const gameId = uuidv4();
-    const gameName = title;
     const gameDate = new Date().toISOString();
     // Save to server/games/ so the server can serve the files
     const GAMES_DIR = path.join(__dirname, 'games');
@@ -59,8 +58,9 @@ async function runPipeline(title, onStatusUpdate) {
       throw err;
     }
     try {
-      // Get code from pure pipeline (mock or real)
-      const code = await generateGameSourceCode(title, logger, llmClient);
+      // Get code and game design info from pure pipeline (mock or real)
+      const { code, gameDef } = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
+      const gameName = gameDef?.title || title;
       const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
       // Copy controlBar.js and controlBar.css directly into the game folder
@@ -78,8 +78,8 @@ async function runPipeline(title, onStatusUpdate) {
       // Replace template variables
       html = html
         .replace('{{title}}', gameName)
-        .replace('{{description}}', '')
-        .replace('{{instructions}}', '')
+        .replace('{{description}}', gameDef.description || '')
+        .replace('{{instructions}}', gameDef.mechanics || '')
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'controlBar/controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
@@ -104,16 +104,18 @@ async function runPipeline(title, onStatusUpdate) {
   }
 }
 
-// Pure agent pipeline: returns only the generated JS code as a string
-async function agentPipelineToCode(title, logger, llmClient) {
+// Pure agent pipeline: returns both the generated code and game design info
+async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
   const traceId = uuidv4();
   logger.info('Agent pipeline started', { traceId, title });
   const sharedState = createSharedState();
   sharedState.title = title;
   // 1. GameDesignAgent
+  onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
   await GameDesignAgent(sharedState, { logger, traceId, llmClient });
   logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
   // 2. PlannerAgent
+  onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
   await PlannerAgent(sharedState, { logger, traceId, llmClient });
   logger.info('PlannerAgent output', { traceId, plan: sharedState.plan });
   // 3. Step execution cycle
@@ -122,6 +124,7 @@ async function agentPipelineToCode(title, logger, llmClient) {
   for (const step of sharedState.plan) {
     stepIndex++;
     sharedState.currentStep = step;
+    onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
     logger.info('Step execution', { traceId, step });
     let stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient });
     logger.info('StepBuilderAgent output', { traceId, step, stepCode });
@@ -146,25 +149,37 @@ async function agentPipelineToCode(title, logger, llmClient) {
     logger.info('BlockInserterAgent output', { traceId, step, currentCode: sharedState.currentCode });
   }
   // 4. SyntaxSanityAgent
+  onStatusUpdate && onStatusUpdate('Validating', { step: 'Syntax Validation' });
   SyntaxSanityAgent(sharedState, { logger, traceId });
   logger.info('SyntaxSanityAgent output', { traceId });
   // 5. RuntimePlayabilityAgent
+  onStatusUpdate && onStatusUpdate('Testing', { step: 'Runtime Testing' });
   await RuntimePlayabilityAgent(sharedState, { logger, traceId });
   logger.info('RuntimePlayabilityAgent output', { traceId });
   // 6. FeedbackAgent
+  onStatusUpdate && onStatusUpdate('Feedback', { step: 'Gathering Feedback' });
   await FeedbackAgent(sharedState, { logger, traceId, llmClient });
   logger.info('FeedbackAgent output', { traceId });
-  // Return only the generated code
-  return sharedState.currentCode;
+  // Return both the generated code and game design info
+  return {
+    code: sharedState.currentCode,
+    gameDef: sharedState.gameDef
+  };
 }
 
 // Pure function: returns JS code string (mock or real)
-async function generateGameSourceCode(title, logger, llmClient) {
+async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) {
   if (process.env.MOCK_PIPELINE === '1') {
     logger.info('MOCK_PIPELINE is active: using mock game.js');
-    return fs.readFileSync(path.join(__dirname, 'mocks', 'game.js'), 'utf8');
+    return {
+      code: fs.readFileSync(path.join(__dirname, 'mocks', 'game.js'), 'utf8'),
+      gameDef: {
+        description: 'A mock game for testing purposes',
+        mechanics: 'This is a mock game with no real mechanics'
+      }
+    };
   } else {
-    return await agentPipelineToCode(title, logger, llmClient);
+    return await agentPipelineToCode(title, logger, llmClient, onStatusUpdate);
   }
 }
 
