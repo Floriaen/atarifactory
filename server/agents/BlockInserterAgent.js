@@ -15,6 +15,73 @@
 const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
 const logger = require('../utils/logger');
+const parser = require('@babel/parser');
+const { generate } = require('@babel/generator');
+const { mergeASTs } = require('@babel/core');
+
+async function codeMerge(currentCode, newCode) {
+  try {
+    // Parse both files
+    const currentCodeAST = parser.parse(currentCode);
+    const newCodeAST = parser.parse(newCode);
+
+    // Extract all variable declarations from both files
+    const currentDeclarations = currentCodeAST.program.body.filter(node => 
+      node.type === 'VariableDeclaration'
+    );
+    const newDeclarations = newCodeAST.program.body.filter(node => 
+      node.type === 'VariableDeclaration'
+    );
+
+    // Create a map of existing declarations by name
+    const existingDeclarations = new Map();
+    currentDeclarations.forEach(decl => {
+      decl.declarations.forEach(d => {
+        if (d.id && d.id.name) {
+          existingDeclarations.set(d.id.name, decl);
+        }
+      });
+    });
+
+    // Filter out duplicate declarations from new code
+    const uniqueNewDeclarations = newDeclarations.filter(decl => {
+      return !decl.declarations.some(d => 
+        d.id && d.id.name && existingDeclarations.has(d.id.name)
+      );
+    });
+
+    // Remove declarations from their original positions
+    currentCodeAST.program.body = currentCodeAST.program.body.filter(node => 
+      node.type !== 'VariableDeclaration'
+    );
+    newCodeAST.program.body = newCodeAST.program.body.filter(node => 
+      node.type !== 'VariableDeclaration'
+    );
+
+    // Insert all declarations at the top of currentCode
+    currentCodeAST.program.body.unshift(...currentDeclarations, ...uniqueNewDeclarations);
+
+    // Merge the remaining code
+    const mergedAST = mergeASTs(currentCodeAST, newCodeAST);
+    const mergedCode = generate(mergedAST).code;
+
+    // Format the merged code
+    return prettier.format(mergedCode, {
+      parser: 'babel',
+      semi: true,
+      singleQuote: true,
+      tabWidth: 2,
+      useTabs: false,
+      bracketSpacing: true,
+      arrowParens: 'avoid',
+      trailingComma: 'none',
+      printWidth: 80
+    });
+  } catch (error) {
+    console.error('Error in codeMerge:', error);
+    throw new Error(`Failed to merge code: ${error.message}`);
+  }
+}
 
 async function mergeAndFormat(currentCode, stepCode) {
   try {
