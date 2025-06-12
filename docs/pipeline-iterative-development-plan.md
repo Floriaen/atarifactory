@@ -45,6 +45,26 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 15. **RuntimePlayabilityAgent**:
     - Implement headless runtime validation (Puppeteer/jsdom).
     - Test: Can you detect if a game is playable?
+    
+    **Implementation & Test Plan:**
+    - Use Puppeteer (preferred) or jsdom to run the generated game code in a headless browser.
+    - Input: `{ code: string }` (full game.js)
+    - Output: `{ canvasActive, inputResponsive, playerMoved, winConditionReachable }` (all booleans)
+    - Steps:
+      1. Write code to a temp file.
+      2. Launch Puppeteer, inject code, simulate input.
+      3. Check for canvas, input, movement, win condition.
+      4. Collect logs/errors, return result object.
+      5. Handle timeouts and runtime errors gracefully.
+    - **Test Plan:**
+      - Happy path: valid game code (all true)
+      - No canvas (canvasActive: false)
+      - No input (inputResponsive: false)
+      - No movement (playerMoved: false)
+      - No win logic (winConditionReachable: false)
+      - Runtime error (all false, error present)
+      - Infinite loop (timeout, error present)
+    - Provide a mock for CI and fast tests; run real Puppeteer tests in a separate suite or with a flag.
 16. **FeedbackAgent**:
     - Implement error routing and feedback logic.
     - Test: Can you route errors to the right agent and recover?
@@ -68,6 +88,24 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 24. **Iterate on agent prompts, error handling, and code merging** based on test results.
 25. **Testing:** End-to-end tests, error simulation, and regression tests.
 
+**Sub-plan: Closing the Gap to a Unified, Playable Game**
+- **Smarter Code Merging (AST-based Extension):**
+  - Ensure each new step's logic is inserted or extended into the correct place, never overwriting previous logic.
+  - Use AST tools to append new logic to existing function bodies (e.g., `update()`, `render()`), and insert non-function code appropriately.
+- **Context Summarization for LLM:**
+  - Before each LLM call, generate a summary of all entities, functions, and game state.
+  - Include this summary in the prompt so the LLM can integrate new logic with what's already present.
+- **NOT DONE Final Integration/Refinement Agent:**
+  - After all steps, run a final agent (LLM or deterministic) to review, unify, and polish the code.
+  - Ensure all planned features are present, merge duplicate logic, and add missing win/lose/UI code.
+  - Optionally, run a formatter/linter for style consistency.
+- **NOT DONE More Robust Error Recovery:**
+  - On syntax or runtime error, retry or escalate to a fixer agent.
+  - If the fixer fails, escalate to the planner or abort with a clear error.
+- **NOT DONE Iterative Testing and Prompt Refinement:**
+  - Continuously test the pipeline and refine prompts to improve LLM output quality.
+  - Adjust prompts to encourage the LLM to extend, not replace, and to check for missing features.
+
 ---
 
 ## Phase 6: Integration & Migration
@@ -83,6 +121,17 @@ This plan describes how to incrementally build the new agent-based, LLM-driven g
 31. **Optimize for large codebases** (context summarization, chunking).
 32. **Add support for new game genres, behaviors, or agent types**.
 33. **Testing:** Regression and performance tests for advanced features.
+
+---
+
+## LLM Mocking Policy
+
+- For every agent that calls an LLM, provide a corresponding mock implementation (e.g., MockOpenAI).
+- Whenever you change the LLM prompt, contract, or output parsing, update the mock to match.
+- All tests should use the mock by default, unless explicitly testing real LLM integration.
+- Add a code review checklist item: "If LLM contract changed, was the mock updated?"
+- Document the location and usage of the mock in the codebase.
+- Add a comment in each LLM agent: `// NOTE: If you change this contract, update MockOpenAI accordingly.`
 
 ---
 

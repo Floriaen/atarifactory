@@ -2,7 +2,7 @@
 
 ### 1. Overview
 
-This system automatically generates playable vanilla JS Canvas games from minimal input. It follows a hybrid strategy combining pattern-based generation, step-by-step code planning, and runtime validation.
+This system automatically generates complete, playable vanilla JS Canvas games from scratch. It follows a hybrid strategy combining pattern-based generation, step-by-step code planning, and runtime validation. The system requires no input - it generates everything including game design, mechanics, and code.
 
 **Note:** For all code merging and insertion, the system will use AST-based (Abstract Syntax Tree) code manipulation tools (such as Recast or Babel) to ensure robust, safe, and context-aware code updates.
 
@@ -13,13 +13,11 @@ This system automatically generates playable vanilla JS Canvas games from minima
 #### 2.1 GameDesignAgent
 
 **Input:**
-
 ```json
-{ "title": "Coin Collector" }
+{}
 ```
 
 **Output:**
-
 ```json
 {
   "title": "Coin Collector",
@@ -31,7 +29,7 @@ This system automatically generates playable vanilla JS Canvas games from minima
 ```
 
 **Example Prompt:**
-"Generate a simple 2D canvas game design for the title 'Coin Collector'. Include description, mechanics, and win condition."
+"Generate a complete game design including title, description, mechanics, and win condition."
 
 #### 2.2 PlannerAgent
 
@@ -41,11 +39,11 @@ This system automatically generates playable vanilla JS Canvas games from minima
 
 ```json
 [
-  { "id": 1, "label": "Setup canvas and loop" },
-  { "id": 2, "label": "Add player and controls" },
-  { "id": 3, "label": "Add coins and scoring" },
-  { "id": 4, "label": "Add spikes and loss condition" },
-  { "id": 5, "label": "Display win/lose text" }
+  { "id": 1, "description": "Setup canvas and loop" },
+  { "id": 2, "description": "Add player and controls" },
+  { "id": 3, "description": "Add coins and scoring" },
+  { "id": 4, "description": "Add spikes and loss condition" },
+  { "id": 5, "description": "Display win/lose text" }
 ]
 ```
 
@@ -58,7 +56,7 @@ This system automatically generates playable vanilla JS Canvas games from minima
 
 * currentCode (the full code generated so far)
 * plan (the full ordered list of build steps)
-* step: { id, label } (the current step description)
+* step: { id, description } (the current step description)
 
 **Note:**
 To ensure robust, incremental, and non-redundant code generation, StepBuilderAgent always receives the full plan, the current code, and the current step. This allows the agent to:
@@ -71,7 +69,7 @@ If the codebase becomes very large, context summarization strategies (such as in
 **Output:** Code block (new or updated function)
 
 **Prompt Template:**
-"Here is the current game code, the full plan, and a step labeled '{{label}}'. Please generate the corresponding function or logic to complete this step."
+"Here is the current game code, the full plan, and a step described as '{{description}}'. Please generate the corresponding function or logic to complete this step."
 
 **Example:**
 
@@ -84,14 +82,14 @@ function update() {
 *Input (plan):*
 ```json
 [
-  { "id": 1, "label": "Setup canvas and loop" },
-  { "id": 2, "label": "Add player and controls" },
-  { "id": 3, "label": "Add coins and scoring" },
-  { "id": 4, "label": "Add spikes and loss condition" },
-  { "id": 5, "label": "Display win/lose text" }
+  { "id": 1, "description": "Setup canvas and loop" },
+  { "id": 2, "description": "Add player and controls" },
+  { "id": 3, "description": "Add coins and scoring" },
+  { "id": 4, "description": "Add spikes and loss condition" },
+  { "id": 5, "description": "Display win/lose text" }
 ]
 ```
-*Step (label):* "Extend the 'update' function to add collision detection."
+*Step (description):* "Extend the 'update' function to add collision detection."
 
 *Output (stepCode):*
 ```js
@@ -162,11 +160,11 @@ function update() {
 **Input:**
 
 * currentCode (the full code generated so far)
-* step (the current step object from the plan, e.g., { id, label })
+* step (the current step object from the plan, e.g., { id, description })
 * error list
 
 **Note:**
-The 'step' input is the current step object from the plan (see PlannerAgent), typically including an id and label. This provides the agent with the context and intent for the code it is fixing, ensuring the correction matches the step's purpose.
+The 'step' input is the current step object from the plan (see PlannerAgent), typically including an id and description. This provides the agent with the context and intent for the code it is fixing, ensuring the correction matches the step's purpose.
 
 **Output:**
 
@@ -178,7 +176,7 @@ The 'step' input is the current step object from the plan (see PlannerAgent), ty
 * Does **not** modify or rewrite the full currentCode — only the faulty part from StepBuilderAgent
 
 **Prompt Template:**
-"Fix the step code for '{{label}}'. Here are the errors found: {{errorList}}"
+"Fix the step code for '{{description}}'. Here are the errors found: {{errorList}}"
 
 **Behavior:**
 
@@ -194,7 +192,7 @@ if (player.x < coin.x + coin.width && player.x + player.width > coin.x) {
 ```
 *Input (step):*
 ```json
-{ "id": 3, "label": "Add coins and scoring" }
+{ "id": 3, "description": "Add coins and scoring" }
 ```
 *Error List:*
 - ReferenceError: coin is not defined
@@ -434,11 +432,11 @@ Formatting is handled internally by agents that modify the code. It is not an ag
 
 ```json
 [
-  { "id": 1, "label": "Setup canvas" },
-  { "id": 2, "label": "Add player and jump" },
-  { "id": 3, "label": "Add platforms" },
-  { "id": 4, "label": "Add gems and collect logic" },
-  { "id": 5, "label": "Display score and win" }
+  { "id": 1, "description": "Setup canvas" },
+  { "id": 2, "description": "Add player and jump" },
+  { "id": 3, "description": "Add platforms" },
+  { "id": 4, "description": "Add gems and collect logic" },
+  { "id": 5, "description": "Display score and win" }
 ]
 ```
 

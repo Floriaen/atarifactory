@@ -167,7 +167,10 @@ function clearLog(delay = 2000) {
 
 async function fetchGames() {
   const res = await fetch(`${API_BASE}/games`);
-  return res.json();
+  let games = await res.json();
+  // Always add a Test Game entry for rapid backend testing
+  games.unshift({ id: 'testgame', name: 'Test Game', date: new Date().toISOString() });
+  return games;
 }
 
 function renderGallery(games) {
@@ -214,7 +217,9 @@ document.getElementById('generate-btn').onclick = async function() {
   try {
     const response = await fetch(`${API_BASE}/generate-stream`, {
       method: 'POST',
-      headers: { 'Accept': 'text/event-stream' },
+      headers: {
+        'Accept': 'text/event-stream'
+      }
     });
     if (!response.body) throw new Error('No response body');
     const reader = response.body.getReader();
