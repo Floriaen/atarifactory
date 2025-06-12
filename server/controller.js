@@ -57,21 +57,21 @@ async function runPipeline(title, onStatusUpdate) {
       console.error('Failed to create gameFolder', gameFolder, err);
       throw err;
     }
+
+    // Get code and game design info from pure pipeline (mock or real)
+    const { code, gameDef } = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
+    const gameName = gameDef?.title || title;
+
     try {
-      // Get code and game design info from pure pipeline (mock or real)
-      const { code, gameDef } = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
-      const gameName = gameDef?.title || title;
       const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+      
+      // Write game.js
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
-      // Copy controlBar.js and controlBar.css directly into the game folder
+      
+      // Copy control bar assets
       fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
       fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
-    } catch (err) {
-      logger.error('Failed to write game.js or control bar assets', { gameId, gameFolder, error: err });
-      console.error('Failed to write game.js or control bar assets', path.join(gameFolder, 'game.js'), err);
-      throw err;
-    }
-    try {
+
       // Read the boilerplate template
       const boilerplatePath = path.join(__dirname, 'gameBoilerplate.html');
       let html = fs.readFileSync(boilerplatePath, 'utf8');
@@ -79,15 +79,16 @@ async function runPipeline(title, onStatusUpdate) {
       html = html
         .replace('{{title}}', gameName)
         .replace('{{description}}', gameDef.description || '')
-        .replace('{{instructions}}', gameDef.mechanics || '')
+        .replace('{{instructions}}', Array.isArray(gameDef.mechanics) ? gameDef.mechanics.join(', ') : gameDef.mechanics || '')
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'controlBar/controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
     } catch (err) {
-      logger.error('Failed to write index.html', { gameId, gameFolder, error: err });
-      console.error('Failed to write index.html', path.join(gameFolder, 'index.html'), err);
+      logger.error('Failed to write game files', { gameId, gameFolder, error: err });
+      console.error('Failed to write game files', err);
       throw err;
     }
+
     // Update manifest
     if (!global.gamesManifest) global.gamesManifest = [];
     const gameMeta = { id: gameId, name: gameName, date: gameDate, url: `/games/${gameId}/` };
@@ -174,8 +175,11 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
     return {
       code: fs.readFileSync(path.join(__dirname, 'mocks', 'game.js'), 'utf8'),
       gameDef: {
+        title: title,
         description: 'A mock game for testing purposes',
-        mechanics: 'This is a mock game with no real mechanics'
+        mechanics: ['move', 'jump'],
+        winCondition: 'Collect all coins',
+        entities: ['player', 'coin']
       }
     };
   } else {
