@@ -4,7 +4,7 @@
   <meta charset='utf-8'>
   <title>{{title}}</title>
   <meta name='viewport' content='width=device-width,initial-scale=1.0,user-scalable=no'>
-  <link rel='stylesheet' href='assets/controlBar.css'>
+  <link rel='stylesheet' href='controlBar.css'>
   <style>
     body{margin:0;background:#181818;}
     #game-container{width:100vw;position:relative;}
@@ -19,7 +19,7 @@
   </div>
   {{controlBarHTML}}
   <div id='game-info' style='color:#ffb300;text-align:center;font-size:1em;margin:0.5em 0 0.2em 0;'>{{description}}<br><span style='color:#ccc;font-size:0.95em;'>{{instructions}}</span></div>
-  <script src='/games/{{gameId}}/assets/controlBar.js'></script>
+  <script src='controlBar.js'></script>
   <script>
     // Dynamically resize the game container and canvas to avoid control bar overlap
     function resizeGameArea() {
@@ -41,6 +41,6 @@
     window.addEventListener('gamepad-press', function(e) { window.gamepadState[e.detail.key] = true; });
     window.addEventListener('gamepad-release', function(e) { window.gamepadState[e.detail.key] = false; });
   </script>
-  <script src='assets/game.js'></script>
+  <script src='game.js'></script>
 </body>
 </html> 
