@@ -14,7 +14,7 @@
 
 const logger = require('../utils/logger');
 const { ESLint } = require('eslint');
-const BlockInserterAgent = require('./BlockInserterAgent');
+const { mergeCode } = require('../utils/codeMerge');
 const pipelineConfig = require('../config/pipeline.eslint.config');
 
 async function StaticCheckerAgent(sharedState, { logger, traceId }) {
@@ -26,8 +26,8 @@ async function StaticCheckerAgent(sharedState, { logger, traceId }) {
     stepCode: stepCode || '(empty)'
   });
 
-  // Get simulated merged code using the same merge logic
-  const codeToCheck = await BlockInserterAgent.mergeAndFormat(currentCode, stepCode);
+  // Get simulated merged code using the same merge logic (dry-run)
+  const codeToCheck = mergeCode(currentCode, stepCode);
   
   logger.info('StaticCheckerAgent merged code:', { 
     traceId, 

@@ -46,8 +46,10 @@ describe('Pipeline Integration', () => {
     expect(stepCode.length).toBeGreaterThan(0);
 
     // 4. Merge code
+    sharedState.currentCode = '';
+    sharedState.stepCode = stepCode;
     const mergedCode = await BlockInserterAgent(
-      { currentCode: '', stepCode },
+      sharedState,
       { logger, traceId }
     );
     expect(typeof mergedCode).toBe('string');
