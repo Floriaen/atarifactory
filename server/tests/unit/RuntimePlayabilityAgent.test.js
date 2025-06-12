@@ -20,6 +20,13 @@ describe('RuntimePlayabilityAgent', () => {
   it('should return all booleans (placeholder)', async () => {
     const sharedState = createSharedState();
     sharedState.currentCode = '// placeholder game code';
+    sharedState.gameDef = {
+      title: 'Test Game',
+      description: 'A test game',
+      mechanics: ['move'],
+      winCondition: 'Reach the goal',
+      entities: ['player']
+    };
     const result = await RuntimePlayabilityAgent(sharedState, { logger: console, traceId: 'test' });
     expect(typeof result).toBe('object');
     expect(typeof result.canvasActive).toBe('boolean');
@@ -44,6 +51,13 @@ describe('RuntimePlayabilityAgent', () => {
       const canvas = document.createElement('canvas');
       document.body.appendChild(canvas);
     `;
+    sharedState.gameDef = {
+      title: 'Test Game',
+      description: 'A test game',
+      mechanics: ['move'],
+      winCondition: 'Reach the goal',
+      entities: ['player']
+    };
     const result = await RuntimePlayabilityAgent(sharedState, { logger: console, traceId: 'input-test' });
     expect(result.canvasActive).toBe(true);
     expect(result.inputResponsive).toBe(true);
@@ -63,6 +77,13 @@ describe('RuntimePlayabilityAgent', () => {
       const canvas = document.createElement('canvas');
       document.body.appendChild(canvas);
     `;
+    sharedState.gameDef = {
+      title: 'Test Game',
+      description: 'A test game',
+      mechanics: ['move'],
+      winCondition: 'Reach the goal',
+      entities: ['player']
+    };
     const result = await RuntimePlayabilityAgent(sharedState, { logger: console, traceId: 'move-test' });
     expect(result.canvasActive).toBe(true);
     expect(result.inputResponsive).toBe(true);
@@ -87,6 +108,13 @@ describe('RuntimePlayabilityAgent', () => {
       const canvas = document.createElement('canvas');
       document.body.appendChild(canvas);
     `;
+    sharedState.gameDef = {
+      title: 'Test Game',
+      description: 'A test game',
+      mechanics: ['move'],
+      winCondition: 'Reach the goal',
+      entities: ['player']
+    };
     const result = await RuntimePlayabilityAgent(sharedState, { logger: console, traceId: 'win-test' });
     expect(result.canvasActive).toBe(true);
     expect(result.inputResponsive).toBe(true);

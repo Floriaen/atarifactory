@@ -44,9 +44,9 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
     
     // Replace template variables with test values
     html = html
-      .replace('{{title}}', 'Test Game')
-      .replace('{{description}}', 'Test game for runtime validation')
-      .replace('{{instructions}}', 'Test instructions')
+      .replace('{{title}}', sharedState.gameDef.title)
+      .replace('{{description}}', sharedState.gameDef.description || 'Test game for runtime validation')
+      .replace('{{instructions}}', Array.isArray(sharedState.gameDef.mechanics) ? sharedState.gameDef.mechanics.join(', ') : 'Test instructions')
       .replace('{{gameId}}', 'test')
       .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, '..', 'controlBar/controlBar.html'), 'utf8'));
     

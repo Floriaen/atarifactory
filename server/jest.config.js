@@ -6,15 +6,15 @@
 /** @type {import('jest').Config} */
 const config = {
   collectCoverage: true,
-  coverageDirectory: "coverage",
-  coverageProvider: "v8",
-  setupFiles: ["./jest.setup.js"],
+  coverageDirectory: 'coverage',
+  coverageProvider: 'v8',
+  setupFiles: ['./jest.setup.js'],
   testMatch: [
-    "**/tests/unit/**/*.test.js",
-    "**/tests/integration/**/*.test.js",
-    "**/tests/mocks/**/*.test.js"
+    '**/tests/unit/**/*.test.js',
+    '**/tests/integration/**/*.test.js',
+    '**/tests/mocks/**/*.test.js'
   ],
-  testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/"]
+  testPathIgnorePatterns: ['/node_modules/', '/tests/e2e/']
 };
 
 module.exports = config;
