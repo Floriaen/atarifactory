@@ -14,14 +14,18 @@
 
 const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
+const { cleanUp } = require('../utils/cleanUp');
 
 const mergeAndFormat = async (currentCode, stepCode, logger) => {
   try {
     // First merge using the codeMerge utility
     const mergedCode = await mergeCode(currentCode, stepCode);
-    
-    // Format the merged code
-    const formattedCode = await prettier.format(mergedCode, {
+
+    // Clean up: deduplicate and hoist declarations/functions
+    const cleanedCode = cleanUp(mergedCode);
+
+    // Format the cleaned code
+    const formattedCode = await prettier.format(cleanedCode, {
       parser: 'babel',
       singleQuote: false,
       trailingComma: 'none',

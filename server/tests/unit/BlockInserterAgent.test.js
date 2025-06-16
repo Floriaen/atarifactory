@@ -29,6 +29,420 @@ function extractDeclarations(ast) {
 }
 
 describe('BlockInserterAgent', () => {
+  it('should correctly hoist declarations and entrypoint calls for real-world complex input', async () => {
+    const sharedState = createSharedState();
+    // User's real-world problematic code sample
+    sharedState.currentCode = `
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+function gameLoop() {
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Update game state
+  // (This is where you would update positions, check for collisions, etc.)
+
+  // Render game state
+  // (This is where you would draw the player, enemies, etc.)
+
+  // Request the next frame
+  requestAnimationFrame(gameLoop);
+}
+
+// Start the game loop
+gameLoop();
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height - 30,
+  width: 50,
+  height: 10,
+  speed: 5,
+  moveLeft: false,
+  moveRight: false
+};
+
+function updatePlayer() {
+  if (player.moveLeft && player.x > 0) {
+    player.x -= player.speed;
+  }
+  if (player.moveRight && player.x < canvas.width - player.width) {
+    player.x += player.speed;
+  }
+}
+
+function drawPlayer() {
+  ctx.fillStyle = 'blue';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+// Update game state
+function updateGameState() {
+  updatePlayer();
+}
+
+// Render game state
+function renderGameState() {
+  drawPlayer();
+}
+
+// Modify the game loop to include update and render functions
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateGameState();
+  renderGameState();
+  requestAnimationFrame(gameLoop);
+}
+// Add event listeners for keydown and keyup to control player movement
+document.addEventListener('keydown', function(event) {
+  if (event.code === 'ArrowLeft') {
+    player.moveLeft = true;
+  } else if (event.code === 'ArrowRight') {
+    player.moveRight = true;
+  }
+});
+
+document.addEventListener('keyup', function(event) {
+  if (event.code === 'ArrowLeft') {
+    player.moveLeft = false;
+  } else if (event.code === 'ArrowRight') {
+    player.moveRight = false;
+  }
+});
+const lasers = [];
+
+function shootLaser() {
+  const laser = {
+    x: player.x + player.width / 2,
+    y: player.y,
+    width: 5,
+    height: 20,
+    speed: 7
+  };
+  lasers.push(laser);
+}
+
+function updateLasers() {
+  for (let i = 0; i < lasers.length; i++) {
+    lasers[i].y -= lasers[i].speed;
+    if (lasers[i].y < 0) {
+      lasers.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+function drawLasers() {
+  ctx.fillStyle = 'red';
+  for (const laser of lasers) {
+    ctx.fillRect(laser.x, laser.y, laser.width, laser.height);
+  }
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.code === 'Space') {
+    shootLaser();
+  }
+});
+
+function updateGameState() {
+  updatePlayer();
+  updateLasers();
+}
+
+function renderGameState() {
+  drawPlayer();
+  drawLasers();
+}
+const alienShips = [];
+
+function createAlienShip(x, y) {
+  const alienShip = {
+    x: x,
+    y: y,
+    width: 40,
+    height: 20,
+    speed: 2
+  };
+  alienShips.push(alienShip);
+}
+
+function drawAlienShips() {
+  ctx.fillStyle = 'green';
+  for (const alienShip of alienShips) {
+    ctx.fillRect(alienShip.x, alienShip.y, alienShip.width, alienShip.height);
+  }
+}
+
+// Initialize some alien ships for demonstration
+createAlienShip(100, 50);
+createAlienShip(200, 50);
+createAlienShip(300, 50);
+
+function renderGameState() {
+  drawPlayer();
+  drawLasers();
+  drawAlienShips();
+}
+function updateAlienShips() {
+  for (const alienShip of alienShips) {
+    alienShip.y += alienShip.speed;
+    // Check if the alien ship has reached the base
+    if (alienShip.y + alienShip.height >= canvas.height) {
+      // Handle the case where an alien ship reaches the base
+      // This could be a lose condition or some other logic
+    }
+  }
+}
+
+function updateGameState() {
+  updatePlayer();
+  updateLasers();
+  updateAlienShips();
+}
+function checkCollisions() {
+  for (let i = 0; i < lasers.length; i++) {
+    const laser = lasers[i];
+    for (let j = 0; j < alienShips.length; j++) {
+      const alienShip = alienShips[j];
+      if (
+        laser.x < alienShip.x + alienShip.width &&
+        laser.x + laser.width > alienShip.x &&
+        laser.y < alienShip.y + alienShip.height &&
+        laser.y + laser.height > alienShip.y
+      ) {
+        // Collision detected
+        // Handle collision in the next step
+      }
+    }
+  }
+}
+
+function updateGameState() {
+  updatePlayer();
+  updateLasers();
+  updateAlienShips();
+  checkCollisions();
+}
+function checkCollisions() {
+  for (let i = 0; i < lasers.length; i++) {
+    const laser = lasers[i];
+    for (let j = 0; j < alienShips.length; j++) {
+      const alienShip = alienShips[j];
+      if (
+        laser.x < alienShip.x + alienShip.width &&
+        laser.x + laser.width > alienShip.x &&
+        laser.y < alienShip.y + alienShip.height &&
+        laser.y + laser.height > alienShip.y
+      ) {
+        // Collision detected
+        // Remove the alien ship and the laser
+        alienShips.splice(j, 1);
+        lasers.splice(i, 1);
+        i--; // Adjust index after removal
+        break; // Exit the inner loop as the laser is already removed
+      }
+    }
+  }
+}
+player.isDodging = false;
+player.dodgeCooldown = false;
+player.dodgeSpeed = 15;
+player.dodgeDuration = 200; // milliseconds
+player.dodgeCooldownTime = 1000; // milliseconds
+
+function dodge() {
+  if (!player.isDodging && !player.dodgeCooldown) {
+    player.isDodging = true;
+    player.dodgeCooldown = true;
+    const originalSpeed = player.speed;
+    player.speed = player.dodgeSpeed;
+
+    setTimeout(() => {
+      player.isDodging = false;
+      player.speed = originalSpeed;
+    }, player.dodgeDuration);
+
+    setTimeout(() => {
+      player.dodgeCooldown = false;
+    }, player.dodgeCooldownTime);
+  }
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.code === 'KeyD') {
+    dodge();
+  }
+});
+function checkWinCondition() {
+  if (alienShips.length === 0) {
+    // All alien ships are destroyed, player wins
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = '48px sans-serif';
+    ctx.fillText('You Win!', canvas.width / 2 - 100, canvas.height / 2);
+    return true; // Indicate that the game should stop
+  }
+  return false; // Continue the game
+}
+
+function updateGameState() {
+  updatePlayer();
+  updateLasers();
+  updateAlienShips();
+  checkCollisions();
+  if (checkWinCondition()) {
+    return; // Stop the game loop if the win condition is met
+  }
+}
+
+// Modify the game loop to stop when the win condition is met
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateGameState();
+  renderGameState();
+  if (!checkWinCondition()) {
+    requestAnimationFrame(gameLoop);
+  }
+}
+function checkLoseCondition() {
+  for (const alienShip of alienShips) {
+    if (alienShip.y + alienShip.height >= canvas.height) {
+      // An alien ship has reached the base, player loses
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'red';
+      ctx.font = '48px sans-serif';
+      ctx.fillText('You Lose!', canvas.width / 2 - 100, canvas.height / 2);
+      return true; // Indicate that the game should stop
+    }
+  }
+  return false; // Continue the game
+}
+
+function updateGameState() {
+  updatePlayer();
+  updateLasers();
+  updateAlienShips();
+  checkCollisions();
+  if (checkWinCondition() || checkLoseCondition()) {
+    return; // Stop the game loop if the win or lose condition is met
+  }
+}
+
+// Modify the game loop to stop when the win or lose condition is met
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateGameState();
+  renderGameState();
+  if (!checkWinCondition() && !checkLoseCondition()) {
+    requestAnimationFrame(gameLoop);
+  }
+}
+function displayOutcomeText(text, color) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = color;
+  ctx.font = '48px sans-serif';
+  ctx.fillText(text, canvas.width / 2 - 100, canvas.height / 2);
+}
+
+function checkWinCondition() {
+  if (alienShips.length === 0) {
+    displayOutcomeText('You Win!', 'white');
+    return true; // Indicate that the game should stop
+  }
+  return false; // Continue the game
+}
+
+function checkLoseCondition() {
+  for (const alienShip of alienShips) {
+    if (alienShip.y + alienShip.height >= canvas.height) {
+      displayOutcomeText('You Lose!', 'red');
+      return true; // Indicate that the game should stop
+    }
+  }
+  return false; // Continue the game
+}
+`;
+    sharedState.stepCode = '';
+    const result = await BlockInserterAgent(sharedState, { logger, traceId: 'realworld-test' });
+    // DEBUG: Log the cleaned output to help diagnose test failure
+    // eslint-disable-next-line no-console
+    console.log('--- Cleaned output for real-world test ---\n' + result + '\n--- END CLEANED OUTPUT ---');
+
+    // AST-based validation: All variable declarations must come before any top-level function call
+    const ast = parser.parse(result, { sourceType: 'module' });
+    let lastVarDeclIdx = -1;
+    let firstFuncCallIdx = -1;
+    ast.program.body.forEach((node, idx) => {
+      if (node.type === 'VariableDeclaration') lastVarDeclIdx = idx;
+      if (
+        node.type === 'ExpressionStatement' &&
+        node.expression.type === 'CallExpression' &&
+        ((node.expression.callee.type === 'Identifier') || (node.expression.callee.type === 'MemberExpression')) &&
+        firstFuncCallIdx === -1
+      ) {
+        firstFuncCallIdx = idx;
+      }
+    });
+    expect(lastVarDeclIdx).toBeGreaterThan(-1);
+    expect(firstFuncCallIdx).toBeGreaterThan(-1);
+    expect(lastVarDeclIdx).toBeLessThan(firstFuncCallIdx);
+
+    // Find all declared function names
+    const declaredFunctionNames = new Set();
+    ast.program.body.forEach(node => {
+      if (node.type === 'FunctionDeclaration' && node.id && node.id.name) {
+        declaredFunctionNames.add(node.id.name);
+      }
+    });
+    // Find all top-level function calls
+    const callNodes = ast.program.body.filter(node =>
+      node.type === 'ExpressionStatement' &&
+      node.expression.type === 'CallExpression'
+    );
+    // Print all top-level call names for debug
+    // eslint-disable-next-line no-console
+    console.log('Top-level calls:', callNodes.map(n => n.expression.callee.type === 'Identifier' ? n.expression.callee.name : '[non-identifier]'));
+    // Find the last top-level call to a declared function (entrypoint candidate)
+    let lastEntrypointIdx = -1;
+    for (let i = callNodes.length - 1; i >= 0; i--) {
+      const call = callNodes[i];
+      if (
+        call.expression.callee.type === 'Identifier' &&
+        declaredFunctionNames.has(call.expression.callee.name)
+      ) {
+        lastEntrypointIdx = i;
+        break;
+      }
+    }
+    expect(lastEntrypointIdx).not.toBe(-1);
+    // The last entrypoint call must be the last top-level function call
+    expect(lastEntrypointIdx).toBe(callNodes.length - 1);
+  });
+  it('should hoist variable declarations above entrypoint calls (TDZ prevention)', async () => {
+    const sharedState = createSharedState();
+    // Simulate problematic input: call before declaration
+    sharedState.currentCode = `
+      gameLoop();
+    `;
+    sharedState.stepCode = `
+      const player = { x: 0, y: 0 };
+      function gameLoop() {
+        player.x += 1;
+      }
+    `;
+    const result = await BlockInserterAgent(sharedState, { logger, traceId: 'tdz-test' });
+
+    // player must be declared before gameLoop is called
+    const playerIndex = result.indexOf('const player');
+    const callIndex = result.indexOf('gameLoop();');
+    expect(playerIndex).toBeGreaterThan(-1);
+    expect(callIndex).toBeGreaterThan(-1);
+    expect(playerIndex).toBeLessThan(callIndex);
+
+    // Optionally: call to gameLoop should be at the end
+    expect(result.trim().endsWith('gameLoop();')).toBe(true);
+  });
   const traceId = 'unit-test';
 
   it('should merge new code into existing code', async () => {
@@ -222,6 +636,7 @@ describe('BlockInserterAgent', () => {
     sharedState.currentCode = 'function update() { console.log("old"); }';
     sharedState.stepCode = 'function update() { console.log("new"); }';
     const result = await BlockInserterAgent(sharedState, { logger, traceId: 'merge-fn' });
+    // New logic: order is variable declarations, then functions (draw, then update)
     expect(result).toMatch(/function update\(\) \{[\s\S]*console\.log\("old"\);[\s\S]*console\.log\("new"\);[\s\S]*\}/);
     expect(sharedState.currentCode).toBe(result);
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
@@ -242,7 +657,7 @@ describe('BlockInserterAgent', () => {
     sharedState.currentCode = 'function update() {}';
     sharedState.stepCode = 'const x = 42;';
     const result = await BlockInserterAgent(sharedState, { logger, traceId: 'append-stmt' });
-    expect(result).toMatch(/function update\(\) \{\}[\s\S]*const x = 42;/);
+    expect(result).toMatch(/const x = 42;[\s\S]*function update\(\) \{\}/);
     expect(sharedState.currentCode).toBe(result);
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
   });

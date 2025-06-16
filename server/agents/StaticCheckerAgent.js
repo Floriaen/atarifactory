@@ -15,6 +15,7 @@
 const logger = require('../utils/logger');
 const { ESLint } = require('eslint');
 const { mergeCode } = require('../utils/codeMerge');
+const { cleanUp } = require('../utils/cleanUp');
 const pipelineConfig = require('../config/pipeline.eslint.config');
 
 async function StaticCheckerAgent(sharedState, { logger, traceId }) {
@@ -27,9 +28,27 @@ async function StaticCheckerAgent(sharedState, { logger, traceId }) {
   });
 
   // Get simulated merged code using the same merge logic (dry-run)
-  const codeToCheck = mergeCode(currentCode, stepCode);
-  
-  logger.info('StaticCheckerAgent merged code:', { 
+  const mergedCode = mergeCode(currentCode, stepCode);
+  let codeToCheck;
+  try {
+    codeToCheck = cleanUp(mergedCode);
+  } catch (parseError) {
+    logger.error('StaticCheckerAgent: Parse error in cleanUp', {
+      traceId,
+      error: parseError.message,
+      stack: parseError.stack
+    });
+    const syntaxError = {
+      line: 1,
+      column: 0,
+      message: `Syntax error: ${parseError.message}`,
+      ruleId: 'parse-error'
+    };
+    sharedState.errors = [syntaxError];
+    return [syntaxError];
+  }
+
+  logger.info('StaticCheckerAgent merged+cleaned code:', { 
     traceId, 
     codeToCheck: codeToCheck || '(empty)'
   });
@@ -63,7 +82,8 @@ async function StaticCheckerAgent(sharedState, { logger, traceId }) {
     logger.error('StaticCheckerAgent: ESLint error', { 
       traceId, 
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
     throw new Error(`Static validation failed: ${error.message}`);
   }

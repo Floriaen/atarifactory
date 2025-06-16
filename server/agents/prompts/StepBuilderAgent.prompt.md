@@ -8,6 +8,8 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 ```
 
+IMPORTANT: Never use alert(). Use displayMessage(msg) or show messages in the game UI instead.
+
 ---
 
 ## CURRENT CODE

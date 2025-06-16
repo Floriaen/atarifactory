@@ -37,6 +37,8 @@ Ignore style issues like:
 
 ---
 
+IMPORTANT: Never use alert(). Use displayMessage(msg) or show messages in the game UI instead.
+
 ## CORRECTED CODE BLOCK
 ```js
 // Your corrected code here
