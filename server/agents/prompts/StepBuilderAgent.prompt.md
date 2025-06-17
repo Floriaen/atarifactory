@@ -8,6 +8,10 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 ```
 
+IMPORTANT: Never use alert(). Instead, update the DOM (e.g., inject a message element) or use console.log for debugging.
+
+IMPORTANT: Do NOT load external images or sounds. Draw everything directly with canvas primitives.
+
 ---
 
 ## CURRENT CODE

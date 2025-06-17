@@ -14,69 +14,59 @@
 
 const { mergeCode } = require('../utils/codeMerge');
 const prettier = require('prettier');
-const logger = require('../utils/logger');
+const { cleanUp } = require('../utils/cleanUp');
 
-async function mergeAndFormat(currentCode, stepCode) {
+const mergeAndFormat = async (currentCode, stepCode, logger) => {
   try {
-    // Merge the code using our module
+    // First merge using the codeMerge utility
     const mergedCode = await mergeCode(currentCode, stepCode);
-    
-    // Format the merged code
-    try {
-      return prettier.format(mergedCode, {
-        parser: 'babel',
-        semi: true,
-        singleQuote: false,
-        trailingComma: 'es5',
-      });
-    } catch (formatError) {
-      logger.error('Prettier formatting failed:', formatError);
-      return mergedCode;
-    }
-  } catch (error) {
-    logger.error('Error in merge:', error);
-    throw error;
-  }
-}
 
-async function BlockInserterAgent(sharedState, { logger, traceId }) {
-  try {
-    // Extract and validate required fields
-    const { currentCode, stepCode } = sharedState;
-    if (currentCode === undefined || currentCode === null) {
-      throw new Error('BlockInserterAgent: currentCode is required in sharedState');
-    }
-    if (stepCode === undefined || stepCode === null) {
-      throw new Error('BlockInserterAgent: stepCode is required in sharedState');
-    }
+    // Clean up: deduplicate and hoist declarations/functions
+    const cleanedCode = cleanUp(mergedCode);
 
-    logger.info('BlockInserterAgent called', { traceId });
-    
-    // Merge and format the code
-    const formattedCode = await mergeAndFormat(currentCode, stepCode);
-    
-    // Update sharedState
-    sharedState.currentCode = formattedCode;
-    
-    // Initialize metadata if it doesn't exist
-    if (!sharedState.metadata) {
-      sharedState.metadata = {
-        startTime: new Date(),
-        lastUpdate: new Date()
-      };
-    } else {
-      sharedState.metadata.lastUpdate = new Date();
-    }
-    
-    logger.info('BlockInserterAgent output', { traceId, formattedCode });
+    // Format the cleaned code
+    const formattedCode = await prettier.format(cleanedCode, {
+      parser: 'babel',
+      singleQuote: false,
+      trailingComma: 'none',
+      tabWidth: 2
+    });
+
     return formattedCode;
   } catch (error) {
-    logger.error('Error in BlockInserterAgent:', error);
-    throw error;
+    if (logger) logger.error('Error in mergeAndFormat:', { error, service: 'pipeline-v2' });
+    // Fallback to simple concatenation if merge fails
+    return `${currentCode}\n${stepCode}`;
+  }
+};
+
+async function BlockInserterAgent(sharedState, { logger, traceId }) {
+  const { currentCode, stepCode } = sharedState;
+
+  logger.info('codeMerge input:', { currentCode, stepCode, service: 'pipeline-v2', timestamp: new Date().toISOString() });
+
+
+  try {
+    const result = await mergeAndFormat(currentCode, stepCode, logger);
+    logger.info('codeMerge output:', { mergedCode: result, service: 'pipeline-v2', timestamp: new Date().toISOString() });
+
+    // Update shared state
+    sharedState.currentCode = result;
+    sharedState.metadata.lastUpdate = new Date();
+
+    return result;
+  } catch (error) {
+    logger.error('codeMerge parsing failed:', error);
+    // If parsing fails, fall back to simple concatenation
+    const fallbackCode = `${currentCode}\n${stepCode}`;
+    logger.info('codeMerge fallback output:', { fallbackCode });
+
+    // Update shared state with fallback
+    sharedState.currentCode = fallbackCode;
+    sharedState.metadata.lastUpdate = new Date();
+
+    return fallbackCode;
   }
 }
 
-// Add mergeAndFormat as a property of BlockInserterAgent
-BlockInserterAgent.mergeAndFormat = mergeAndFormat;
-
-module.exports = BlockInserterAgent; 
+module.exports = BlockInserterAgent;

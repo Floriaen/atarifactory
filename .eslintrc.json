@@ -14,5 +14,16 @@
     "no-console": "off",
     "semi": ["error", "always"],
     "quotes": ["error", "single"]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["frontend/src/main.js"],
+      "env": { "browser": true },
+      "parserOptions": { "sourceType": "module" }
+    },
+    {
+      "files": ["server/tests/**/*.js"],
+      "env": { "jest": true }
+    }
+  ]
 } 

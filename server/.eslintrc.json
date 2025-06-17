@@ -12,5 +12,15 @@
     "no-undef": "error",
     "quotes": "off",
     "semi": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.js"],
+      "env": { "jest": true }
+    },
+    {
+      "files": ["games/**/*.js"],
+      "env": { "browser": true }
+    }
+  ]
 } 

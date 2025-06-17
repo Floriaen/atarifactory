@@ -14,7 +14,9 @@
 
 const logger = require('../utils/logger');
 const { ESLint } = require('eslint');
-const BlockInserterAgent = require('./BlockInserterAgent');
+const { mergeCode } = require('../utils/codeMerge');
+const { cleanUp } = require('../utils/cleanUp');
+const pipelineConfig = require('../config/pipeline.eslint.config');
 
 async function StaticCheckerAgent(sharedState, { logger, traceId }) {
   const { currentCode, stepCode } = sharedState;
@@ -25,28 +27,66 @@ async function StaticCheckerAgent(sharedState, { logger, traceId }) {
     stepCode: stepCode || '(empty)'
   });
 
-  // Get simulated merged code using the same merge logic
-  const codeToCheck = await BlockInserterAgent.mergeAndFormat(currentCode, stepCode);
-  
-  logger.info('StaticCheckerAgent merged code:', { 
+  // Get simulated merged code using the same merge logic (dry-run)
+  const mergedCode = mergeCode(currentCode, stepCode);
+  let codeToCheck;
+  try {
+    codeToCheck = cleanUp(mergedCode);
+  } catch (parseError) {
+    logger.error('StaticCheckerAgent: Parse error in cleanUp', {
+      traceId,
+      error: parseError.message,
+      stack: parseError.stack
+    });
+    const syntaxError = {
+      line: 1,
+      column: 0,
+      message: `Syntax error: ${parseError.message}`,
+      ruleId: 'parse-error'
+    };
+    sharedState.errors = [syntaxError];
+    return [syntaxError];
+  }
+
+  logger.info('StaticCheckerAgent merged+cleaned code:', { 
     traceId, 
     codeToCheck: codeToCheck || '(empty)'
   });
 
-  const eslint = new ESLint();
-  const results = await eslint.lintText(codeToCheck);
+  try {
+    // Use pipeline-specific ESLint config
+    const eslint = new ESLint({
+      overrideConfig: pipelineConfig,
+      useEslintrc: false // Disable loading of .eslintrc files
+    });
 
-  const errors = results[0].messages.map(message => ({
-    line: message.line,
-    column: message.column,
-    message: message.message,
-    ruleId: message.ruleId
-  }));
+    const results = await eslint.lintText(codeToCheck);
+    
+    if (!results || !Array.isArray(results) || results.length === 0) {
+      logger.warn('StaticCheckerAgent: No ESLint results returned', { traceId });
+      sharedState.errors = [];
+      return [];
+    }
 
-  sharedState.errors = errors;
+    const errors = results[0].messages.map(message => ({
+      line: message.line,
+      column: message.column,
+      message: message.message,
+      ruleId: message.ruleId
+    }));
 
-  logger.info('StaticCheckerAgent output', { traceId, errors });
-  return errors;
+    sharedState.errors = errors;
+    logger.info('StaticCheckerAgent output', { traceId, errors });
+    return errors;
+  } catch (error) {
+    logger.error('StaticCheckerAgent: ESLint error', { 
+      traceId, 
+      error: error.message,
+      stack: error.stack,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    });
+    throw new Error(`Static validation failed: ${error.message}`);
+  }
 }
 
 module.exports = StaticCheckerAgent; 
