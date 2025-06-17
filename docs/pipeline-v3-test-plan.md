@@ -6,7 +6,7 @@
 
 ## 1 · Scope & Goals
 * Verify functional correctness of each new component (agents, controller changes).
-* Ensure legacy regressions are caught (playability, lint errors, no external assets).
+* Ensure regressions are caught (playability, lint errors, no external assets) as pipeline-v3 is now the only supported pipeline.
 * Provide fast feedback (<20 s unit, <60 s integration) so the team can iterate confidently.
 
 ---
@@ -76,6 +76,7 @@ server/tests/integration/pipeline-v3/*
 * `npm run test:unit:v3` – runs all unit tests in `pipeline-v3` dir.
 * `npm run test:integration:v3` – runs integration suite (Puppeteer in `--ci` mode, XVFB if needed).
 * Workflow must green-light before allowing merge to `main`.
+* Only pipeline-v3 tests are required; previous pipelines are no longer tested or maintained.
 
 ---
 

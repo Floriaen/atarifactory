@@ -6,7 +6,7 @@
 ---
 
 ## 1 · Motivation
-* The AST-merge strategy (pipeline-v2) introduces complexity and still leaves duplicate / out-of-order code issues.
+* The previous AST-merge strategy introduced complexity and still left duplicate / out-of-order code issues.
 * LLM context limits are now large enough (GPT-4o) to hold the whole ``game.js`` (~300-400 LOC) each step.
 * Simpler contract: every step receives the **entire source** and returns the **entire updated source**.
 
@@ -71,7 +71,7 @@ interface SharedState {
 ## 6 · Failure / Retry Logic
 1. **StaticChecker** errors → one retry via ContextStepFixer.
 2. Fixer fails → escalate to Planner or abort.
-3. Runtime failures handled as in v-2.
+3. Runtime failures are handled as in previous versions, but only pipeline-v3 is now maintained.
 
 ---
 
@@ -87,9 +87,9 @@ interface SharedState {
 
 ## 8 · Roll-out
 1. Implement on branch `pipeline-v3-context-incremental` (current).
-2. Keep v-2 behind flag `PIPELINE_VERSION` for rollback/benchmarking.
-3. CI runs both pipelines’ unit/integration tests.
-4. When v-3 stability ≥ v-2, make it default.
+2. Pipeline-v3 is the only supported and tested pipeline moving forward.
+2. CI runs all pipeline-v3 unit/integration tests.
+3. Pipeline-v3 is now the default and only supported pipeline.
 
 ---
 

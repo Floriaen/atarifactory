@@ -68,6 +68,12 @@ class MockOpenAI {
         }
         // Return a valid code block for the step
         return '```javascript\nfunction update() {\n  // Player movement code\n  player.x += 5;\n}\n```';
+      case 'ContextStepBuilderAgent':
+        return (
+          'function draw() { /* original drawing code */ }\n' +
+          'let score = 0;\n' +
+          'function increaseScore() { score++; }'
+        );
       case 'BlockInserterAgent':
         // Parse the input to extract currentCode and stepCode
         const input = JSON.parse(prompt);
