@@ -98,6 +98,8 @@ class MockOpenAI {
           });
       case 'StepFixerAgent':
         return 'function update() {\n  // Fixed player movement code\n  player.x += 5;\n}';
+      case 'ContextStepFixerAgent':
+        return 'function update() {\n  // Fixed player movement code\n  player.x += 5;\n}';
       case 'FeedbackAgent':
         return {
           retryTarget: 'fixer',
