@@ -61,6 +61,18 @@ class MockOpenAI {
           { id: 4, description: 'Add spikes and loss condition' },
           { id: 5, description: 'Display win/lose text' }
         ];
+      case 'ContextStepBuilderAgent':
+        if (prompt && prompt.includes('Add score')) {
+          // For the unit test: Adds new code without erasing old
+          return 'function draw() { /* original drawing code */ }\nlet score = 0;\nfunction increaseScore() { score++; }';
+        }
+        if (prompt && prompt.includes('"id": 999')) {
+          throw new Error('MockOpenAI: Invalid step');
+        }
+        if (outputType === 'string') {
+          return 'function setup() { /* setup code */ }';
+        }
+        return { code: 'function setup() { /* setup code */ }' };
       case 'StepBuilderAgent':
         // Check if the step is invalid (id: 999)
         if (prompt && prompt.includes('"id": 999')) {

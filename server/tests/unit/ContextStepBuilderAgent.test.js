@@ -18,10 +18,10 @@ describe('ContextStepBuilderAgent', () => {
     const sharedState = createSharedState();
     sharedState.gameSource = 'function draw() { /* original drawing code */ }';
     sharedState.plan = [
-      { id: 1, desc: 'Setup' },
-      { id: 2, desc: 'Add score' }
+      { id: 1, description: 'Setup' },
+      { id: 2, description: 'Add score' }
     ];
-    sharedState.step = { id: 2, description: 'Add score' };
+    sharedState.currentStep = { id: 2, description: 'Add score' };
     const expectedOutput = 'function draw() { /* original drawing code */ }\nlet score = 0;\nfunction increaseScore() { score++; }';
     const mockOpenAI = new MockOpenAI();
     mockOpenAI.setAgent('ContextStepBuilderAgent');
@@ -38,6 +38,7 @@ describe('ContextStepBuilderAgent', () => {
     expect(sharedState.gameSource).toBe(expectedOutput);
     expect(result).toContain('function increaseScore()');
     expect(sharedState.metadata.lastUpdate).toBeInstanceOf(Date);
+
   });
 
   test('Respects guard-rails (alert)', () => {

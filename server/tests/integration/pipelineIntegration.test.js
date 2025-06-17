@@ -1,6 +1,6 @@
 /**
- * Integration test for the agent pipeline:
- * GameDesignAgent → PlannerAgent → StepBuilderAgent → BlockInserterAgent
+ * Integration test for the pipeline-v3 agent sequence:
+ * GameDesignAgent → PlannerAgent → ContextStepBuilderAgent → BlockInserterAgent → StaticCheckerAgent → SyntaxSanityAgent → RuntimePlayabilityAgent → FeedbackAgent
  *
  * Modes:
  * - Mock LLM: Default
@@ -9,8 +9,12 @@
  */
 const GameDesignAgent = require('../../agents/GameDesignAgent');
 const PlannerAgent = require('../../agents/PlannerAgent');
-const StepBuilderAgent = require('../../agents/StepBuilderAgent');
+const ContextStepBuilderAgent = require('../../agents/ContextStepBuilderAgent');
 const BlockInserterAgent = require('../../agents/BlockInserterAgent');
+const StaticCheckerAgent = require('../../agents/StaticCheckerAgent');
+const SyntaxSanityAgent = require('../../agents/SyntaxSanityAgent');
+const RuntimePlayabilityAgent = require('../../agents/RuntimePlayabilityAgent');
+const FeedbackAgent = require('../../agents/FeedbackAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
 const logger = require('../../utils/logger');
 const prettier = require('prettier');
@@ -22,6 +26,7 @@ function format(code) {
 }
 
 describe('Pipeline Integration', () => {
+  jest.setTimeout(20000);
   it('should process game design through to code generation', async () => {
     const mockLlmClient = new MockOpenAI();
     const traceId = 'test-trace';
@@ -29,6 +34,7 @@ describe('Pipeline Integration', () => {
     // 1. Game Design
     const sharedState = createSharedState();
     sharedState.title = 'Test Game';
+    sharedState.gameSource = '';
     mockLlmClient.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
     sharedState.gameDef = gameDef;
@@ -38,24 +44,52 @@ describe('Pipeline Integration', () => {
     const plan = await PlannerAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
     sharedState.plan = plan;
 
-    // 3. Step code (first step)
+    // 3. ContextStepBuilderAgent (first step)
     sharedState.currentStep = sharedState.plan[0];
-    mockLlmClient.setAgent('StepBuilderAgent');
-    const stepCode = await StepBuilderAgent(sharedState, { logger, traceId: 'test-trace', llmClient: mockLlmClient });
-    expect(typeof stepCode).toBe('string');
-    expect(stepCode.length).toBeGreaterThan(0);
+    // Debug: Print plan and currentStep
+    // eslint-disable-next-line no-console
+    console.log('DEBUG: sharedState.plan =', JSON.stringify(sharedState.plan));
+    // eslint-disable-next-line no-console
+    console.log('DEBUG: sharedState.currentStep =', JSON.stringify(sharedState.currentStep));
+  
+    mockLlmClient.setAgent('ContextStepBuilderAgent');
+    const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId: 'test-trace', llmClient: mockLlmClient });
+    expect(typeof revisedSource).toBe('string');
+    expect(revisedSource.length).toBeGreaterThan(0);
+    sharedState.gameSource = revisedSource;
 
-    // 4. Merge code
+    // 4. BlockInserterAgent
     sharedState.currentCode = '';
-    sharedState.stepCode = stepCode;
-    const mergedCode = await BlockInserterAgent(
-      sharedState,
-      { logger, traceId }
-    );
+    sharedState.stepCode = revisedSource;
+    const mergedCode = await BlockInserterAgent(sharedState, { logger, traceId });
     expect(typeof mergedCode).toBe('string');
     expect(mergedCode.length).toBeGreaterThan(0);
-    // Optionally, check for valid JS (parse or format)
+    sharedState.currentCode = mergedCode;
     expect(() => format(mergedCode)).not.toThrow();
+
+    // 5. StaticCheckerAgent
+    const errors = await StaticCheckerAgent(sharedState, { logger, traceId });
+    expect(Array.isArray(errors)).toBe(true);
+    sharedState.errors = errors;
+
+    // 6. SyntaxSanityAgent
+    const syntaxResult = SyntaxSanityAgent(sharedState, { logger, traceId });
+    expect(typeof syntaxResult).toBe('object');
+    expect(syntaxResult).toHaveProperty('valid');
+    sharedState.syntaxResult = syntaxResult;
+
+    // 7. RuntimePlayabilityAgent
+    const runtimeResults = await RuntimePlayabilityAgent(sharedState, { logger, traceId });
+    expect(typeof runtimeResults).toBe('object');
+    expect(runtimeResults).toHaveProperty('canvasActive');
+    sharedState.runtimeResults = runtimeResults;
+
+    // 8. FeedbackAgent
+    mockLlmClient.setAgent('FeedbackAgent');
+    const feedback = await FeedbackAgent(sharedState, { logger, traceId, llmClient: mockLlmClient });
+    expect(feedback).toHaveProperty('retryTarget');
+    expect(feedback).toHaveProperty('suggestion');
+    sharedState.feedback = feedback;
   });
 
   it('should handle error in StepBuilderAgent gracefully', async () => {
@@ -72,11 +106,12 @@ describe('Pipeline Integration', () => {
     mockLlmClient.setAgent('PlannerAgent');
     const plan = await PlannerAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
 
-    // 3. Try to build an invalid step
-    mockLlmClient.setAgent('StepBuilderAgent');
-    const badStep = { id: 999, label: 'Nonexistent step' };
+    // 3. Try to build an invalid step with ContextStepBuilderAgent
+    mockLlmClient.setAgent('ContextStepBuilderAgent');
+    const badStep = { id: 999, description: 'Nonexistent step' };
+    const badSharedState = { ...sharedState, currentStep: badStep, gameSource: '', plan };
     await expect(
-      StepBuilderAgent({ currentCode: '', plan, step: badStep }, { llmClient: mockLlmClient, logger, traceId })
+      ContextStepBuilderAgent(badSharedState, { logger, traceId, llmClient: mockLlmClient })
     ).rejects.toThrow();
   });
 }); 
