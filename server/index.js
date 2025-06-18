@@ -86,20 +86,5 @@ app.get('/cors-test', (req, res) => {
   res.json({ message: 'CORS test OK' });
 });
 
-// --- pipeline-v2 agent-based endpoint ---
-app.post('/api/pipeline-v2/generate', async (req, res) => {
-  let title = req.body && req.body.title;
-  if (!title) {
-    title = 'Game-' + uuidv4().slice(0, 8);
-  }
-  try {
-    const result = await runPipeline(title);
-    res.json(result);
-  } catch (err) {
-    console.error('Error in /api/pipeline-v2/generate:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Export app for testing and server startup
 module.exports = app; 

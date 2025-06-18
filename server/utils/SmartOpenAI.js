@@ -34,12 +34,20 @@ class SmartOpenAI {
     });
     console.log('\n=== END REQUEST ===\n');
 */
-    const response = await this.openai.chat.completions.create({
+    // Use correct token parameter for each model
+    const params = {
       model,
-      messages,
-      temperature,
-      max_tokens
-    });
+      messages
+    };
+    if (!model.startsWith('o3-')) {
+      params.temperature = temperature;
+    }
+    if (model.startsWith('o3-')) {
+      params.max_completion_tokens = max_tokens;
+    } else {
+      params.max_tokens = max_tokens;
+    }
+    const response = await this.openai.chat.completions.create(params);
 
     const raw = response.choices[0].message.content;
     

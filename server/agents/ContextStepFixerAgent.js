@@ -29,11 +29,17 @@ async function ContextStepFixerAgent(sharedState, { logger, traceId, llmClient }
       .replace('{{errors}}', JSON.stringify(errors, null, 2));
     // Call LLM
     const fixedSource = await llmClient.chatCompletion({ prompt, outputType: 'string' });
-    // Update sharedState
-    sharedState.gameSource = fixedSource;
-    sharedState.metadata = sharedState.metadata || {};
+    if (typeof fixedSource === 'string' && fixedSource.trim()) {
+      sharedState.gameSource = fixedSource;
+    } else {
+      logger && logger.error && logger.error('LLM returned undefined/empty output for fixer step', { traceId, step });
+      sharedState.metadata = sharedState.metadata || {};
+      sharedState.metadata.llmError = `LLM output was undefined or empty for fixer step: ${step.description}`;
+      // Do NOT overwrite sharedState.gameSource
+    }
     sharedState.metadata.lastUpdate = new Date();
-    return fixedSource;
+    return sharedState.gameSource;
+
   } catch (err) {
     logger && logger.error && logger.error('ContextStepFixerAgent error', { traceId, error: err });
     throw err;

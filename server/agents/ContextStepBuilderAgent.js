@@ -1,7 +1,9 @@
 /**
  * ContextStepBuilderAgent (pipeline-v3)
  * Receives the full game source, current step, and plan.
- * Returns the complete revised source by calling the injected llmClient.
+ * Returns the complete revised JavaScript source by calling the injected llmClient.
+ *
+ * NOTE: This agent only handles JavaScript code, not HTML. The gameSource is always JS-only.
  *
  * @param {Object} sharedState - { gameSource, plan, currentStep }
  * @param {Object} options - { logger, traceId, llmClient }
@@ -31,14 +33,20 @@ async function ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient
       .replace('{{step}}', JSON.stringify(currentStep, null, 2));
 
     // Call LLM
-    const revisedSource = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    let revisedSource = await llmClient.chatCompletion({ prompt, outputType: 'string', max_tokens: 4096 });
 
-    // Optionally: update sharedState
-    sharedState.gameSource = revisedSource;
-    sharedState.metadata = sharedState.metadata || {};
+    // Only update if valid string, otherwise preserve last good code
+    if (typeof revisedSource === 'string' && revisedSource.trim()) {
+      sharedState.gameSource = revisedSource;
+    } else {
+      logger && logger.error && logger.error('LLM returned undefined/empty output for step', { traceId, currentStep });
+      sharedState.metadata = sharedState.metadata || {};
+      sharedState.metadata.llmError = `LLM output was undefined or empty for step: ${currentStep.description}`;
+      // Do NOT overwrite sharedState.gameSource
+    }
     sharedState.metadata.lastUpdate = new Date();
+    return sharedState.gameSource;
 
-    return revisedSource;
   } catch (err) {
     logger && logger.error && logger.error('ContextStepBuilderAgent error', { traceId, error: err });
     throw err;

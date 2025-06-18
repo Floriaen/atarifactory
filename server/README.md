@@ -8,6 +8,22 @@ This directory contains the next-generation, agent-based, LLM-driven game genera
 
 ---
 
+## Environment Variables
+
+- `OPENAI_API_KEY`: Required to use the real OpenAI LLM pipeline.
+- `MOCK_PIPELINE`: If set to `1`, runs the pipeline in mock mode using static mock game code (bypasses LLM calls).
+- `MINIMAL_GAME`: If set to `1`, runs the pipeline with a hardcoded minimal game prompt for testing. This generates a very simple game (player moves left/right, wins by reaching the right edge, no coins, no spikes, no score). Useful for fast/small test runs or debugging. When unset or `0`, the normal prompt/title is used.
+
+### Usage
+
+To run the pipeline with a minimal game for testing:
+
+```sh
+MINIMAL_GAME=1 npm start
+```
+
+You can combine this with other environment variables as needed. Only one special mode (MOCK or MINIMAL) will be active at a time.
+
 ## Mock Pipeline Mode
 
 You can run the pipeline in a fast, robust mock mode for end-to-end testing and development.

@@ -1,6 +1,6 @@
-You are a game pipeline agent. Given the following game source, plan, and step, return the updated full source code as a string.
+You are a game pipeline agent. Given the following JavaScript game source, plan, and step, return the updated complete JavaScript code as a string. Do NOT return any HTML, only JavaScript.
 
-Game Source:
+JavaScript Game Source:
 {{gameSource}}
 
 Plan:
