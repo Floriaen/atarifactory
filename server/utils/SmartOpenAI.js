@@ -12,12 +12,12 @@ class SmartOpenAI {
    * @param {Object} options
    * @param {string} options.prompt - The user prompt.
    * @param {'json-array'|'json-object'|'string'} options.outputType - Expected output type.
-   * @param {string} [options.model] - Model name (default: 'gpt-4o').
+   * @param {string} [options.model] - Model name (default: 'gpt-4.1').
    * @param {number} [options.temperature] - Sampling temperature.
    * @param {number} [options.max_tokens] - Max tokens.
    * @returns {Promise<any>} Parsed output.
    */
-  async chatCompletion({ prompt, outputType, model = 'gpt-4o', temperature = 0.2, max_tokens = 1024 }) {
+  async chatCompletion({ prompt, outputType, model = 'gpt-4.1', temperature = 0.2, max_tokens = 1024 }) {
     const messages = [
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: prompt }
@@ -34,12 +34,20 @@ class SmartOpenAI {
     });
     console.log('\n=== END REQUEST ===\n');
 */
-    const response = await this.openai.chat.completions.create({
+    // Use correct token parameter for each model
+    const params = {
       model,
-      messages,
-      temperature,
-      max_tokens
-    });
+      messages
+    };
+    if (!model.startsWith('o3-')) {
+      params.temperature = temperature;
+    }
+    if (model.startsWith('o3-')) {
+      params.max_completion_tokens = max_tokens;
+    } else {
+      params.max_tokens = max_tokens;
+    }
+    const response = await this.openai.chat.completions.create(params);
 
     const raw = response.choices[0].message.content;
     

@@ -25,7 +25,7 @@ describe('StaticCheckerAgent', () => {
   });
 
   it('should detect syntax errors in code', async () => {
-    sharedState.currentCode = 'function update() {';
+    sharedState.stepCode = 'function update() {'; // Place invalid code in stepCode, which is now checked
     const result = await StaticCheckerAgent(sharedState, { logger, traceId: 'test-trace', llmClient });
     expect(sharedState.errors.length).toBeGreaterThan(0);
     expect(sharedState.errors[0].message).toMatch(/unexpected|syntax/i);

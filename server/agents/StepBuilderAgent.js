@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 const { extractJsCodeBlocks } = require('../utils/formatter');
 
 async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
@@ -61,17 +62,27 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     });
 
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + String(codeBlock));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
 
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);
-    logger.info('StepBuilderAgent cleaned code:', { 
-      traceId,
-      cleanCode
-    });
-
-    // Update sharedState
+    logger.info('StepBuilderAgent cleaned code:', { traceId, cleanCode });
+    if (typeof cleanCode === 'string' && cleanCode.trim()) {
+      sharedState.currentCode = cleanCode;
+    } else {
+      logger.error('LLM returned undefined/empty output for step builder', { traceId, step: sharedState.currentStep });
+      sharedState.metadata = sharedState.metadata || {};
+      sharedState.metadata.llmError = `LLM output was undefined or empty for step builder: ${sharedState.currentStep && sharedState.currentStep.description}`;
+      // Do NOT overwrite sharedState.currentCode
+    }
     sharedState.metadata.lastUpdate = new Date();
-    return cleanCode;
+    return sharedState.currentCode;
+
   } catch (err) {
     logger.error('StepBuilderAgent error', { traceId, error: err, step: sharedState.currentStep });
     throw err;

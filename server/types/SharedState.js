@@ -40,6 +40,11 @@
  * @property {Error[]} errors - Array of current errors
  * @property {RuntimeResults} [runtimeResults] - Results from runtime execution
  * @property {Metadata} [metadata] - Additional metadata
+ * @property {string} gameSource - The full source code for the game (pipeline-v3)
+ * @property {number} tokenCount - The total estimated LLM token count (pipeline-v3)
+
+ * @property {Object} [syntaxResult] - Result of syntax checking (pipeline-v3)
+ * @property {Object} [feedback] - Feedback object from FeedbackAgent (pipeline-v3)
  */
 
 /**
@@ -50,14 +55,20 @@ function createSharedState() {
   return {
     gameDef: null,
     plan: [],
-    currentStep: null,
+    currentStep: null, // legacy
     currentCode: '',
     errors: [],
     runtimeResults: {},
     metadata: {
       startTime: new Date(),
       lastUpdate: new Date()
-    }
+    },
+    // pipeline-v3 fields
+    gameSource: '',
+
+    syntaxResult: null,
+    feedback: null,
+    tokenCount: 0
   };
 }
 

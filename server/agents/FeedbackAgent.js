@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 /**
  * FeedbackAgent
  * Input: SharedState
@@ -41,10 +42,22 @@ async function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
     const result = llmClient.chatCompletion({ prompt, outputType: 'json-object' });
     if (typeof result.then === 'function') {
       return result.then(feedback => {
+        // === TOKEN COUNT ===
+        if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+        sharedState.tokenCount += estimateTokens(prompt + JSON.stringify(feedback));
+        if (typeof global.onStatusUpdate === 'function') {
+          global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+        }
         sharedState.metadata.lastUpdate = new Date();
         sharedState.metadata.feedback = feedback;
         return feedback;
       });
+    }
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + JSON.stringify(result));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
     }
     sharedState.metadata.lastUpdate = new Date();
     sharedState.metadata.feedback = result;

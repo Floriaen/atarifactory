@@ -1,12 +1,23 @@
 // NOTE: If you change any LLM agent contract, update this mock accordingly.
 // This mock is used in tests to avoid real OpenAI API calls and ensure deterministic, fast, and cheap testing.
 
-const { mergeCode } = require('../../utils/codeMerge');
 const prettier = require('prettier');
 
 class MockOpenAI {
   constructor() {
     this.agent = null;
+    this._defaultTokenCounts = {
+      GameDesignAgent: 50,
+      PlannerAgent: 40,
+      ContextStepBuilderAgent: 60,
+      StepBuilderAgent: 55,
+      ContextStepFixerAgent: 30,
+      StepFixerAgent: 25,
+      FeedbackAgent: 20,
+      StaticCheckerAgent: 10,
+      SyntaxSanityAgent: 5,
+      RuntimePlayabilityAgent: 5
+    };
   }
 
   setAgent(agentName) {
@@ -44,14 +55,34 @@ class MockOpenAI {
 
   _getMockResponse(prompt, outputType) {
     console.log('Agent :', this.agent);
+    // Emit a default tokenCount for this agent if applicable
+    if (typeof global.onStatusUpdate === 'function' && this.agent && this._defaultTokenCounts[this.agent]) {
+      global.onStatusUpdate('TokenCount', { tokenCount: this._defaultTokenCounts[this.agent] });
+    }
     switch (this.agent) {
-      case 'GameDesignAgent':
+      case 'GameDesignAgent': {
+        // Try to extract name and description from the prompt
+        let name = 'Mock Game Name';
+        let description = 'A mock description for a creative game idea.';
+        try {
+          const match = prompt.match(/\{\s*"name":\s*"([^"]+)",\s*"description":\s*"([^"]+)"\s*\}/);
+          if (match) {
+            name = match[1];
+            description = match[2];
+          }
+        } catch (e) {}
         return {
-          title: 'Mock Game',
-          description: 'A mock game for testing.',
+          title: name,
+          description: description,
           mechanics: ['move', 'jump'],
           winCondition: 'Win!',
           entities: ['player', 'goal']
+        };
+      }
+      case 'GameInventorAgent':
+        return {
+          name: 'Mock Game Name',
+          description: 'A mock description for a creative game idea.'
         };
       case 'PlannerAgent':
         return [
@@ -61,6 +92,18 @@ class MockOpenAI {
           { id: 4, description: 'Add spikes and loss condition' },
           { id: 5, description: 'Display win/lose text' }
         ];
+      case 'ContextStepBuilderAgent':
+        if (prompt && prompt.includes('Add score')) {
+          // For the unit test: Adds new code without erasing old
+          return 'function draw() { /* original drawing code */ }\nlet score = 0;\nfunction increaseScore() { score++; }';
+        }
+        if (prompt && prompt.includes('"id": 999')) {
+          throw new Error('MockOpenAI: Invalid step');
+        }
+        if (outputType === 'string') {
+          return 'function setup() { /* setup code */ }';
+        }
+        return { code: 'function setup() { /* setup code */ }' };
       case 'StepBuilderAgent':
         // Check if the step is invalid (id: 999)
         if (prompt && prompt.includes('"id": 999')) {
@@ -68,6 +111,12 @@ class MockOpenAI {
         }
         // Return a valid code block for the step
         return '```javascript\nfunction update() {\n  // Player movement code\n  player.x += 5;\n}\n```';
+      case 'ContextStepBuilderAgent':
+        return (
+          'function draw() { /* original drawing code */ }\n' +
+          'let score = 0;\n' +
+          'function increaseScore() { score++; }'
+        );
       case 'BlockInserterAgent':
         // Parse the input to extract currentCode and stepCode
         const input = JSON.parse(prompt);
@@ -91,6 +140,8 @@ class MockOpenAI {
             }
           });
       case 'StepFixerAgent':
+        return 'function update() {\n  // Fixed player movement code\n  player.x += 5;\n}';
+      case 'ContextStepFixerAgent':
         return 'function update() {\n  // Fixed player movement code\n  player.x += 5;\n}';
       case 'FeedbackAgent':
         return {

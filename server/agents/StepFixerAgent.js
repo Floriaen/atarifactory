@@ -16,6 +16,7 @@
 const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 
 async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
@@ -57,23 +58,25 @@ async function StepFixerAgent(sharedState, { logger, traceId, llmClient }) {
       outputType: 'string',
       temperature: 0.1 // Lower temperature for more deterministic fixes
     });
-    
-    // Validate that we got actual code back
-    if (!fixedCode || fixedCode.trim().length === 0) {
-      throw new Error('StepFixerAgent: LLM returned empty code');
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(promptTemplate + String(fixedCode));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
     }
-    
-    // Update sharedState
-    sharedState.stepCode = fixedCode;
+    // Validate that we got actual code back
+    if (fixedCode && fixedCode.trim().length > 0) {
+      sharedState.stepCode = fixedCode;
+    } else {
+      logger.error('LLM returned undefined/empty output for step fixer', { traceId, currentStep });
+      sharedState.metadata = sharedState.metadata || {};
+      sharedState.metadata.llmError = `LLM output was undefined or empty for step fixer: ${currentStep && currentStep.description}`;
+      // Do NOT overwrite sharedState.stepCode
+    }
     sharedState.metadata.lastUpdate = new Date();
-    
-    logger.info('StepFixerAgent output', { 
-      traceId, 
-      currentStep, 
-      errorCount: errors.length,
-      fixedCodeLength: fixedCode.length 
-    });
-    return fixedCode;
+    logger.info('StepFixerAgent output', { traceId, currentStep, errorCount: errors.length, fixedCodeLength: fixedCode ? fixedCode.length : 0 });
+    return sharedState.stepCode;
+
   } catch (error) {
     logger.error('Error in StepFixerAgent:', error);
     throw error;

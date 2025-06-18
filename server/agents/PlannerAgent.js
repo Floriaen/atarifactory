@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 
 async function PlannerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
@@ -46,6 +47,12 @@ async function PlannerAgent(sharedState, { logger, traceId, llmClient }) {
     }
 
     const plan = await llmClient.chatCompletion({ prompt, outputType: 'json-array' });
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + JSON.stringify(plan));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
     logger.info('PlannerAgent output', { traceId, plan });
 
     // Validate plan array structure

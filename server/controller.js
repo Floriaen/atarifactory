@@ -1,9 +1,8 @@
+const GameInventorAgent = require('./agents/GameInventorAgent');
 const GameDesignAgent = require('./agents/GameDesignAgent');
 const PlannerAgent = require('./agents/PlannerAgent');
-const StepBuilderAgent = require('./agents/StepBuilderAgent');
+const ContextStepBuilderAgent = require('./agents/ContextStepBuilderAgent');
 const StaticCheckerAgent = require('./agents/StaticCheckerAgent');
-const StepFixerAgent = require('./agents/StepFixerAgent');
-const BlockInserterAgent = require('./agents/BlockInserterAgent');
 const SyntaxSanityAgent = require('./agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('./agents/RuntimePlayabilityAgent');
 const FeedbackAgent = require('./agents/FeedbackAgent');
@@ -68,11 +67,11 @@ async function runPipeline(title, onStatusUpdate) {
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
       
       // Copy control bar assets
-      fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
-      fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
+      fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
+      fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
 
       // Read the boilerplate template
-      const boilerplatePath = path.join(__dirname, 'gameBoilerplate.html');
+      const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.html');
       let html = fs.readFileSync(boilerplatePath, 'utf8');
       // Replace template variables
       html = html
@@ -80,7 +79,7 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{description}}', gameDef.description || '')
         .replace('{{instructions}}', Array.isArray(gameDef.mechanics) ? gameDef.mechanics.join(', ') : gameDef.mechanics || '')
         .replace('{{gameId}}', gameId)
-        .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'controlBar/controlBar.html'), 'utf8'));
+        .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err });
@@ -106,81 +105,169 @@ async function runPipeline(title, onStatusUpdate) {
 
 // Pure agent pipeline: returns both the generated code and game design info
 async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
+  // Make onStatusUpdate globally available for token counting
+  global.onStatusUpdate = onStatusUpdate;
   const traceId = uuidv4();
   logger.info('Agent pipeline started', { traceId, title });
   const sharedState = createSharedState();
-  sharedState.title = title;
-  // 1. GameDesignAgent
+  // Load canonical JS boilerplate as the initial gameSource
+  const fs = require('fs');
+  const path = require('path');
+  const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
+  sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
+  // 1. GameInventorAgent: Invent a new game idea (name and description)
+  onStatusUpdate && onStatusUpdate('Inventing', { step: 'Game Invention' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameInventorAgent');
+  const invention = await GameInventorAgent(sharedState, { logger, traceId, llmClient });
+  sharedState.title = invention.name;
+  sharedState.name = invention.name;
+  sharedState.description = invention.description;
+  logger.info('GameInventorAgent output', { traceId, invention });
+  // 2. GameDesignAgent: Use invention to design game mechanics/entities
   onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameDesignAgent');
   await GameDesignAgent(sharedState, { logger, traceId, llmClient });
   logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
-  // 2. PlannerAgent
+  // 3. PlannerAgent
   onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('PlannerAgent');
   await PlannerAgent(sharedState, { logger, traceId, llmClient });
-  logger.info('PlannerAgent output', { traceId, plan: sharedState.plan });
-  // 3. Step execution cycle
-  const MAX_STATIC_CHECK_RETRIES = 0;
+  // 3. ContextStepBuilderAgent for each step
   let stepIndex = 0;
   for (const step of sharedState.plan) {
     stepIndex++;
     sharedState.currentStep = step;
     onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
-    logger.info('Step execution', { traceId, step });
-    let stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient });
-    logger.info('StepBuilderAgent output', { traceId, step, stepCode });
-    sharedState.stepCode = stepCode;
-    let errors = await StaticCheckerAgent(sharedState, { logger, traceId, llmClient });
-    logger.info('StaticCheckerAgent output', { traceId, step, errors });
-    let retryCount = 0;
-    while (errors.length > 0 && retryCount < MAX_STATIC_CHECK_RETRIES) {
-      sharedState.errors = errors;
-      stepCode = await StepFixerAgent(sharedState, { logger, traceId, llmClient });
-      logger.info('StepFixerAgent output', { traceId, step, stepCode, retryCount });
-      sharedState.stepCode = stepCode;
-      errors = await StaticCheckerAgent(sharedState, { logger, traceId, llmClient });
-      logger.info('StaticCheckerAgent output after fix', { traceId, step, errors, retryCount });
-      retryCount++;
+    if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('ContextStepBuilderAgent');
+    logger.info('ContextStepBuilderAgent execution', { traceId, currentStep: step });
+    // Always update the full canonical JS file
+    const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient });
+    logger.info('ContextStepBuilderAgent output', { traceId, currentStep: step });
+    if (typeof revisedSource === 'string' && revisedSource.trim()) {
+      sharedState.gameSource = revisedSource;
+    } else {
+      logger.error('Pipeline: ContextStepBuilderAgent returned undefined/empty output', { traceId, step });
+      sharedState.metadata = sharedState.metadata || {};
+      sharedState.metadata.llmError = `Pipeline: ContextStepBuilderAgent output was undefined or empty for step: ${step.description}`;
+      // Do NOT overwrite sharedState.gameSource
     }
-    if (errors.length > 0) {
-      logger.error('Static validation failed after max retries, escalating to PlannerAgent or aborting', { traceId, step, errors });
-      throw new Error(`Static validation failed for step ${JSON.stringify(step)} after ${MAX_STATIC_CHECK_RETRIES} retries: ${errors.join('; ')}`);
-    }
-    sharedState.currentCode = await BlockInserterAgent(sharedState, { logger, traceId });
-    logger.info('BlockInserterAgent output', { traceId, step, currentCode: sharedState.currentCode });
   }
-  // 4. SyntaxSanityAgent
+  // 4. StaticCheckerAgent
+  const errors = await StaticCheckerAgent(sharedState, { logger, traceId });
+  logger.info('StaticCheckerAgent output', { traceId, errors });
+  // 5. SyntaxSanityAgent
   onStatusUpdate && onStatusUpdate('Validating', { step: 'Syntax Validation' });
-  SyntaxSanityAgent(sharedState, { logger, traceId });
-  logger.info('SyntaxSanityAgent output', { traceId });
-  // 5. RuntimePlayabilityAgent
+  await SyntaxSanityAgent(sharedState, { logger, traceId });
+  // 6. RuntimePlayabilityAgent
   onStatusUpdate && onStatusUpdate('Testing', { step: 'Runtime Testing' });
   await RuntimePlayabilityAgent(sharedState, { logger, traceId });
   logger.info('RuntimePlayabilityAgent output', { traceId });
-  // 6. FeedbackAgent
+  // 8. FeedbackAgent
   onStatusUpdate && onStatusUpdate('Feedback', { step: 'Gathering Feedback' });
   await FeedbackAgent(sharedState, { logger, traceId, llmClient });
   logger.info('FeedbackAgent output', { traceId });
   // Return both the generated code and game design info
   return {
-    code: sharedState.currentCode,
+    code: sharedState.gameSource,
     gameDef: sharedState.gameDef
   };
 }
 
 // Pure function: returns JS code string (mock or real)
 async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) {
+  // Make onStatusUpdate globally available for token counting
+  global.onStatusUpdate = onStatusUpdate;
   if (process.env.MOCK_PIPELINE === '1') {
     logger.info('MOCK_PIPELINE is active: using mock game.js');
-    return {
-      code: fs.readFileSync(path.join(__dirname, 'mocks', 'game.js'), 'utf8'),
-      gameDef: {
-        title: title,
-        description: 'A mock game for testing purposes',
-        mechanics: ['move', 'jump'],
-        winCondition: 'Collect all coins',
-        entities: ['player', 'coin']
-      }
+    const code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
+    const gameDef = {
+      title: title,
+      description: 'A mock game for testing purposes',
+      mechanics: ['move', 'jump'],
+      winCondition: 'Collect all coins',
+      entities: ['player', 'coin']
     };
+    // Estimate tokens and emit TokenCount
+    const { estimateTokens } = require('./utils/tokenUtils');
+    const estimatedTokenCount = estimateTokens(code + JSON.stringify(gameDef));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
+    }
+    return { code, gameDef };
+  } else if (process.env.MINIMAL_GAME === '1') {
+    logger.info('MINIMAL_GAME is active: using hardcoded minimal gameDef and plan');
+    // Create a minimal sharedState and inject minimal gameDef and plan
+    const traceId = require('uuid').v4();
+    const { createSharedState } = require('./types/SharedState');
+    const sharedState = createSharedState();
+    sharedState.title = "Minimal Platformer";
+    sharedState.gameDef = {
+      title: "Minimal Platformer",
+      description: "Move left and right. Win by reaching the right edge.",
+      mechanics: ["move left/right"],
+      winCondition: "Reach the right edge",
+      entities: ["player"]
+    };
+    sharedState.plan = [
+      { id: 1, description: "Set up the HTML canvas and main game loop" },
+      { id: 2, description: "Create the player entity and implement left/right movement" },
+      { id: 3, description: "Implement win condition when player reaches the right edge" }
+    ];
+    // Load canonical JS boilerplate as the initial gameSource
+    const fs = require('fs');
+    const path = require('path');
+    const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
+    sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
+    // Estimate tokens and emit TokenCount
+    const { estimateTokens } = require('./utils/tokenUtils');
+    const estimatedTokenCount = estimateTokens(sharedState.gameSource + JSON.stringify(sharedState.gameDef));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
+    }
+    // Run the rest of the pipeline as usual, skipping GameDesignAgent and PlannerAgent
+    // 3. ContextStepBuilderAgent for each step
+    let stepIndex = 0;
+    for (const step of sharedState.plan) {
+      stepIndex++;
+      sharedState.currentStep = step;
+      onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
+      logger.info('ContextStepBuilderAgent execution', { traceId, currentStep: step });
+      const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient });
+      logger.info('ContextStepBuilderAgent output', { traceId, currentStep: step });
+      if (typeof revisedSource === 'string' && revisedSource.trim()) {
+        sharedState.gameSource = revisedSource;
+      } else {
+        logger.error('Pipeline: ContextStepBuilderAgent returned undefined/empty output', { traceId, step });
+        sharedState.metadata = sharedState.metadata || {};
+        sharedState.metadata.llmError = `Pipeline: ContextStepBuilderAgent output was undefined or empty for step: ${step.description}`;
+        // Do NOT overwrite sharedState.gameSource
+      }
+    }
+    // 4. StaticCheckerAgent
+    const errors = await StaticCheckerAgent(sharedState, { logger, traceId });
+    logger.info('StaticCheckerAgent output', { traceId, errors });
+    // 6. SyntaxSanityAgent
+    onStatusUpdate && onStatusUpdate('Validating', { step: 'Syntax Validation' });
+    await SyntaxSanityAgent(sharedState, { logger, traceId });
+    // 7. RuntimePlayabilityAgent
+    onStatusUpdate && onStatusUpdate('Testing', { step: 'Runtime Testing' });
+    await RuntimePlayabilityAgent(sharedState, { logger, traceId });
+    logger.info('RuntimePlayabilityAgent output', { traceId });
+    // 8. FeedbackAgent
+    onStatusUpdate && onStatusUpdate('Feedback', { step: 'Gathering Feedback' });
+    await FeedbackAgent(sharedState, { logger, traceId, llmClient });
+    logger.info('FeedbackAgent output', { traceId });
+    // Write debug shared state for replay/debugging
+    const debugPath = path.join(__dirname, '../debug_sharedState.json');
+    fs.writeFileSync(debugPath, JSON.stringify(sharedState, null, 2));
+    // Return both the generated code and game design info
+    const result = {
+      code: sharedState.gameSource,
+      gameDef: sharedState.gameDef
+    };
+    // Clean up global
+    delete global.onStatusUpdate;
+    return result;
   } else {
     return await agentPipelineToCode(title, logger, llmClient, onStatusUpdate);
   }

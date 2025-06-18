@@ -14,7 +14,6 @@
 
 const logger = require('../utils/logger');
 const { ESLint } = require('eslint');
-const { mergeCode } = require('../utils/codeMerge');
 const { cleanUp } = require('../utils/cleanUp');
 const pipelineConfig = require('../config/pipeline.eslint.config');
 
@@ -28,7 +27,7 @@ async function StaticCheckerAgent(sharedState, { logger, traceId }) {
   });
 
   // Get simulated merged code using the same merge logic (dry-run)
-  const mergedCode = mergeCode(currentCode, stepCode);
+  const mergedCode = stepCode; // mergeCode removed, use stepCode directly or implement merging if needed
   let codeToCheck;
   try {
     codeToCheck = cleanUp(mergedCode);
