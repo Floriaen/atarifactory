@@ -23,6 +23,7 @@ const logger = process.env.TEST_LOGS ? console : mockLogger;
 const fs = require('fs');
 const path = require('path');
 const { SmartOpenAI } = require('../utils/SmartOpenAI');
+const { estimateTokens } = require('../utils/tokenUtils');
 
 async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
   try {
@@ -50,6 +51,13 @@ async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
       prompt,
       outputType: 'json-object'
     });
+
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + JSON.stringify(parsed));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
 
     logger.info('GameDesignAgent LLM parsed output', { traceId, parsed });
 

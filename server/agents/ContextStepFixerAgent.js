@@ -9,6 +9,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 
 async function ContextStepFixerAgent(sharedState, { logger, traceId, llmClient }) {
   try {
@@ -29,6 +30,12 @@ async function ContextStepFixerAgent(sharedState, { logger, traceId, llmClient }
       .replace('{{errors}}', JSON.stringify(errors, null, 2));
     // Call LLM
     const fixedSource = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + String(fixedSource));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
     if (typeof fixedSource === 'string' && fixedSource.trim()) {
       sharedState.gameSource = fixedSource;
     } else {

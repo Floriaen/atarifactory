@@ -104,6 +104,8 @@ async function runPipeline(title, onStatusUpdate) {
 
 // Pure agent pipeline: returns both the generated code and game design info
 async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
+  // Make onStatusUpdate globally available for token counting
+  global.onStatusUpdate = onStatusUpdate;
   const traceId = uuidv4();
   logger.info('Agent pipeline started', { traceId, title });
   const sharedState = createSharedState();
@@ -115,10 +117,12 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
   sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
   // 1. GameDesignAgent
   onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameDesignAgent');
   await GameDesignAgent(sharedState, { logger, traceId, llmClient });
   logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
   // 2. PlannerAgent
   onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('PlannerAgent');
   await PlannerAgent(sharedState, { logger, traceId, llmClient });
   // 3. ContextStepBuilderAgent for each step
   let stepIndex = 0;
@@ -126,6 +130,7 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
     stepIndex++;
     sharedState.currentStep = step;
     onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
+    if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('ContextStepBuilderAgent');
     logger.info('ContextStepBuilderAgent execution', { traceId, currentStep: step });
     // Always update the full canonical JS file
     const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient });
@@ -162,18 +167,25 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
 
 // Pure function: returns JS code string (mock or real)
 async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) {
+  // Make onStatusUpdate globally available for token counting
+  global.onStatusUpdate = onStatusUpdate;
   if (process.env.MOCK_PIPELINE === '1') {
     logger.info('MOCK_PIPELINE is active: using mock game.js');
-    return {
-      code: fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8'),
-      gameDef: {
-        title: title,
-        description: 'A mock game for testing purposes',
-        mechanics: ['move', 'jump'],
-        winCondition: 'Collect all coins',
-        entities: ['player', 'coin']
-      }
+    const code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
+    const gameDef = {
+      title: title,
+      description: 'A mock game for testing purposes',
+      mechanics: ['move', 'jump'],
+      winCondition: 'Collect all coins',
+      entities: ['player', 'coin']
     };
+    // Estimate tokens and emit TokenCount
+    const { estimateTokens } = require('./utils/tokenUtils');
+    const estimatedTokenCount = estimateTokens(code + JSON.stringify(gameDef));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
+    }
+    return { code, gameDef };
   } else if (process.env.MINIMAL_GAME === '1') {
     logger.info('MINIMAL_GAME is active: using hardcoded minimal gameDef and plan');
     // Create a minimal sharedState and inject minimal gameDef and plan
@@ -198,6 +210,12 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
     const path = require('path');
     const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
     sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
+    // Estimate tokens and emit TokenCount
+    const { estimateTokens } = require('./utils/tokenUtils');
+    const estimatedTokenCount = estimateTokens(sharedState.gameSource + JSON.stringify(sharedState.gameDef));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
+    }
     // Run the rest of the pipeline as usual, skipping GameDesignAgent and PlannerAgent
     // 3. ContextStepBuilderAgent for each step
     let stepIndex = 0;
@@ -235,11 +253,13 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
     const debugPath = path.join(__dirname, '../debug_sharedState.json');
     fs.writeFileSync(debugPath, JSON.stringify(sharedState, null, 2));
     // Return both the generated code and game design info
-    return {
+    const result = {
       code: sharedState.gameSource,
       gameDef: sharedState.gameDef
     };
-
+    // Clean up global
+    delete global.onStatusUpdate;
+    return result;
   } else {
     return await agentPipelineToCode(title, logger, llmClient, onStatusUpdate);
   }

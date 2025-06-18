@@ -41,6 +41,7 @@
  * @property {RuntimeResults} [runtimeResults] - Results from runtime execution
  * @property {Metadata} [metadata] - Additional metadata
  * @property {string} gameSource - The full source code for the game (pipeline-v3)
+ * @property {number} tokenCount - The total estimated LLM token count (pipeline-v3)
 
  * @property {Object} [syntaxResult] - Result of syntax checking (pipeline-v3)
  * @property {Object} [feedback] - Feedback object from FeedbackAgent (pipeline-v3)
@@ -66,7 +67,8 @@ function createSharedState() {
     gameSource: '',
 
     syntaxResult: null,
-    feedback: null
+    feedback: null,
+    tokenCount: 0
   };
 }
 

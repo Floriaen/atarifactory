@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { estimateTokens } = require('../utils/tokenUtils');
 const { extractJsCodeBlocks } = require('../utils/formatter');
 
 async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
@@ -61,6 +62,12 @@ async function StepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
     });
 
     const codeBlock = await llmClient.chatCompletion({ prompt, outputType: 'string' });
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + String(codeBlock));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
 
     // Use markdown parser to extract JS code blocks
     const cleanCode = extractJsCodeBlocks(codeBlock);

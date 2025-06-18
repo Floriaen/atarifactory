@@ -87,4 +87,11 @@ app.get('/cors-test', (req, res) => {
 });
 
 // Export app for testing and server startup
-module.exports = app; 
+module.exports = app;
+
+// Start the server if this file is run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}

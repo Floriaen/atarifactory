@@ -9,6 +9,8 @@
  * @param {Object} options - { logger, traceId, llmClient }
  * @returns {Promise<string>} The revised game source.
  */
+const { estimateTokens } = require('../utils/tokenUtils');
+
 async function ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     const { gameSource, plan, currentStep } = sharedState;
@@ -34,6 +36,13 @@ async function ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient
 
     // Call LLM
     let revisedSource = await llmClient.chatCompletion({ prompt, outputType: 'string', max_tokens: 4096 });
+
+    // === TOKEN COUNT ===
+    if (typeof sharedState.tokenCount !== 'number') sharedState.tokenCount = 0;
+    sharedState.tokenCount += estimateTokens(prompt + String(revisedSource));
+    if (typeof global.onStatusUpdate === 'function') {
+      global.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
 
     // Only update if valid string, otherwise preserve last good code
     if (typeof revisedSource === 'string' && revisedSource.trim()) {

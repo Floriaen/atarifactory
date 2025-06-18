@@ -10,6 +10,7 @@ app.innerHTML = `
     <button id="generate-btn">
       <span id="btn-text">Generate Game</span>
     </button>
+    <div id="token-count" class="token-count" style="display:none;"></div>
     <div id="status-label" class="status-label" style="display:none;"></div>
   </div>
   <div class="gallery-container">
@@ -25,6 +26,26 @@ app.innerHTML = `
 
 const style = document.createElement('style');
 style.textContent = `
+  .token-count {
+    margin-top: 1.1em;
+    margin-bottom: 0.3em;
+    margin-left: 0;
+    font-size: 1.02em;
+    color: #b0b0b8;
+    min-width: 100px;
+    text-align: center;
+    display: block;
+    font-family: monospace;
+    opacity: 0.92;
+    letter-spacing: 0.02em;
+    transition: opacity 0.2s;
+  }
+  .token-count strong {
+    color: #b3e5fc;
+    font-weight: 600;
+    font-size: 1.08em;
+  }
+
   body { margin: 0; font-family: system-ui, sans-serif; background: #181818; color: #fff; }
   .header { display: flex; flex-direction: column; align-items: center; padding: 1rem 0 0.5rem 0; }
   .header h1 { font-size: 1.5rem; margin: 0 0 0.5rem 0; }
@@ -137,9 +158,14 @@ function setStatusLabel(text) {
 function setReady() {
   const btnText = document.getElementById('btn-text');
   const statusLabel = document.getElementById('status-label');
+  const tokenCountDiv = document.getElementById('token-count');
   btnText.textContent = 'Generate Game';
   statusLabel.style.display = 'none';
   statusLabel.textContent = '';
+  if (tokenCountDiv) {
+    tokenCountDiv.style.display = 'none';
+    tokenCountDiv.textContent = '';
+  }
 }
 setReady();
 
@@ -209,6 +235,9 @@ document.getElementById('close-modal').onclick = function() {
 // Fallback to /generate if needed
 
 document.getElementById('generate-btn').onclick = async function() {
+  const tokenCountDiv = document.getElementById('token-count');
+  tokenCountDiv.style.display = '';
+  tokenCountDiv.textContent = '';
   const btn = this;
   setStatusLabel('Generating...');
   btn.disabled = true;
@@ -244,6 +273,7 @@ document.getElementById('generate-btn').onclick = async function() {
             }
             if (data.step === 'Done') {
               setStatusLabel('Done!');
+              tokenCountDiv.style.display = 'none';
               // Update gallery and open game
               const games = await fetchGames();
               renderGallery(games);
@@ -253,6 +283,9 @@ document.getElementById('generate-btn').onclick = async function() {
               setTimeout(() => setReady(), 1200);
               btn.disabled = false;
               return;
+            }
+            if (data.step === 'TokenCount' && typeof data.tokenCount === 'number') {
+              tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
             }
             setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
           }

@@ -6,6 +6,18 @@ const prettier = require('prettier');
 class MockOpenAI {
   constructor() {
     this.agent = null;
+    this._defaultTokenCounts = {
+      GameDesignAgent: 50,
+      PlannerAgent: 40,
+      ContextStepBuilderAgent: 60,
+      StepBuilderAgent: 55,
+      ContextStepFixerAgent: 30,
+      StepFixerAgent: 25,
+      FeedbackAgent: 20,
+      StaticCheckerAgent: 10,
+      SyntaxSanityAgent: 5,
+      RuntimePlayabilityAgent: 5
+    };
   }
 
   setAgent(agentName) {
@@ -43,6 +55,10 @@ class MockOpenAI {
 
   _getMockResponse(prompt, outputType) {
     console.log('Agent :', this.agent);
+    // Emit a default tokenCount for this agent if applicable
+    if (typeof global.onStatusUpdate === 'function' && this.agent && this._defaultTokenCounts[this.agent]) {
+      global.onStatusUpdate('TokenCount', { tokenCount: this._defaultTokenCounts[this.agent] });
+    }
     switch (this.agent) {
       case 'GameDesignAgent':
         return {
