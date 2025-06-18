@@ -28,12 +28,12 @@ const { estimateTokens } = require('../utils/tokenUtils');
 async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
   try {
     // Extract and validate required fields
-    const { title } = sharedState;
-    if (!title) {
-      throw new Error('GameDesignAgent: title is required in sharedState');
+    const { name, description } = sharedState;
+    if (!name || !description) {
+      throw new Error('GameDesignAgent: name and description are required in sharedState');
     }
 
-    logger.info('GameDesignAgent called', { traceId, input: { title } });
+    logger.info('GameDesignAgent called', { traceId, input: { name, description } });
 
     if (!llmClient) {
       throw new Error('GameDesignAgent: llmClient is required but was not provided');
@@ -41,10 +41,12 @@ async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
 
     // Load prompt
     const promptPath = path.join(__dirname, 'prompts/GameDesignAgent.prompt.md');
-    const promptTemplate = fs.readFileSync(promptPath, 'utf8');
+    let promptTemplate = fs.readFileSync(promptPath, 'utf8');
 
-    // Compose prompt
-    const prompt = promptTemplate;
+    // Compose prompt with invention
+    const prompt = promptTemplate
+      .replace('{{name}}', name)
+      .replace('{{description}}', description);
 
     // Call LLM
     const parsed = await llmClient.chatCompletion({

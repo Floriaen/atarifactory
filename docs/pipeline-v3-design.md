@@ -1,7 +1,124 @@
-# Pipeline-v3 – Context-Incremental Strategy
+# Pipeline-v3 – Creative Game Generation Architecture
 
-> Draft ‑ work-in-progress design document.  
-> Please review and refine before implementation.
+## High-Level Pipeline Flow
+
+```
+GameInventorAgent
+      ↓
+GameDesignAgent
+      ↓
+PlannerAgent
+      ↓
+ContextStepBuilderAgent (×N)
+      ↓
+StaticCheckerAgent
+      ↓
+SyntaxSanityAgent
+      ↓
+RuntimePlayabilityAgent
+      ↓
+FeedbackAgent
+```
+
+---
+
+## Agent Roles & Data Flow
+
+### 1. GameInventorAgent
+- **Purpose:** Invents a new game idea, producing a creative `name` (title) and `description`.
+- **Output Example:**
+  ```json
+  {
+    "name": "Shadow Lanterns",
+    "description": "In a mystical village where night never ends, you play as Lumi, a brave child armed with magical lanterns..."
+  }
+  ```
+
+### 2. GameDesignAgent
+- **Purpose:** Designs the game mechanics, entities, and win condition based on the invented idea.
+- **Input:**
+  ```json
+  {
+    "name": "Shadow Lanterns",
+    "description": "In a mystical village where night never ends, you play as Lumi..."
+  }
+  ```
+- **Output Example:**
+  ```json
+  {
+    "title": "Shadow Lanterns",
+    "description": "...",
+    "mechanics": ["move left/right", "jump", "place lantern", ...],
+    "winCondition": "...",
+    "entities": ["Lumi (player)", "magical lantern", ...]
+  }
+  ```
+
+### 3. PlannerAgent
+- **Purpose:** Breaks down the game design into a sequenced plan of implementation steps.
+- **Output Example:**
+  ```json
+  [
+    { "id": 1, "description": "Set up the HTML canvas and main game loop." },
+    { "id": 2, "description": "Create the player character Luma..." },
+    ...
+  ]
+  ```
+
+### 4. ContextStepBuilderAgent
+- **Purpose:** Iteratively implements each plan step, always receiving and returning the full game source code.
+- **Input:**
+  ```json
+  {
+    "gameSource": "...",
+    "plan": [...],
+    "currentStep": { "id": N, "description": "..." }
+  }
+  ```
+- **Output:** Updated full `gameSource` string.
+
+### 5. StaticCheckerAgent
+- **Purpose:** Lints and checks the entire code for functional and forbidden patterns (e.g., no `alert()`, no external images).
+
+### 6. SyntaxSanityAgent
+- **Purpose:** Checks code syntax (no LLM used).
+
+### 7. RuntimePlayabilityAgent
+- **Purpose:** Runs the game in a headless browser to check for playability (canvas active, win condition reachable, etc).
+
+### 8. FeedbackAgent
+- **Purpose:** Provides suggestions for improvement or retries if issues are detected.
+
+---
+
+## Shared State Structure
+
+```ts
+interface SharedState {
+  name: string;          // Invented game name
+  description: string;   // Invented game description
+  gameDef: { ... };      // Game design output
+  plan: Step[];          // List of implementation steps
+  gameSource: string;    // Full JS source code
+  currentStep?: Step;    // Current plan step
+  errors?: StaticError[];// For fixer agent
+  tokenCount?: number;   // For UI cost estimation
+  ...
+}
+```
+
+---
+
+## Test & Validation
+- **Integration tests** ensure the invented idea propagates from invention to design and into the final game.
+- **Mocks** are used for LLMs in CI, with tests verifying creative propagation.
+- **Token counting** is included for UI cost estimation.
+
+---
+
+## Notes
+- The pipeline is fully modular; each agent can be tested and replaced independently.
+- Only pipeline-v3 is supported and maintained going forward.
 
 ---
 
@@ -14,16 +131,6 @@ Goals:
 1. Eliminate merge/hoisting bugs and temporal-dead-zone errors.
 2. Keep the game single-file (``game.js``) & existing runtime unchanged.
 3. Maintain testability, playability checks, and linting safeguards.
-
----
-
-## 2 · High-Level Flow
-```text
-GameDesign → Planner → ContextStepBuilder (×N) → StaticChecker → RuntimePlayability
-           ↘──────────────Retry via ContextStepFixer─────────────↙
-```
-* **SharedState.gameSource** holds the full JS code throughout the pipeline.
-* On each step the agent gets `{ gameSource, plan, step }` and **must return the full updated file**.
 
 ---
 

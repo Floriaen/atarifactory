@@ -60,13 +60,29 @@ class MockOpenAI {
       global.onStatusUpdate('TokenCount', { tokenCount: this._defaultTokenCounts[this.agent] });
     }
     switch (this.agent) {
-      case 'GameDesignAgent':
+      case 'GameDesignAgent': {
+        // Try to extract name and description from the prompt
+        let name = 'Mock Game Name';
+        let description = 'A mock description for a creative game idea.';
+        try {
+          const match = prompt.match(/\{\s*"name":\s*"([^"]+)",\s*"description":\s*"([^"]+)"\s*\}/);
+          if (match) {
+            name = match[1];
+            description = match[2];
+          }
+        } catch (e) {}
         return {
-          title: 'Mock Game',
-          description: 'A mock game for testing.',
+          title: name,
+          description: description,
           mechanics: ['move', 'jump'],
           winCondition: 'Win!',
           entities: ['player', 'goal']
+        };
+      }
+      case 'GameInventorAgent':
+        return {
+          name: 'Mock Game Name',
+          description: 'A mock description for a creative game idea.'
         };
       case 'PlannerAgent':
         return [

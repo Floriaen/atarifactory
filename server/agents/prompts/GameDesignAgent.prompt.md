@@ -1,21 +1,26 @@
 # GameDesignAgent Prompt
 
 You are GameDesignAgent.
-Given a game title, generate a simple 2D canvas game design as a JSON object with the following fields:
-- title
-- description
-- mechanics (array of strings)
-- winCondition (string)
-- entities (array of strings)
+Given a game idea with the following fields, design a simple 2D canvas game as a JSON object. Use the name and description to inspire the gameplay, mechanics, and entities.
 
----
-
-## Example input
+## Input
 ```json
-{ "title": "Coin Collector" }
+{
+  "name": "{{name}}",
+  "description": "{{description}}"
+}
 ```
 
-## Example output
+## Output format
+```json
+{
+  "title": "...",
+  "description": "...",
+  "mechanics": ["..."],
+  "winCondition": "...",
+  "entities": ["..."]
+}
+```
 ```json
 {
   "title": "Coin Collector",

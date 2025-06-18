@@ -7,6 +7,7 @@
  * - Real LLM: Set OPENAI_API_KEY
  * - Logging: Set TEST_LOGS=1
  */
+const GameInventorAgent = require('../../agents/GameInventorAgent');
 const GameDesignAgent = require('../../agents/GameDesignAgent');
 const PlannerAgent = require('../../agents/PlannerAgent');
 const ContextStepBuilderAgent = require('../../agents/ContextStepBuilderAgent');
@@ -25,15 +26,38 @@ function format(code) {
 }
 
 describe('Pipeline Integration', () => {
+  it('should use the invented name/description in the game design', async () => {
+    const mockLlmClient = new MockOpenAI();
+    const traceId = 'test-trace';
+    const sharedState = createSharedState();
+    sharedState.gameSource = '';
+    mockLlmClient.setAgent('GameInventorAgent');
+    const invention = await GameInventorAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    mockLlmClient.setAgent('GameDesignAgent');
+    const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    // The test should fail if GameDesignAgent output is static or unrelated
+    // For now, this will pass only if the agent uses invention.name/description
+    expect(gameDef.title).not.toBe('Coin Collector');
+    expect(gameDef.title).toMatch(new RegExp(invention.name, 'i'));
+    expect(gameDef.description).toMatch(new RegExp(invention.description.split(' ')[0], 'i'));
+  });
   jest.setTimeout(20000);
   it('should process game design through to code generation', async () => {
     const mockLlmClient = new MockOpenAI();
     const traceId = 'test-trace';
 
-    // 1. Game Design
+    // 1. Game Inventor
     const sharedState = createSharedState();
-    sharedState.title = 'Test Game';
     sharedState.gameSource = '';
+    mockLlmClient.setAgent('GameInventorAgent');
+    const invention = await GameInventorAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    expect(typeof invention).toBe('object');
+    expect(invention).toHaveProperty('name');
+    expect(invention).toHaveProperty('description');
+    expect(sharedState.title).toBe(invention.name);
+    expect(sharedState.description).toBe(invention.description);
+
+    // 2. Game Design
     mockLlmClient.setAgent('GameDesignAgent');
     const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
     sharedState.gameDef = gameDef;

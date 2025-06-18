@@ -1,3 +1,4 @@
+const GameInventorAgent = require('./agents/GameInventorAgent');
 const GameDesignAgent = require('./agents/GameDesignAgent');
 const PlannerAgent = require('./agents/PlannerAgent');
 const ContextStepBuilderAgent = require('./agents/ContextStepBuilderAgent');
@@ -109,18 +110,25 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
   const traceId = uuidv4();
   logger.info('Agent pipeline started', { traceId, title });
   const sharedState = createSharedState();
-  sharedState.title = title;
   // Load canonical JS boilerplate as the initial gameSource
   const fs = require('fs');
   const path = require('path');
   const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
   sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
-  // 1. GameDesignAgent
+  // 1. GameInventorAgent: Invent a new game idea (name and description)
+  onStatusUpdate && onStatusUpdate('Inventing', { step: 'Game Invention' });
+  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameInventorAgent');
+  const invention = await GameInventorAgent(sharedState, { logger, traceId, llmClient });
+  sharedState.title = invention.name;
+  sharedState.name = invention.name;
+  sharedState.description = invention.description;
+  logger.info('GameInventorAgent output', { traceId, invention });
+  // 2. GameDesignAgent: Use invention to design game mechanics/entities
   onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
   if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameDesignAgent');
   await GameDesignAgent(sharedState, { logger, traceId, llmClient });
   logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
-  // 2. PlannerAgent
+  // 3. PlannerAgent
   onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
   if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('PlannerAgent');
   await PlannerAgent(sharedState, { logger, traceId, llmClient });
