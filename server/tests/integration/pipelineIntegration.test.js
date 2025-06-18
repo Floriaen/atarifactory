@@ -10,7 +10,6 @@
 const GameDesignAgent = require('../../agents/GameDesignAgent');
 const PlannerAgent = require('../../agents/PlannerAgent');
 const ContextStepBuilderAgent = require('../../agents/ContextStepBuilderAgent');
-const BlockInserterAgent = require('../../agents/BlockInserterAgent');
 const StaticCheckerAgent = require('../../agents/StaticCheckerAgent');
 const SyntaxSanityAgent = require('../../agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('../../agents/RuntimePlayabilityAgent');
@@ -58,14 +57,12 @@ describe('Pipeline Integration', () => {
     expect(revisedSource.length).toBeGreaterThan(0);
     sharedState.gameSource = revisedSource;
 
-    // 4. BlockInserterAgent
-    sharedState.currentCode = '';
-    sharedState.stepCode = revisedSource;
-    const mergedCode = await BlockInserterAgent(sharedState, { logger, traceId });
-    expect(typeof mergedCode).toBe('string');
-    expect(mergedCode.length).toBeGreaterThan(0);
-    sharedState.currentCode = mergedCode;
-    expect(() => format(mergedCode)).not.toThrow();
+    // 4. [BlockInserterAgent removed]
+    // In pipeline-v3, revisedSource is the full code. Assign directly.
+    sharedState.currentCode = revisedSource;
+    expect(typeof sharedState.currentCode).toBe('string');
+    expect(sharedState.currentCode.length).toBeGreaterThan(0);
+    expect(() => format(sharedState.currentCode)).not.toThrow();
 
     // 5. StaticCheckerAgent
     const errors = await StaticCheckerAgent(sharedState, { logger, traceId });

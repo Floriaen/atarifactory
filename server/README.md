@@ -33,7 +33,7 @@ You can run the pipeline in a fast, robust mock mode for end-to-end testing and 
   MOCK_PIPELINE=1 npm run start:server
   ```
 - In mock mode, the pipeline skips all agent/LLM logic and uses the static mock game code from `server/mocks/game.js`.
-- All generated files (`game.js`, `controlBar.js`, `controlBar.css`, `index.html`) are written directly into `/server/games/<gameId>/` (no `assets/` directory).
+- All generated files (`game.js`, `gameBoilerplate/controlBar/controlBar.js`, `gameBoilerplate/controlBar/controlBar.css`, `index.html`) are written directly into `/server/games/<gameId>/` (no `assets/` directory).
 - The frontend and server behave as if a real game was generated, allowing you to test serving, loading, and playing the game.
 
 ## Integration Testing

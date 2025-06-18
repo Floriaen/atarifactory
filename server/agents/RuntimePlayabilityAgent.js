@@ -39,7 +39,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
     page = await browser.newPage();
     
     // Read and prepare the boilerplate template
-    const boilerplatePath = path.join(__dirname, '..', 'gameBoilerplate.html');
+    const boilerplatePath = path.join(__dirname, '../gameBoilerplate/game.html');
     let html = fs.readFileSync(boilerplatePath, 'utf8');
     
     // Replace template variables with test values
@@ -48,7 +48,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
       .replace('{{description}}', sharedState.gameDef.description || 'Test game for runtime validation')
       .replace('{{instructions}}', Array.isArray(sharedState.gameDef.mechanics) ? sharedState.gameDef.mechanics.join(', ') : 'Test instructions')
       .replace('{{gameId}}', 'test')
-      .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, '..', 'controlBar/controlBar.html'), 'utf8'));
+      .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, '..', 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
     
     // Set the HTML content
     await page.setContent(html);

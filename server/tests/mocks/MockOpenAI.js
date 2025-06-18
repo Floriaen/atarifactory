@@ -1,7 +1,6 @@
 // NOTE: If you change any LLM agent contract, update this mock accordingly.
 // This mock is used in tests to avoid real OpenAI API calls and ensure deterministic, fast, and cheap testing.
 
-const { mergeCode } = require('../../utils/codeMerge');
 const prettier = require('prettier');
 
 class MockOpenAI {

@@ -2,7 +2,6 @@ const GameDesignAgent = require('./agents/GameDesignAgent');
 const PlannerAgent = require('./agents/PlannerAgent');
 const ContextStepBuilderAgent = require('./agents/ContextStepBuilderAgent');
 const StaticCheckerAgent = require('./agents/StaticCheckerAgent');
-const BlockInserterAgent = require('./agents/BlockInserterAgent');
 const SyntaxSanityAgent = require('./agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('./agents/RuntimePlayabilityAgent');
 const FeedbackAgent = require('./agents/FeedbackAgent');
@@ -67,11 +66,11 @@ async function runPipeline(title, onStatusUpdate) {
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
       
       // Copy control bar assets
-      fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
-      fs.copyFileSync(path.join(__dirname, 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
+      fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
+      fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
 
       // Read the boilerplate template
-      const boilerplatePath = path.join(__dirname, 'gameBoilerplate.html');
+      const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.html');
       let html = fs.readFileSync(boilerplatePath, 'utf8');
       // Replace template variables
       html = html
@@ -79,7 +78,7 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{description}}', gameDef.description || '')
         .replace('{{instructions}}', Array.isArray(gameDef.mechanics) ? gameDef.mechanics.join(', ') : gameDef.mechanics || '')
         .replace('{{gameId}}', gameId)
-        .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'controlBar/controlBar.html'), 'utf8'));
+        .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err });
@@ -112,7 +111,7 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
   // Load canonical JS boilerplate as the initial gameSource
   const fs = require('fs');
   const path = require('path');
-  const boilerplatePath = path.join(__dirname, 'gameBoilerplate.js');
+  const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
   sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
   // 1. GameDesignAgent
   onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
@@ -166,7 +165,7 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
   if (process.env.MOCK_PIPELINE === '1') {
     logger.info('MOCK_PIPELINE is active: using mock game.js');
     return {
-      code: fs.readFileSync(path.join(__dirname, 'mocks', 'game.js'), 'utf8'),
+      code: fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8'),
       gameDef: {
         title: title,
         description: 'A mock game for testing purposes',
@@ -197,7 +196,7 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
     // Load canonical JS boilerplate as the initial gameSource
     const fs = require('fs');
     const path = require('path');
-    const boilerplatePath = path.join(__dirname, 'gameBoilerplate.js');
+    const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
     sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
     // Run the rest of the pipeline as usual, skipping GameDesignAgent and PlannerAgent
     // 3. ContextStepBuilderAgent for each step

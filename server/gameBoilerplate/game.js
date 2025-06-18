@@ -1,5 +1,5 @@
 // Canonical initial JS for all generated games (pipeline-v3)
-// Assumes #game-canvas and all DOM boilerplate are present (see gameBoilerplate.html)
+// Assumes #game-canvas and all DOM boilerplate are present (see game.html)
 
 // Set up the canvas and context
 const canvas = document.getElementById('game-canvas');
