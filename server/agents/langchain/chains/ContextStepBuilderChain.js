@@ -8,13 +8,6 @@ const { ChatOpenAI } = require('@langchain/openai');
 
 // Async factory for the chain
 async function createContextStepBuilderChain(llm) {
-  // If test/mock env, use a dummy LLM
-  if (!llm && (process.env.MOCK_PIPELINE === '1' || process.env.MINIMAL_GAME === '1')) {
-    llm = {
-      invoke: async () => '// mock code for test',
-      pipe: function() { return this; }
-    };
-  }
   if (!llm) llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 });
   // Use the new JS prompt with system/human separation
   const parser = new StringOutputParser({
