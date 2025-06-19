@@ -37,7 +37,7 @@ async function PlannerAgent(sharedState, { logger, traceId, llmClient }) {
     logger.info('PlannerAgent called', { traceId, gameDefinition: gameDef });
 
     // Load prompt from file
-    const promptPath = path.join(__dirname, 'prompts', 'PlannerAgent.prompt.md');
+    const promptPath = path.join(__dirname, 'prompts', 'PlannerChain.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     const prompt = promptTemplate.replace('{{gameDefinition}}', JSON.stringify(gameDef, null, 2));
 

@@ -1,6 +1,6 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
-const { createGameDesignChain } = require("../../agents/langchain/GameDesignChain");
+const { createGameDesignChain } = require("../../agents/langchain/chains/GameDesignChain");
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const fs = require("fs/promises");
 const { ChatOpenAI } = (() => { try { return require("@langchain/openai"); } catch { return {}; } })();
@@ -34,7 +34,7 @@ describe("GameDesignChain Pipeline Tests", () => {
   // 2. Unit test: Prompt template
   describe("Prompt Template", () => {
     it("loads prompt file and checks content", async () => {
-      const promptPath = path.join(__dirname, "../../agents/prompts/GameDesignAgent.prompt.md");
+      const promptPath = path.join(__dirname, "../../agents/langchain/prompts/GameDesignChain.prompt.md");
       const promptString = await fs.readFile(promptPath, "utf8");
       expect(promptString).toMatch(/name/);
       expect(promptString).toMatch(/description/);

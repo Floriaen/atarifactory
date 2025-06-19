@@ -34,7 +34,7 @@ async function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
     logger.info('FeedbackAgent called', { traceId });
     
     // Load prompt from file
-    const promptPath = path.join(__dirname, 'prompts', 'FeedbackAgent.prompt.md');
+    const promptPath = path.join(__dirname, './prompts/FeedbackAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     const prompt = promptTemplate
       .replace('{{runtimeLogs}}', JSON.stringify(runtimeResults, null, 2))

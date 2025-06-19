@@ -1,4 +1,4 @@
-const { createFeedbackChain } = require('../../agents/langchain/FeedbackChain');
+const { createFeedbackChain } = require('../../agents/langchain/chains/FeedbackChain');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 describe('FeedbackChain', () => {
   let promptString;
   beforeAll(async () => {
-    const promptPath = path.join(__dirname, '../../agents/prompts/FeedbackAgent.prompt.md');
+    const promptPath = path.join(__dirname, '../../agents/langchain/prompts/FeedbackChain.prompt.md');
     promptString = await fs.readFile(promptPath, 'utf8');
   });
 

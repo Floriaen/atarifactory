@@ -40,7 +40,7 @@ async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
     }
 
     // Load prompt
-    const promptPath = path.join(__dirname, 'prompts/GameDesignAgent.prompt.md');
+    const promptPath = path.join(__dirname, './prompts/GameDesignAgent.prompt.md');
     let promptTemplate = fs.readFileSync(promptPath, 'utf8');
 
     // Compose prompt with invention

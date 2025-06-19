@@ -8,7 +8,7 @@ async function GameInventorAgent(sharedState, { logger, traceId, llmClient }) {
     logger.info('GameInventorAgent called', { traceId });
     if (!llmClient) throw new Error('GameInventorAgent: llmClient is required');
     
-    const promptPath = path.join(__dirname, 'prompts/GameInventorAgent.prompt.md');
+    const promptPath = path.join(__dirname, './prompts/GameInventorAgent.prompt.md');
     const promptTemplate = fs.readFileSync(promptPath, 'utf8');
     // Optionally interpolate theme or constraints here
     const prompt = promptTemplate; // Extend later for theme support
