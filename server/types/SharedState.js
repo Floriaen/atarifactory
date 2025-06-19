@@ -31,33 +31,41 @@
  * @property {Date} lastUpdate - Last state update
  */
 
-/**
- * @typedef {Object} SharedState
- * @property {GameDefinition|null} gameDef - The game definition from GameDesignAgent
- * @property {Step[]} plan - The full list of steps
- * @property {Step|null} currentStep - The step being processed
- * @property {string} currentCode - The code generated so far
- * @property {Error[]} errors - Array of current errors
- * @property {RuntimeResults} [runtimeResults] - Results from runtime execution
- * @property {Metadata} [metadata] - Additional metadata
- * @property {string} gameSource - The full source code for the game (pipeline-v3)
- * @property {number} tokenCount - The total estimated LLM token count (pipeline-v3)
+// SharedState schema and factory using Zod for strict consistency
+const { z } = require("zod");
 
- * @property {Object} [syntaxResult] - Result of syntax checking (pipeline-v3)
- * @property {Object} [feedback] - Feedback object from FeedbackAgent (pipeline-v3)
- */
+const MetadataSchema = z.object({
+  startTime: z.date(),
+  lastUpdate: z.date()
+});
+
+const SharedStateSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  gameDef: z.any().nullable(),
+  plan: z.array(z.any()),
+  currentStep: z.any().nullable(),
+  currentCode: z.string(),
+  errors: z.array(z.any()),
+  runtimeResults: z.any(),
+  metadata: MetadataSchema,
+  gameSource: z.string(),
+  syntaxResult: z.any().nullable(),
+  feedback: z.any().nullable(),
+  tokenCount: z.number()
+});
 
 /**
- * Creates a new SharedState object with default values
+ * Creates a new SharedState object with default values, validated by Zod.
  * @returns {SharedState}
  */
-function createSharedState() {
-  return {
+function createSharedState(init = {}) {
+  return SharedStateSchema.parse({
     name: '',
     description: '',
     gameDef: null,
     plan: [],
-    currentStep: null, // legacy
+    currentStep: null,
     currentCode: '',
     errors: [],
     runtimeResults: {},
@@ -65,15 +73,25 @@ function createSharedState() {
       startTime: new Date(),
       lastUpdate: new Date()
     },
-    // pipeline-v3 fields
     gameSource: '',
-
     syntaxResult: null,
     feedback: null,
-    tokenCount: 0
-  };
+    tokenCount: 0,
+    ...init
+  });
+}
+
+/**
+ * Validates and parses an updated SharedState object, ensuring no extra fields.
+ * @param {object} update
+ * @returns {SharedState}
+ */
+function parseSharedState(update) {
+  return SharedStateSchema.parse(update);
 }
 
 module.exports = {
-  createSharedState
-}; 
+  SharedStateSchema,
+  createSharedState,
+  parseSharedState
+};
