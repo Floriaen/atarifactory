@@ -1,5 +1,7 @@
 const GameInventorAgent = require('./agents/GameInventorAgent');
 const GameDesignAgent = require('./agents/GameDesignAgent');
+const PlayabilityValidatorAgent = require('./agents/PlayabilityValidatorAgent');
+const PlayabilityAutoFixAgent = require('./agents/PlayabilityAutoFixAgent');
 const PlannerAgent = require('./agents/PlannerAgent');
 const ContextStepBuilderAgent = require('./agents/ContextStepBuilderAgent');
 const StaticCheckerAgent = require('./agents/StaticCheckerAgent');
@@ -128,6 +130,34 @@ async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
   if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameDesignAgent');
   await GameDesignAgent(sharedState, { logger, traceId, llmClient });
   logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
+  // 2b. Playability Validation
+  onStatusUpdate && onStatusUpdate('Validating', { step: 'Playability Validation' });
+  const validationResults = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient });
+  if (!validationResults.isPlayable) {
+    logger.warn('Playability validation failed, attempting auto-fix', { traceId, validationResults });
+    if (validationResults.suggestion) {
+      const fixResult = await PlayabilityAutoFixAgent(validationResults, { logger, traceId, llmClient });
+      if (fixResult.fixed) {
+        logger.info('Auto-fix applied', { traceId, note: fixResult.note, fixedGameDef: fixResult.gameDef });
+        sharedState.gameDef = fixResult.gameDef;
+        // Re-validate
+        const reValidation = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient });
+        if (!reValidation.isPlayable) {
+          logger.error('Playability validation failed after auto-fix', { traceId, reValidation });
+          throw new Error('Playability validation failed after auto-fix');
+        }
+        logger.info('Playability validation passed after auto-fix', { traceId, reValidation });
+      } else {
+        logger.error('Auto-fix did not recognize suggestion or failed', { traceId, validationResults });
+        throw new Error('Playability validation failed (auto-fix not applicable)');
+      }
+    } else {
+      logger.error('Playability validation failed (no suggestion for auto-fix)', { traceId, validationResults });
+      throw new Error('Playability validation failed (no suggestion for auto-fix)');
+    }
+  } else {
+    logger.info('Playability validation passed', { traceId, validationResults });
+  }
   // 3. PlannerAgent
   onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
   if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('PlannerAgent');

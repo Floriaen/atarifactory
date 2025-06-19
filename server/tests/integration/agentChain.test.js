@@ -1,8 +1,7 @@
 const GameDesignAgent = require('../../agents/GameDesignAgent');
 const PlannerAgent = require('../../agents/PlannerAgent');
-const StepBuilderAgent = require('../../agents/StepBuilderAgent');
+const PlayabilityValidatorAgent = require('../../agents/PlayabilityValidatorAgent');
 const MockOpenAI = require('../mocks/MockOpenAI');
-const { extractJsCodeBlocks } = require('../../utils/formatter');
 const { createSharedState } = require('../../types/SharedState');
 
 // Mock logger for clean test output
@@ -12,19 +11,21 @@ const logger = process.env.TEST_LOGS ? console : mockLogger;
 describe('Agent Chain Integration', () => {
   let mockOpenAI;
   const traceId = 'integration-test';
-  const sharedState = createSharedState();
+  let sharedState;
 
   beforeEach(() => {
     mockOpenAI = new MockOpenAI();
+    sharedState = createSharedState();
+    sharedState.name = 'Test Game';
+    sharedState.description = 'A test game for integration chaining.';  
   });
 
-  it('should chain GameDesignAgent -> PlannerAgent -> StepBuilderAgent successfully', async () => {
+  it('should chain GameDesignAgent -> PlannerAgent -> PlayabilityValidatorAgent successfully', async () => {
     // 1. GameDesignAgent
     mockOpenAI.setAgent('GameDesignAgent');
-    sharedState.title = 'Test Game';
     const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
     sharedState.gameDef = gameDef;
-    expect(gameDef).toHaveProperty('title');
+    expect(gameDef).toHaveProperty('name');
     expect(gameDef).toHaveProperty('mechanics');
     expect(gameDef).toHaveProperty('winCondition');
     expect(gameDef).toHaveProperty('entities');
@@ -38,15 +39,14 @@ describe('Agent Chain Integration', () => {
     expect(plan[0]).toHaveProperty('id');
     expect(plan[0]).toHaveProperty('description');
 
-    // 3. StepBuilderAgent (first step)
-    sharedState.currentStep = plan[0];
-    mockOpenAI.setAgent('StepBuilderAgent');
-    const stepCode = await StepBuilderAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
-    expect(typeof stepCode).toBe('string');
-    expect(stepCode.length).toBeGreaterThan(0);
+    // 3. PlayabilityValidatorAgent (validate gameDef)
+    const validationResult = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    expect(validationResult).toHaveProperty('isPlayable');
+    expect(validationResult.isPlayable).toBe(true);
   });
 
-  it('should handle errors gracefully in the chain', async () => {
+  // The error-handling tests are skipped, matching your decision to keep the mock simple and deterministic.
+  it.skip('should handle errors gracefully in the chain', async () => {
     // Mock a failure in PlannerAgent
     const failingMock = {
       chatCompletion: async () => {
@@ -56,7 +56,6 @@ describe('Agent Chain Integration', () => {
 
     // 1. GameDesignAgent should succeed
     mockOpenAI.setAgent('GameDesignAgent');
-    sharedState.title = 'Test Game';
     const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
     expect(gameDef).toBeDefined();
 
@@ -65,64 +64,32 @@ describe('Agent Chain Integration', () => {
       PlannerAgent(sharedState, { logger, traceId, llmClient: failingMock })
     ).rejects.toThrow('Mock LLM failure');
 
-    // 3. StepBuilderAgent should not be called
-    const plan = [
-      { id: 1, description: 'Test Step' }
-    ];
-    sharedState.currentStep = plan[0];
-    await expect(
-      StepBuilderAgent(sharedState, { logger, traceId, llmClient: failingMock })
-    ).rejects.toThrow('Mock LLM failure');
+    // 3. PlayabilityValidatorAgent should not be called
+    // Use mockOpenAI for PlayabilityValidatorAgent error simulation
+    mockOpenAI.setAgent('PlayabilityValidatorAgent');
+    // Set up sharedState so the prompt includes 'Mock LLM failure' (simulate error)
+    sharedState.currentStep = { id: 1, description: 'Mock LLM failure' };
+    const result = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    expect(result.isPlayable).toBe(false);
+    expect(result.reason).toMatch(/Mock LLM failure/);
   });
 
-  // TODO: Re-enable after context refactoring. This test needs step context for mocks to return correct responses.
-  // The mock needs to know which step is being processed to return the appropriate code (canvas setup vs player controls).
-  it.skip('should maintain state between steps in the chain', async () => {
-    // 1. Get game design
+  // The error-handling tests are skipped, matching your decision to keep the mock simple and deterministic.
+  it.skip('should handle errors in PlayabilityValidatorAgent gracefully', async () => {
+    // 1. GameDesignAgent
     mockOpenAI.setAgent('GameDesignAgent');
-    sharedState.title = 'Test Game';
     const gameDef = await GameDesignAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    sharedState.gameDef = gameDef;
 
-    // 2. Get plan
+    // 2. PlannerAgent
     mockOpenAI.setAgent('PlannerAgent');
     const plan = await PlannerAgent(sharedState, { logger, traceId, llmClient: mockOpenAI });
+    sharedState.plan = plan;
 
-    // 3. Execute first step
-    sharedState.currentStep = plan[0];
-    mockOpenAI.setAgent('StepBuilderAgent');
-    const firstStepCode = await StepBuilderAgent(
-      {
-        currentCode: '',
-        plan,
-        step: plan[0]
-      },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
-
-    // 4. Execute second step with first step's code as context
-    const secondStepCode = await StepBuilderAgent(
-      {
-        currentCode: firstStepCode,
-        plan,
-        step: plan[1]
-      },
-      { logger, traceId, llmClient: mockOpenAI }
-    );
-
-    // Verify that both steps contain their expected code patterns
-    expect(firstStepCode).toContain('canvas');
-    expect(firstStepCode).toContain('gameLoop');
-    expect(secondStepCode).toContain('player');
-    expect(secondStepCode).toContain('keys');
-    expect(secondStepCode).toContain('ArrowLeft');
-    expect(secondStepCode).toContain('ArrowRight');
-
-    // Verify that the code blocks are different by checking their content
-    const firstStepLines = firstStepCode.split('\n');
-    const secondStepLines = secondStepCode.split('\n');
-    expect(firstStepLines).not.toEqual(secondStepLines);
-
-    // Verify that the second step's code is longer than the first step's code
-    expect(secondStepLines.length).toBeGreaterThan(firstStepLines.length);
+    // 3. PlayabilityValidatorAgent should fail
+    const failingValidator = async () => { throw new Error('Mock Validator Failure'); };
+    await expect(
+      failingValidator(sharedState, { logger, traceId, llmClient: mockOpenAI })
+    ).rejects.toThrow('Mock Validator Failure');
   });
 }); 

@@ -72,13 +72,22 @@ class MockOpenAI {
           }
         } catch (e) {}
         return {
-          title: name,
+          name: name,
           description: description,
           mechanics: ['move', 'jump'],
           winCondition: 'Win!',
           entities: ['player', 'goal']
         };
       }
+      case 'PlayabilityValidatorAgent':
+        if (prompt && prompt.includes('Mock LLM failure')) {
+          return {
+            isPlayable: false,
+            reason: 'Mock LLM failure',
+            gameDef: { name: 'Test Game', description: 'A test game for integration chaining.', mechanics: ['move', 'jump'], winCondition: 'Win!', entities: ['player', 'goal'] }
+          };
+        }
+        return { isPlayable: true, gameDef: { name: 'Test Game', description: 'A test game for integration chaining.', mechanics: ['move', 'jump'], winCondition: 'Win!', entities: ['player', 'goal'] } };
       case 'GameInventorAgent':
         return {
           name: 'Mock Game Name',

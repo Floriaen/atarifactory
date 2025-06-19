@@ -37,8 +37,8 @@ describe('Pipeline Integration', () => {
     const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
     // The test should fail if GameDesignAgent output is static or unrelated
     // For now, this will pass only if the agent uses invention.name/description
-    expect(gameDef.title).not.toBe('Coin Collector');
-    expect(gameDef.title).toMatch(new RegExp(invention.name, 'i'));
+    expect(gameDef.name).not.toBe('Coin Collector');
+    expect(gameDef.name).toMatch(new RegExp(invention.name, 'i'));
     expect(gameDef.description).toMatch(new RegExp(invention.description.split(' ')[0], 'i'));
   });
   jest.setTimeout(20000);
@@ -54,7 +54,7 @@ describe('Pipeline Integration', () => {
     expect(typeof invention).toBe('object');
     expect(invention).toHaveProperty('name');
     expect(invention).toHaveProperty('description');
-    expect(sharedState.title).toBe(invention.name);
+    expect(sharedState.name).toBe(invention.name);
     expect(sharedState.description).toBe(invention.description);
 
     // 2. Game Design
@@ -113,26 +113,71 @@ describe('Pipeline Integration', () => {
     sharedState.feedback = feedback;
   });
 
-  it('should handle error in StepBuilderAgent gracefully', async () => {
-    const mockLlmClient = new MockOpenAI();
-    const traceId = 'test-trace';
 
-    // 1. Game Design
+  it('should trigger LLM fallback for ambiguous specs and accept if LLM says winnable', async () => {
+    // Mock LLM client that always returns winnable: true for fallback
+    class FallbackMockOpenAI extends MockOpenAI {
+      async chatCompletion({ prompt, outputType }) {
+        if (prompt.includes('game validation agent')) {
+          return { winnable: true, suggestion: 'Add "move" mechanic.' };
+        }
+        return super.chatCompletion({ prompt, outputType });
+      }
+    }
+    const mockLlmClient = new FallbackMockOpenAI();
+    const traceId = 'test-trace-ambiguous';
     const sharedState = createSharedState();
-    sharedState.title = 'Test Game';
-    mockLlmClient.setAgent('GameDesignAgent');
-    const gameDef = await GameDesignAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
+    sharedState.name = 'Ambiguous Game';
+    sharedState.description = 'Win by escaping the maze.';
+    sharedState.gameDef = {
+      title: 'Ambiguous Game',
+      description: 'Win by escaping the maze.',
+      mechanics: ['wait'], // ambiguous for 'escape'
+      winCondition: 'Escape the maze.',
+      entities: ['player', 'maze']
+    };
+    let passed = false;
+    try {
+      await require('../../agents/PlayabilityValidatorAgent')(sharedState, { logger, traceId, llmClient: mockLlmClient });
+      passed = true;
+    } catch (err) {
+      passed = false;
+    }
+    expect(passed).toBe(true);
+  });
 
-    // 2. Plan
-    mockLlmClient.setAgent('PlannerAgent');
-    const plan = await PlannerAgent(sharedState, { llmClient: mockLlmClient, logger, traceId });
-
-    // 3. Try to build an invalid step with ContextStepBuilderAgent
-    mockLlmClient.setAgent('ContextStepBuilderAgent');
-    const badStep = { id: 999, description: 'Nonexistent step' };
-    const badSharedState = { ...sharedState, currentStep: badStep, gameSource: '', plan };
-    await expect(
-      ContextStepBuilderAgent(badSharedState, { logger, traceId, llmClient: mockLlmClient })
-    ).rejects.toThrow();
+  it('should auto-fix unwinnable game designs if LLM provides a suggestion', async () => {
+    const PlayabilityAutoFixAgent = require('../../agents/PlayabilityAutoFixAgent');
+    const mockLlmClient = new MockOpenAI();
+    const traceId = 'test-trace-autofix';
+    // Simulate a design where winCondition is unreachable with given mechanics
+    const sharedState = createSharedState();
+    sharedState.name = 'Impossible Game';
+    sharedState.description = 'Win by collecting all coins, but you cannot move.';
+    sharedState.gameDef = {
+      title: 'Impossible Game',
+      description: 'Win by collecting all coins, but you cannot move.',
+      mechanics: ['wait'], // No movement or collect
+      winCondition: 'All coins collected.',
+      entities: ['player', 'coin']
+    };
+    // Mock LLM so that when PlayabilityValidatorAgent asks, it returns a fix suggestion
+    mockLlmClient.chatCompletion = async ({ prompt, outputType }) => {
+      if (prompt.includes('game validation agent')) {
+        return { winnable: false, suggestion: "Add the 'move' and 'collect' mechanics." };
+      }
+      return { winnable: false };
+    };
+    // 1. Validate (should be unplayable, with suggestion)
+    const validationResult = await require('../../agents/PlayabilityValidatorAgent')(sharedState, { logger, traceId, llmClient: mockLlmClient });
+    expect(validationResult.isPlayable).toBe(false);
+    expect(validationResult.suggestion).toMatch(/move/);
+    // 2. Auto-fix
+    const fixResult = await PlayabilityAutoFixAgent(validationResult, { logger, traceId });
+    expect(fixResult.fixed).toBe(true);
+    // 3. Re-validate
+    const revalidationResult = await require('../../agents/PlayabilityValidatorAgent')({ gameDef: fixResult.gameDef }, { logger, traceId, llmClient: mockLlmClient });
+    expect(revalidationResult.isPlayable).toBe(true);
+    expect(revalidationResult.gameDef.mechanics).toEqual(expect.arrayContaining(['move', 'collect', 'wait']));
   });
 }); 

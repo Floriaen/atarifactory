@@ -24,8 +24,8 @@ async function PlannerAgent(sharedState, { logger, traceId, llmClient }) {
     }
 
     // Validate gameDef structure
-    if (!gameDef.title || typeof gameDef.title !== 'string') {
-      throw new Error('PlannerAgent: gameDef.title is required and must be a string');
+    if (!gameDef.name || typeof gameDef.name !== 'string') {
+      throw new Error('PlannerAgent: gameDef.name is required and must be a string');
     }
     if (!gameDef.description || typeof gameDef.description !== 'string') {
       throw new Error('PlannerAgent: gameDef.description is required and must be a string');
