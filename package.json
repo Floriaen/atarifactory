@@ -19,12 +19,9 @@
   "dependencies": {
     "@langchain/core": "^0.3.59",
     "@langchain/openai": "^0.5.13",
-    "ast-merge": "github:Floriaen/ast-merge",
-    "ast-types": "^0.16.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "jscodeshift": "^17.3.0",
     "langchain": "^0.3.28",
     "marked": "^15.0.12",
     "openai": "^5.5.1",

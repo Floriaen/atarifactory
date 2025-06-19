@@ -1,20 +1,8 @@
-const { runModularGameSpecPipeline } = require('./agents/langchain/pipeline/pipeline');
 const logger = require('./utils/logger');
 const { v4: uuidv4 } = require('uuid');
-const SmartOpenAI = require('./utils/SmartOpenAI');
 const { createSharedState } = require('./types/SharedState');
 const fs = require('fs');
 const path = require('path');
-let llmClient = null;
-try {
-  if (process.env.OPENAI_API_KEY) {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    llmClient = new SmartOpenAI(openai);
-  }
-} catch (err) {
-  logger.warn('OpenAI SDK not available or failed to initialize', { error: err });
-}
 
 /**
  * Orchestrates the agent pipeline for game generation.
@@ -50,7 +38,7 @@ async function runPipeline(title, onStatusUpdate) {
     }
 
     // Get code and game design info (with env var fallback logic)
-    const sharedState = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
+    const sharedState = await generateGameSourceCode(title, logger, onStatusUpdate);
     const code = sharedState.code;
     const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || title;
@@ -98,7 +86,7 @@ async function runPipeline(title, onStatusUpdate) {
   }
 }
 
-async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) {
+async function generateGameSourceCode(title, logger, onStatusUpdate) {
   const { runPlanningPipeline } = require('./agents/langchain/pipeline/planningPipeline');
   const { runCodingPipeline } = require('./agents/langchain/pipeline/codingPipeline');
 

@@ -15,7 +15,6 @@ describe('Token Count Modular Pipeline Integration', () => {
       { id: 2, description: 'Create the player entity and implement left/right movement' },
       { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
-    // Run coding pipeline only (no LLM call if MOCK_PIPELINE/MINIMAL_GAME is set)
     // Inject mock factories so no real LLM is called
     const factories = {
       createContextStepBuilderChain: async () => ({
