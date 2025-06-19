@@ -39,6 +39,15 @@ Ignore style issues like:
 
 IMPORTANT: Never use alert(). Instead, update the DOM (e.g., inject a message element) or use console.log for debugging.
 
+Respond ONLY with the corrected code block for this step. Do not include any explanation, markdown, headings, or formatting—just the code.
+
+Example output:
+```js
+function addPlayer() {{
+  player = {{ x: 0, y: 0 }};
+}}
+```
+
 IMPORTANT: Do NOT load external images or sounds. Draw everything directly with canvas primitives.
 
 ## CORRECTED CODE BLOCK

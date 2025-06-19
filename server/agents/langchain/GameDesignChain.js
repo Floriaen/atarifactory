@@ -5,7 +5,7 @@ const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const { ChatOpenAI } = require("@langchain/openai");
 
 // Async factory for GameDesignChain
-async function createGameDesignChain(llm = new ChatOpenAI({ temperature: 0 })) {
+async function createGameDesignChain(llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 })) {
   const promptPath = path.join(__dirname, "../prompts/GameDesignAgent.prompt.md");
   const promptString = await fs.readFile(promptPath, "utf8");
   const gameDesignPrompt = new PromptTemplate({

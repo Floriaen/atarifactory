@@ -17,7 +17,7 @@ if (!fs.existsSync(sharedStatePath)) {
 const sharedState = JSON.parse(fs.readFileSync(sharedStatePath, 'utf8'));
 
 // Import agents (LLM-free steps only)
-const BlockInserterAgent = require('../agents/BlockInserterAgent');
+
 const StaticCheckerAgent = require('../agents/StaticCheckerAgent');
 const SyntaxSanityAgent = require('../agents/SyntaxSanityAgent');
 const RuntimePlayabilityAgent = require('../agents/RuntimePlayabilityAgent');
@@ -26,12 +26,6 @@ async function main() {
   console.log('=== Pipeline-v3 Debug Replay ===');
   console.log('Loaded sharedState from debug_sharedState.json');
   console.log('Current gameSource length:', sharedState.gameSource && sharedState.gameSource.length);
-
-  // 1. BlockInserterAgent (if used)
-  if (BlockInserterAgent) {
-    sharedState.gameSource = await BlockInserterAgent(sharedState, { logger: console, traceId: 'debug-replay' });
-    console.log('BlockInserterAgent complete.');
-  }
 
   // 2. StaticCheckerAgent
   const errors = await StaticCheckerAgent(sharedState, { logger: console, traceId: 'debug-replay' });
