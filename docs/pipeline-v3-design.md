@@ -1,31 +1,33 @@
 # Pipeline-v3 – Creative Game Generation Architecture
 
+> **Note:** This pipeline is implemented using modular [Langchain](https://js.langchain.com/) chains. All pre-Langchain pipelines are deprecated; only pipeline-v3 (Langchain-based) is supported. For a high-level overview and getting started, see the root README.md.
+
 ## High-Level Pipeline Flow
 
 ```
-GameInventorAgent
+GameInventorChain
       ↓
-GameDesignAgent
+GameDesignChain
       ↓
-PlannerAgent
+PlannerChain
       ↓
-ContextStepBuilderAgent (×N)
+ContextStepBuilderChain (×N)
       ↓
-StaticCheckerAgent
+StaticCheckerChain
       ↓
-SyntaxSanityAgent
+SyntaxSanityChain
       ↓
-RuntimePlayabilityAgent
+RuntimePlayabilityChain
       ↓
-FeedbackAgent
+FeedbackChain
 ```
 
 ---
 
-## Agent Roles & Data Flow
+## Chain Roles & Data Flow
 
-### 1. GameInventorAgent
-- **Purpose:** Invents a new game idea, producing a creative `name` (title) and `description`.
+### 1. GameInventorChain
+- **Purpose:** Generates a new game idea, producing a creative `name` (title) and `description`.
 - **Output Example:**
   ```json
   {
@@ -34,7 +36,7 @@ FeedbackAgent
   }
   ```
 
-### 2. GameDesignAgent
+### 2. GameDesignChain
 - **Purpose:** Designs the game mechanics, entities, and win condition based on the invented idea.
 - **Input:**
   ```json
@@ -54,7 +56,7 @@ FeedbackAgent
   }
   ```
 
-### 3. PlannerAgent
+### 3. PlannerChain
 - **Purpose:** Breaks down the game design into a sequenced plan of implementation steps.
 - **Output Example:**
   ```json
@@ -65,7 +67,7 @@ FeedbackAgent
   ]
   ```
 
-### 4. ContextStepBuilderAgent
+### 4. ContextStepBuilderChain
 - **Purpose:** Iteratively implements each plan step, always receiving and returning the full game source code.
 - **Input:**
   ```json
@@ -77,16 +79,16 @@ FeedbackAgent
   ```
 - **Output:** Updated full `gameSource` string.
 
-### 5. StaticCheckerAgent
+### 5. StaticCheckerChain
 - **Purpose:** Lints and checks the entire code for functional and forbidden patterns (e.g., no `alert()`, no external images).
 
-### 6. SyntaxSanityAgent
+### 6. SyntaxSanityChain
 - **Purpose:** Checks code syntax (no LLM used).
 
-### 7. RuntimePlayabilityAgent
+### 7. RuntimePlayabilityChain
 - **Purpose:** Runs the game in a headless browser to check for playability (canvas active, win condition reachable, etc).
 
-### 8. FeedbackAgent
+### 8. FeedbackChain
 - **Purpose:** Provides suggestions for improvement or retries if issues are detected.
 
 ---

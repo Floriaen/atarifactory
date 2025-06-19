@@ -11,6 +11,50 @@ This project follows CLEAN architecture principles:
 
 All contributors and tools must follow these guidelines.
 
+---
+
+## Pipeline-v3 Architecture (Langchain-based)
+
+> **Note:** Only pipeline-v3 is maintained and supported. All previous pipelines are deprecated. The pipeline is implemented using modular [Langchain](https://js.langchain.com/) chains for each step.
+
+### High-Level Pipeline Flow
+
+```
+GameInventorChain
+      ↓
+GameDesignChain
+      ↓
+PlannerChain
+      ↓
+ContextStepBuilderChain (×N)
+      ↓
+StaticCheckerChain
+      ↓
+SyntaxSanityChain
+      ↓
+RuntimePlayabilityChain
+      ↓
+FeedbackChain
+```
+
+### Chain Roles
+- **GameInventorChain:** Generates a new game idea (`name`, `description`).
+- **GameDesignChain:** Designs mechanics, entities, and win condition for the idea.
+- **PlannerChain:** Breaks down the design into an ordered plan of implementation steps.
+- **ContextStepBuilderChain:** Iteratively implements each plan step, always working with the full game source code.
+- **StaticCheckerChain:** Lints and checks for forbidden patterns or errors.
+- **SyntaxSanityChain:** Ensures generated code is syntactically valid.
+- **RuntimePlayabilityChain:** Runs the game in a headless browser to check for playability.
+- **FeedbackChain:** Provides suggestions or triggers retries if issues are detected.
+
+**Langchain** is a core dependency for pipeline composition, prompt templating, and LLM orchestration.
+
+For detailed architecture, see [docs/pipeline-v3-design.md](docs/pipeline-v3-design.md).
+
+**Extensibility:**
+- To add or modify pipeline steps, create or update the corresponding Langchain chain module in `server/agents/langchain/chains/`.
+- See the [Langchain JS documentation](https://js.langchain.com/) for best practices.
+
 ## Linting
 
 To check code style and errors, run:

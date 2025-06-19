@@ -14,7 +14,7 @@ const config = {
     '**/tests/integration/**/*.test.js',
     '**/tests/mocks/**/*.test.js'
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/tests/e2e/']
+  testPathIgnorePatterns: ['/node_modules/']
 };
 
 module.exports = config;
