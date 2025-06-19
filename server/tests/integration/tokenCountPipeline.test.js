@@ -45,7 +45,8 @@ describe('Token Count Pipeline Integration', () => {
   it('should accumulate token count in manual agent calls (mocked)', async () => {
     const mockLlmClient = new MockOpenAI();
     const sharedState = createSharedState();
-    sharedState.title = 'Manual Token Game';
+    sharedState.name = 'Manual Token Game';
+    sharedState.description = 'A manual test game for token counting.';
     let lastTokenCount = null;
     global.onStatusUpdate = (step, data) => {
       if (step === 'TokenCount' && data && typeof data.tokenCount === 'number') {

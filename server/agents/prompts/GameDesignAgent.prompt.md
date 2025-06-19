@@ -21,9 +21,10 @@ Given a game idea with the following fields, design a simple 2D canvas game as a
 ```
 
 ## Output format
+**IMPORTANT:** You MUST use the field "name" (not "title"). Do not include a "title" field.
 ```json
 {
-  "title": "...",
+  "name": "...",
   "description": "...",
   "mechanics": ["..."],
   "winCondition": "...",
@@ -32,7 +33,7 @@ Given a game idea with the following fields, design a simple 2D canvas game as a
 ```
 ```json
 {
-  "title": "Coin Collector",
+  "name": "Coin Collector",
   "description": "Collect all coins while avoiding obstacles.",
   "mechanics": ["move left/right", "jump"],
   "winCondition": "All coins collected.",

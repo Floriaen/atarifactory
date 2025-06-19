@@ -68,7 +68,7 @@ describe('GameInventorAgent', () => {
     const llmClient = { chatCompletion: jest.fn().mockResolvedValue(parsed) };
     await GameInventorAgent(sharedState, { logger: mockLogger, traceId, llmClient });
     expect(sharedState.name).toBe(parsed.name);
-    expect(sharedState.title).toBe(parsed.name);
+    expect(sharedState.name).toBe(parsed.name);
     expect(sharedState.description).toBe(parsed.description);
   });
 });

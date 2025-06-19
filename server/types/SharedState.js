@@ -53,6 +53,8 @@
  */
 function createSharedState() {
   return {
+    name: '',
+    description: '',
     gameDef: null,
     plan: [],
     currentStep: null, // legacy
