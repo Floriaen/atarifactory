@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1750361260795" clover="3.2.0">
-  <project timestamp="1750361260795" name="All files">
+<coverage generated="1750364047171" clover="3.2.0">
+  <project timestamp="1750364047171" name="All files">
     <metrics statements="478" coveredstatements="434" conditionals="47" coveredconditionals="28" methods="15" coveredmethods="13" elements="540" coveredelements="475" complexity="0" loc="478" ncloc="478" packages="3" files="11" classes="11"/>
     <package name="agents.langchain.chains">
       <metrics statements="148" coveredstatements="148" conditionals="14" coveredconditionals="7" methods="7" coveredmethods="7"/>

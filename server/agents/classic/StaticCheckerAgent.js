@@ -12,10 +12,10 @@
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 
-const logger = require('../utils/logger');
+const logger = require('../../utils/logger');
 const { ESLint } = require('eslint');
-const { cleanUp } = require('../utils/cleanUp');
-const pipelineConfig = require('../config/pipeline.eslint.config');
+const { cleanUp } = require('../../utils/cleanUp');
+const pipelineConfig = require('../../config/pipeline.eslint.config');
 
 async function StaticCheckerAgent(sharedState, { logger, traceId }) {
   const { currentCode, stepCode } = sharedState;

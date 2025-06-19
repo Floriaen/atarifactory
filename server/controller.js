@@ -1,13 +1,4 @@
-const GameInventorAgent = require('./classic/GameInventorAgent');
-const GameDesignAgent = require('./classic/GameDesignAgent');
-const PlayabilityValidatorAgent = require('./classic/PlayabilityValidatorAgent');
-const PlayabilityAutoFixAgent = require('./classic/PlayabilityAutoFixAgent');
-const PlannerAgent = require('./classic/PlannerAgent');
-const ContextStepBuilderAgent = require('./agents/ContextStepBuilderAgent');
-const StaticCheckerAgent = require('./classic/StaticCheckerAgent');
-const SyntaxSanityAgent = require('./classic/SyntaxSanityAgent');
-const RuntimePlayabilityAgent = require('./classic/RuntimePlayabilityAgent');
-const FeedbackAgent = require('./classic/FeedbackAgent');
+const { runModularGameSpecPipeline } = require('./agents/langchain/pipeline/pipeline');
 const logger = require('./utils/logger');
 const { v4: uuidv4 } = require('uuid');
 const SmartOpenAI = require('./utils/SmartOpenAI');
@@ -58,8 +49,10 @@ async function runPipeline(title, onStatusUpdate) {
       throw err;
     }
 
-    // Get code and game design info from pure pipeline (mock or real)
-    const { code, gameDef } = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
+    // Get code and game design info (with env var fallback logic)
+    const sharedState = await generateGameSourceCode(title, logger, llmClient, onStatusUpdate);
+    const code = sharedState.code;
+    const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || title;
 
     try {
@@ -105,202 +98,57 @@ async function runPipeline(title, onStatusUpdate) {
   }
 }
 
-// Pure agent pipeline: returns both the generated code and game design info
-async function agentPipelineToCode(title, logger, llmClient, onStatusUpdate) {
-  // Make onStatusUpdate globally available for token counting
-  global.onStatusUpdate = onStatusUpdate;
-  const traceId = uuidv4();
-  logger.info('Agent pipeline started', { traceId, title });
-  const sharedState = createSharedState();
-  // Load canonical JS boilerplate as the initial gameSource
-  const fs = require('fs');
-  const path = require('path');
-  const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
-  sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
-  // 1. GameInventorAgent: Invent a new game idea (name and description)
-  onStatusUpdate && onStatusUpdate('Inventing', { step: 'Game Invention' });
-  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameInventorAgent');
-  const invention = await GameInventorAgent(sharedState, { logger, traceId, llmClient });
-  sharedState.title = invention.name;
-  sharedState.name = invention.name;
-  sharedState.description = invention.description;
-  logger.info('GameInventorAgent output', { traceId, invention });
-  // 2. GameDesignAgent: Use invention to design game mechanics/entities
-  onStatusUpdate && onStatusUpdate('Designing', { step: 'Game Design' });
-  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('GameDesignAgent');
-  await GameDesignAgent(sharedState, { logger, traceId, llmClient });
-  logger.info('GameDesignAgent output', { traceId, gameDef: sharedState.gameDef });
-  // 2b. Playability Validation
-  onStatusUpdate && onStatusUpdate('Validating', { step: 'Playability Validation' });
-  const validationResults = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient });
-  if (!validationResults.isPlayable) {
-    logger.warn('Playability validation failed, attempting auto-fix', { traceId, validationResults });
-    if (validationResults.suggestion) {
-      const fixResult = await PlayabilityAutoFixAgent(validationResults, { logger, traceId, llmClient });
-      if (fixResult.fixed) {
-        logger.info('Auto-fix applied', { traceId, note: fixResult.note, fixedGameDef: fixResult.gameDef });
-        sharedState.gameDef = fixResult.gameDef;
-        // Re-validate
-        const reValidation = await PlayabilityValidatorAgent(sharedState, { logger, traceId, llmClient });
-        if (!reValidation.isPlayable) {
-          logger.error('Playability validation failed after auto-fix', { traceId, reValidation });
-          throw new Error('Playability validation failed after auto-fix');
-        }
-        logger.info('Playability validation passed after auto-fix', { traceId, reValidation });
-      } else {
-        logger.error('Auto-fix did not recognize suggestion or failed', { traceId, validationResults });
-        throw new Error('Playability validation failed (auto-fix not applicable)');
-      }
-    } else {
-      logger.error('Playability validation failed (no suggestion for auto-fix)', { traceId, validationResults });
-      throw new Error('Playability validation failed (no suggestion for auto-fix)');
-    }
-  } else {
-    logger.info('Playability validation passed', { traceId, validationResults });
-  }
-  // 3. PlannerAgent
-  onStatusUpdate && onStatusUpdate('Planning', { step: 'Game Planning' });
-  if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('PlannerAgent');
-  await PlannerAgent(sharedState, { logger, traceId, llmClient });
-  // 3. ContextStepBuilderAgent for each step
-  let stepIndex = 0;
-  for (const step of sharedState.plan) {
-    stepIndex++;
-    sharedState.currentStep = step;
-    onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
-    if (llmClient && typeof llmClient.setAgent === 'function') llmClient.setAgent('ContextStepBuilderAgent');
-    logger.info('ContextStepBuilderAgent execution', { traceId, currentStep: step });
-    // Always update the full canonical JS file
-    const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient });
-    logger.info('ContextStepBuilderAgent output', { traceId, currentStep: step });
-    if (typeof revisedSource === 'string' && revisedSource.trim()) {
-      sharedState.gameSource = revisedSource;
-    } else {
-      logger.error('Pipeline: ContextStepBuilderAgent returned undefined/empty output', { traceId, step });
-      sharedState.metadata = sharedState.metadata || {};
-      sharedState.metadata.llmError = `Pipeline: ContextStepBuilderAgent output was undefined or empty for step: ${step.description}`;
-      // Do NOT overwrite sharedState.gameSource
-    }
-  }
-  // 4. StaticCheckerAgent
-  const errors = await StaticCheckerAgent(sharedState, { logger, traceId });
-  logger.info('StaticCheckerAgent output', { traceId, errors });
-  // 5. SyntaxSanityAgent
-  onStatusUpdate && onStatusUpdate('Validating', { step: 'Syntax Validation' });
-  await SyntaxSanityAgent(sharedState, { logger, traceId });
-  // 6. RuntimePlayabilityAgent
-  onStatusUpdate && onStatusUpdate('Testing', { step: 'Runtime Testing' });
-  await RuntimePlayabilityAgent(sharedState, { logger, traceId });
-  logger.info('RuntimePlayabilityAgent output', { traceId });
-  // 8. FeedbackAgent
-  onStatusUpdate && onStatusUpdate('Feedback', { step: 'Gathering Feedback' });
-  await FeedbackAgent(sharedState, { logger, traceId, llmClient });
-  logger.info('FeedbackAgent output', { traceId });
-  // Return both the generated code and game design info
-  return {
-    code: sharedState.gameSource,
-    gameDef: sharedState.gameDef
-  };
-}
-
-// Pure function: returns JS code string (mock or real)
 async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) {
-  // Make onStatusUpdate globally available for token counting
-  global.onStatusUpdate = onStatusUpdate;
+  const { runPlanningPipeline } = require('./agents/langchain/pipeline/planningPipeline');
+  const { runCodingPipeline } = require('./agents/langchain/pipeline/codingPipeline');
+
+  // MOCK_PIPELINE: Serve static debug/game.js and mock gameDef
+  // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
   if (process.env.MOCK_PIPELINE === '1') {
-    logger.info('MOCK_PIPELINE is active: using mock game.js');
-    const code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
-    const gameDef = {
+    logger && logger.info && logger.info('MOCK_PIPELINE is active: using debug/game.js');
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    sharedState.gameDef = {
       title: title,
       description: 'A mock game for testing purposes',
       mechanics: ['move', 'jump'],
       winCondition: 'Collect all coins',
       entities: ['player', 'coin']
     };
-    // Estimate tokens and emit TokenCount
-    const { estimateTokens } = require('./utils/tokenUtils');
-    const estimatedTokenCount = estimateTokens(code + JSON.stringify(gameDef));
-    if (typeof global.onStatusUpdate === 'function') {
-      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
-    }
-    return { code, gameDef };
+    sharedState.code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
+    sharedState.plan = [
+      { id: 1, description: 'Set up the HTML canvas and main game loop' },
+      { id: 2, description: 'Create the player entity and implement left/right movement' },
+      { id: 3, description: 'Implement win condition when player reaches the right edge' }
+    ];
+    return sharedState;
   } else if (process.env.MINIMAL_GAME === '1') {
-    logger.info('MINIMAL_GAME is active: using hardcoded minimal gameDef and plan');
-    // Create a minimal sharedState and inject minimal gameDef and plan
-    const traceId = require('uuid').v4();
-    const { createSharedState } = require('./types/SharedState');
+    // MINIMAL_GAME: only run coding pipeline with minimal gameDef/plan/code
+    logger && logger.info && logger.info('MINIMAL_GAME is active: running coding pipeline only');
     const sharedState = createSharedState();
-    sharedState.title = "Minimal Platformer";
+    sharedState.title = 'Minimal Platformer';
     sharedState.gameDef = {
-      title: "Minimal Platformer",
-      description: "Move left and right. Win by reaching the right edge.",
-      mechanics: ["move left/right"],
-      winCondition: "Reach the right edge",
-      entities: ["player"]
+      title: 'Minimal Platformer',
+      description: 'Move left and right. Win by reaching the right edge.',
+      mechanics: ['move left/right'],
+      winCondition: 'Reach the right edge',
+      entities: ['player']
     };
     sharedState.plan = [
-      { id: 1, description: "Set up the HTML canvas and main game loop" },
-      { id: 2, description: "Create the player entity and implement left/right movement" },
-      { id: 3, description: "Implement win condition when player reaches the right edge" }
+      { id: 1, description: 'Set up the HTML canvas and main game loop' },
+      { id: 2, description: 'Create the player entity and implement left/right movement' },
+      { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
-    // Load canonical JS boilerplate as the initial gameSource
-    const fs = require('fs');
-    const path = require('path');
-    const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.js');
-    sharedState.gameSource = fs.readFileSync(boilerplatePath, 'utf8');
-    // Estimate tokens and emit TokenCount
-    const { estimateTokens } = require('./utils/tokenUtils');
-    const estimatedTokenCount = estimateTokens(sharedState.gameSource + JSON.stringify(sharedState.gameDef));
-    if (typeof global.onStatusUpdate === 'function') {
-      global.onStatusUpdate('TokenCount', { tokenCount: estimatedTokenCount });
-    }
-    // Run the rest of the pipeline as usual, skipping GameDesignAgent and PlannerAgent
-    // 3. ContextStepBuilderAgent for each step
-    let stepIndex = 0;
-    for (const step of sharedState.plan) {
-      stepIndex++;
-      sharedState.currentStep = step;
-      onStatusUpdate && onStatusUpdate('Step', { step: `Step ${stepIndex}/${sharedState.plan.length}`, description: step.description });
-      logger.info('ContextStepBuilderAgent execution', { traceId, currentStep: step });
-      const revisedSource = await ContextStepBuilderAgent(sharedState, { logger, traceId, llmClient });
-      logger.info('ContextStepBuilderAgent output', { traceId, currentStep: step });
-      if (typeof revisedSource === 'string' && revisedSource.trim()) {
-        sharedState.gameSource = revisedSource;
-      } else {
-        logger.error('Pipeline: ContextStepBuilderAgent returned undefined/empty output', { traceId, step });
-        sharedState.metadata = sharedState.metadata || {};
-        sharedState.metadata.llmError = `Pipeline: ContextStepBuilderAgent output was undefined or empty for step: ${step.description}`;
-        // Do NOT overwrite sharedState.gameSource
-      }
-    }
-    // 4. StaticCheckerAgent
-    const errors = await StaticCheckerAgent(sharedState, { logger, traceId });
-    logger.info('StaticCheckerAgent output', { traceId, errors });
-    // 6. SyntaxSanityAgent
-    onStatusUpdate && onStatusUpdate('Validating', { step: 'Syntax Validation' });
-    await SyntaxSanityAgent(sharedState, { logger, traceId });
-    // 7. RuntimePlayabilityAgent
-    onStatusUpdate && onStatusUpdate('Testing', { step: 'Runtime Testing' });
-    await RuntimePlayabilityAgent(sharedState, { logger, traceId });
-    logger.info('RuntimePlayabilityAgent output', { traceId });
-    // 8. FeedbackAgent
-    onStatusUpdate && onStatusUpdate('Feedback', { step: 'Gathering Feedback' });
-    await FeedbackAgent(sharedState, { logger, traceId, llmClient });
-    logger.info('FeedbackAgent output', { traceId });
-    // Write debug shared state for replay/debugging
-    const debugPath = path.join(__dirname, '../debug_sharedState.json');
-    fs.writeFileSync(debugPath, JSON.stringify(sharedState, null, 2));
-    // Return both the generated code and game design info
-    const result = {
-      code: sharedState.gameSource,
-      gameDef: sharedState.gameDef
-    };
-    // Clean up global
-    delete global.onStatusUpdate;
-    return result;
+    // Do not pre-set code in MINIMAL_GAME; let the coding pipeline generate it.
+    await runCodingPipeline(sharedState);
+    return sharedState;
   } else {
-    return await agentPipelineToCode(title, logger, llmClient, onStatusUpdate);
+    // Normal: run planning then coding pipeline
+    const sharedState = createSharedState();
+    sharedState.title = title;
+    await runPlanningPipeline(sharedState);
+    await runCodingPipeline(sharedState);
+    return sharedState;
   }
 }
-
 module.exports = { runPipeline, generateGameSourceCode }; 

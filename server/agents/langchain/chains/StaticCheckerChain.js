@@ -1,6 +1,6 @@
 // StaticCheckerChain: wraps StaticCheckerAgent for pipeline compatibility (does not use LLM)
 
-const StaticCheckerAgent = require('../StaticCheckerAgent');
+const StaticCheckerAgent = require('../../classic/StaticCheckerAgent');
 
 async function run({ currentCode, stepCode, logger = console, traceId = 'test' }) {
   // Wrap input in sharedState object for StaticCheckerAgent

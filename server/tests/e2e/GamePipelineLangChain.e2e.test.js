@@ -8,68 +8,55 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const { runModularGameSpecPipeline } = require('../../agents/langchain/pipeline/pipeline');
 
 // Mock LLM outputs for each agent step
-defineMockLLMOutputs();
-
-function defineMockLLMOutputs() {
-  // Mock for GameInventorAgent
-  jest.mock('../../agents/langchain/GameInventorChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      idea: 'A platformer where you control gravity.'
-    })
-  }));
-  // Mock for GameDesignAgent
-  jest.mock('../../agents/langchain/GameDesignChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      gameDef: { title: 'Gravity Jumper', genre: 'Platformer', rules: '...' }
-    })
-  }));
-  // Mock for PlayabilityValidatorAgent
-  jest.mock('../../agents/langchain/PlayabilityValidatorChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      isPlayable: false,
-      suggestion: 'Add a win condition.'
-    })
-  }));
-  // Mock for PlayabilityAutoFixAgent
-  jest.mock('../../agents/langchain/PlayabilityAutoFixChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      fixed: true,
-      gameDef: { title: 'Gravity Jumper', genre: 'Platformer', rules: '...Win by reaching the exit.' }
-    })
-  }));
-  // Mock for PlannerAgent
-  jest.mock('../../agents/langchain/PlannerChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      plan: ['Design levels', 'Implement gravity switch', 'Test win condition']
-    })
-  }));
-  // Mock for ContextStepBuilderAgent
-  jest.mock('../../agents/langchain/ContextStepBuilderChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      contextSteps: ['Set up environment', 'Initialize player state']
-    })
-  }));
-  // Mock for FeedbackAgent
-  jest.mock('../../agents/langchain/FeedbackChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      feedback: 'Game is engaging but needs more levels.'
-    })
-  }));
-  
-  // Mock for SyntaxSanityAgent
-  jest.mock('../../agents/langchain/SyntaxSanityChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      syntaxOk: true
-    })
-  }));
-  // Mock for RuntimePlayabilityAgent
-  jest.mock('../../agents/langchain/RuntimePlayabilityChain', () => ({
-    run: jest.fn().mockResolvedValue({
-      runtimePlayable: true
-    })
-  }));
-}
-
+jest.mock('../../agents/langchain/chains/GameInventorChain', () => ({
+  createGameInventorChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ idea: 'A platformer where you control gravity.' })
+  })
+}));
+jest.mock('../../agents/langchain/chains/GameDesignChain', () => ({
+  createGameDesignChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ gameDef: { name: 'Gravity Jumper', genre: 'Platformer', rules: '...' } })
+  })
+}));
+jest.mock('../../agents/langchain/chains/PlayabilityValidatorChain', () => ({
+  createPlayabilityValidatorChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ isPlayable: false, suggestion: 'Add a win condition.' })
+  })
+}));
+jest.mock('../../agents/langchain/chains/PlayabilityAutoFixChain', () => ({
+  createPlayabilityAutoFixChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ fixed: true, gameDef: { name: 'Gravity Jumper', genre: 'Platformer', rules: '...Win by reaching the exit.' } })
+  })
+}));
+jest.mock('../../agents/langchain/chains/PlannerChain', () => ({
+  createPlannerChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ plan: [
+      { description: 'Design levels' },
+      { description: 'Implement gravity switch' },
+      { description: 'Test win condition' }
+    ] })
+  })
+}));
+jest.mock('../../agents/langchain/chains/ContextStepBuilderChain', () => ({
+  createContextStepBuilderChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ contextSteps: ['Set up environment', 'Initialize player state'] })
+  })
+}));
+jest.mock('../../agents/langchain/chains/FeedbackChain', () => ({
+  createFeedbackChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ feedback: 'Game is engaging but needs more levels.' })
+  })
+}));
+jest.mock('../../agents/langchain/chains/SyntaxSanityChain', () => ({
+  createSyntaxSanityChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ syntaxOk: true })
+  })
+}));
+jest.mock('../../agents/langchain/chains/RuntimePlayabilityChain', () => ({
+  createRuntimePlayabilityChain: jest.fn().mockReturnValue({
+    invoke: jest.fn().mockResolvedValue({ runtimePlayable: true })
+  })
+}));
 
 describe('Modular Agent Pipeline', () => {
   it('should run the modular pipeline and return a valid, playable game definition and plan', async () => {
