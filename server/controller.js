@@ -140,14 +140,14 @@ async function generateGameSourceCode(title, logger, llmClient, onStatusUpdate) 
       { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
     // Do not pre-set code in MINIMAL_GAME; let the coding pipeline generate it.
-    await runCodingPipeline(sharedState);
+    await runCodingPipeline(sharedState, onStatusUpdate);
     return sharedState;
   } else {
     // Normal: run planning then coding pipeline
     const sharedState = createSharedState();
     sharedState.title = title;
-    await runPlanningPipeline(sharedState);
-    await runCodingPipeline(sharedState);
+    await runPlanningPipeline(sharedState, onStatusUpdate);
+    await runCodingPipeline(sharedState, onStatusUpdate);
     return sharedState;
   }
 }

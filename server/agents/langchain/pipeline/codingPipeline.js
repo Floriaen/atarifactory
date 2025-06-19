@@ -3,12 +3,13 @@ const { createContextStepBuilderChain } = require('../chains/ContextStepBuilderC
 const { createFeedbackChain } = require('../chains/FeedbackChain');
 const { run: staticCheckerRun } = require('../chains/StaticCheckerChain');
 
-async function runCodingPipeline(sharedState) {
+async function runCodingPipeline(sharedState, onStatusUpdate) {
   // 1. Context Step Builder (iterate over all steps)
   const contextStepBuilderChain = await createContextStepBuilderChain();
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'start' });
   for (const [i, step] of sharedState.plan.entries()) {
     if (sharedState.logger && typeof sharedState.logger.info === 'function') {
       sharedState.logger.info('CodingPipeline: Processing plan step', { step });
@@ -27,11 +28,13 @@ async function runCodingPipeline(sharedState) {
         step
       });
     } else {
+      /*
       console.log('[DEBUG] ContextStepBuilderChain.invoke input:', {
         gameSource: gameSourceForStep,
         plan: sharedState.plan,
         step
       });
+      */
     }
     const contextStepsOut = await contextStepBuilderChain.invoke({
       gameSource: gameSourceForStep,
@@ -51,18 +54,22 @@ async function runCodingPipeline(sharedState) {
       accumulatedCode = contextStepsOut.code;
     }
     allStepContexts.push(contextStepsOut.contextSteps || contextStepsOut);
+    if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'stepDone', stepIndex: i, step, code: accumulatedCode });
     // No longer update accumulatedContext; only code is accumulated
     // (If you want to support updatedGameSource, adjust here)
   }
   sharedState.contextSteps = allStepContexts;
   sharedState.code = accumulatedCode.trim();
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'done', code: accumulatedCode });
 
   // 2. Feedback
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
   const feedbackChain = await createFeedbackChain();
   const runtimeLogs = `Player reached the goal area after switching forms. No errors detected.`;
   const stepId = sharedState.plan && sharedState.plan[0] && sharedState.plan[0].id ? sharedState.plan[0].id : 'step-1';
   const feedbackOut = await feedbackChain.invoke({ runtimeLogs, stepId });
   let parsedFeedback = feedbackOut.feedback || feedbackOut;
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'done', feedback: parsedFeedback });
   if (typeof parsedFeedback === 'string') {
     try {
       const parsed = JSON.parse(parsedFeedback);
@@ -77,11 +84,14 @@ async function runCodingPipeline(sharedState) {
   }
 
   // 3. Static Checker
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'start' });
   const staticCheckerOut = await staticCheckerRun({ currentCode: '{}', stepCode: '{}' });
   sharedState.staticCheckPassed = staticCheckerOut.staticCheckPassed;
   sharedState.staticCheckErrors = staticCheckerOut.errors;
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'done', staticCheckPassed: staticCheckerOut.staticCheckPassed, errors: staticCheckerOut.errors });
 
   // 4. SyntaxSanity and RuntimePlayability (optional, add as needed)
+  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Complete', status: 'done' });
   sharedState.syntaxOk = true;
   sharedState.runtimePlayable = true;
   sharedState.logs = ['Pipeline executed'];

@@ -38,8 +38,27 @@ app.post('/generate-stream', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
+  function safeStringify(val) {
+    if (typeof val === 'string') return val;
+    try {
+      return JSON.stringify(val, null, 2);
+    } catch (e) {
+      return String(val);
+    }
+  }
   function sendStep(step, data = {}) {
-    res.write(`data: ${JSON.stringify({ step, ...data })}\n\n`);
+    // Only stringify nested objects except for 'game', which stays as object
+    const payload = { step };
+    for (const [k, v] of Object.entries(data)) {
+      if (k === 'game') {
+        payload[k] = v; // keep as object
+      } else if (typeof v === 'object' && v !== null) {
+        payload[k] = safeStringify(v);
+      } else {
+        payload[k] = v;
+      }
+    }
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
   }
   // If no title, generate a random one
   let title = req.body && req.body.title;
