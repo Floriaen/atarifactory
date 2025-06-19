@@ -2,10 +2,12 @@
 const { createContextStepBuilderChain } = require('../chains/ContextStepBuilderChain');
 const { createFeedbackChain } = require('../chains/FeedbackChain');
 const { run: staticCheckerRun } = require('../chains/StaticCheckerChain');
+const { estimateTokens } = require('../../../utils/tokenUtils');
 
-async function runCodingPipeline(sharedState, onStatusUpdate) {
+async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
+  let tokenCount = 0;
   // 1. Context Step Builder (iterate over all steps)
-  const contextStepBuilderChain = await createContextStepBuilderChain();
+  const contextStepBuilderChain = await (factories.createContextStepBuilderChain || createContextStepBuilderChain)();
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
@@ -36,11 +38,16 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       });
       */
     }
-    const contextStepsOut = await contextStepBuilderChain.invoke({
+    const contextStepInput = {
       gameSource: gameSourceForStep,
       plan: JSON.stringify(sharedState.plan, null, 2),
       step: JSON.stringify(step, null, 2)
-    });
+    };
+    // Token counting for input
+    tokenCount += estimateTokens(contextStepInput.gameSource) + estimateTokens(contextStepInput.plan) + estimateTokens(contextStepInput.step);
+
+    const contextStepsOut = await contextStepBuilderChain.invoke(contextStepInput);
+    if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
     // Log the raw LLM output for diagnosis
     if (sharedState.logger && typeof sharedState.logger.info === 'function') {
       sharedState.logger.info('[DEBUG] ContextStepBuilderChain.invoke output', { contextStepsOut });
@@ -64,10 +71,13 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   // 2. Feedback
   if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
-  const feedbackChain = await createFeedbackChain();
+  const feedbackChain = await (factories.createFeedbackChain || createFeedbackChain)();
   const runtimeLogs = `Player reached the goal area after switching forms. No errors detected.`;
   const stepId = sharedState.plan && sharedState.plan[0] && sharedState.plan[0].id ? sharedState.plan[0].id : 'step-1';
+  // Token counting for feedback input
+  tokenCount += estimateTokens(runtimeLogs) + estimateTokens(String(stepId));
   const feedbackOut = await feedbackChain.invoke({ runtimeLogs, stepId });
+  if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
   let parsedFeedback = feedbackOut.feedback || feedbackOut;
   if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'done', feedback: parsedFeedback });
   if (typeof parsedFeedback === 'string') {
@@ -96,6 +106,9 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   sharedState.runtimePlayable = true;
   sharedState.logs = ['Pipeline executed'];
 
+
+  sharedState.tokenCount = tokenCount;
+  if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
   return sharedState;
 }
 
