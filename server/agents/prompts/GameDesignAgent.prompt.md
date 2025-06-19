@@ -14,30 +14,30 @@ Given a game idea with the following fields, design a simple 2D canvas game as a
 
 ## Input
 ```json
-{
+{{
   "name": "{{name}}",
   "description": "{{description}}"
-}
+}}
 ```
 
 ## Output format
 **IMPORTANT:** You MUST use the field "name" (not "title"). Do not include a "title" field.
 ```json
-{
+{{
   "name": "...",
   "description": "...",
   "mechanics": ["..."],
   "winCondition": "...",
   "entities": ["..."]
-}
+}}
 ```
 ```json
-{
+{{
   "name": "Coin Collector",
   "description": "Collect all coins while avoiding obstacles.",
   "mechanics": ["move left/right", "jump"],
   "winCondition": "All coins collected.",
   "entities": ["player", "coin", "obstacle"]
-}
+}}
 ```
 Respond only with the JSON object.
