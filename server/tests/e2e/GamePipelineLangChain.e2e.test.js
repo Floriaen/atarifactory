@@ -13,7 +13,7 @@ jest.mock('../../agents/langchain/chains/GameInventorChain', () => ({
     invoke: jest.fn().mockResolvedValue({ idea: 'A platformer where you control gravity.' })
   })
 }));
-jest.mock('../../agents/langchain/chains/GameDesignChain', () => ({
+jest.mock('../../agents/langchain/chains/design/GameDesignChain', () => ({
   createGameDesignChain: jest.fn().mockReturnValue({
     invoke: jest.fn().mockResolvedValue({ gameDef: { name: 'Gravity Jumper', genre: 'Platformer', rules: '...' } })
   })

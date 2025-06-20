@@ -1,6 +1,6 @@
 // Planning Pipeline: runs GameInventor, GameDesign, PlayabilityValidator, PlayabilityAutoFix, Planner
 const { createGameInventorChain } = require('../chains/GameInventorChain');
-const { createGameDesignChain } = require('../chains/GameDesignChain');
+const { createGameDesignChain } = require('../chains/design/GameDesignChain');
 const { createPlayabilityValidatorChain } = require('../chains/PlayabilityValidatorChain');
 const { createPlayabilityAutoFixChain } = require('../chains/PlayabilityAutoFixChain');
 const { createPlannerChain } = require('../chains/PlannerChain');
@@ -9,8 +9,12 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   // 1. Game Inventor
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameInventor', status: 'start' });
   const gameInventorChain = await createGameInventorChain();
-  const inventorOut = await gameInventorChain.invoke({ title: sharedState.title });
-  sharedState.idea = inventorOut.idea;
+  const inventorOut = await gameInventorChain.invoke({});
+  if (typeof inventorOut !== 'object' || inventorOut === null) {
+    console.error('GameInventorChain returned non-object:', inventorOut);
+    throw new Error('GameInventorChain did not return a valid object. Output: ' + String(inventorOut));
+  }
+  sharedState.idea = inventorOut.idea || inventorOut.name || inventorOut.title || inventorOut;
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameInventor', status: 'done', output: inventorOut });
 
   // 2. Game Design

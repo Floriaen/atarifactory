@@ -1,3 +1,5 @@
+> **Deprecation Notice:** This document is for archival reference only. For the current testing strategy and pipeline, see [../pipeline-v3-design.md](../pipeline-v3-design.md) and the [root README](../../README.md).
+
 # Testing Strategy
 
 ## Overview

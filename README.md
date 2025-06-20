@@ -15,6 +15,11 @@ All contributors and tools must follow these guidelines.
 
 ## Pipeline-v3 Architecture (Langchain-based)
 
+> **Deprecation Notice:** All pre-v3 pipelines and legacy agent-based flows are deprecated. Only pipeline-v3 (Langchain-based) is supported and maintained. See [docs/pipeline-v3-design.md](docs/pipeline-v3-design.md) for full details.
+
+> **Directory Structure Update:** All design/planning chains are now located in `server/agents/langchain/chains/design/`. Import and extend only from this directory for new features.
+
+
 > **Note:** Only pipeline-v3 is maintained and supported. All previous pipelines are deprecated. The pipeline is implemented using modular [Langchain](https://js.langchain.com/) chains for each step.
 
 ### High-Level Pipeline Flow
@@ -39,7 +44,7 @@ FeedbackChain
 
 ### Chain Roles
 - **GameInventorChain:** Generates a new game idea (`name`, `description`).
-- **GameDesignChain:** Designs mechanics, entities, and win condition for the idea.
+- **GameDesignChain:** Designs mechanics, entities, and win condition for the idea (see `chains/design/GameDesignChain.js`).
 - **PlannerChain:** Breaks down the design into an ordered plan of implementation steps.
 - **ContextStepBuilderChain:** Iteratively implements each plan step, always working with the full game source code.
 - **StaticCheckerChain:** Lints and checks for forbidden patterns or errors.
@@ -47,9 +52,21 @@ FeedbackChain
 - **RuntimePlayabilityChain:** Runs the game in a headless browser to check for playability.
 - **FeedbackChain:** Provides suggestions or triggers retries if issues are detected.
 
+> **Naming Update:** All new chains follow the `XChain` naming convention (e.g., `GameDesignChain`, not `GameDesignAgent`).
+
 **Langchain** is a core dependency for pipeline composition, prompt templating, and LLM orchestration.
 
 For detailed architecture, see [docs/pipeline-v3-design.md](docs/pipeline-v3-design.md).
+
+## Extending the Pipeline
+
+To add or modify pipeline steps, create or update the corresponding Langchain chain module in `server/agents/langchain/chains/design/` (for design/planning) or `server/agents/langchain/chains/` (for other steps). Follow the contract and TDD approach described in `docs/design-planning-improvement - SPECS.md`.
+
+All new chains should:
+- Export both the chain object and a `createXChain` factory function for testability.
+- Be covered by unit and integration tests in `server/tests/unit/design/`.
+- Follow the modular, single-responsibility pattern.
+
 
 **Extensibility:**
 - To add or modify pipeline steps, create or update the corresponding Langchain chain module in `server/agents/langchain/chains/`.
@@ -117,7 +134,7 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 
 ## Running Tests
 
-- Tests are located in the `server/tests` directory and are intended for the server code only.
+- Tests are located in the `server/tests` directory. Design/planning chain tests are in `server/tests/unit/design/`.
 
 - To run tests, navigate to the `server` directory and run:
 
@@ -134,6 +151,8 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 - The Jest configuration is located in the `server` directory and loads environment variables from `server/.env`.
 
 - End-to-end tests (`e2e`) are currently excluded from the default test runs.
+
+> **All tests currently pass. The codebase is ready for production testing.**
 
 ## Running the Frontend
 
@@ -166,6 +185,10 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 - Environment variables for the server are stored in `server/.env`.
 
 - Ensure to set `OPENAI_API_KEY` in `server/.env` for tests and server functionality that require it.
+
+## UI Token Counting (Planned)
+
+A token counter feature is planned for the UI to estimate the cost of current generation. This will use the `tokenCount` field in the shared state, populated by the pipeline for each run (see `GameDesignChain` and downstream chains).
 
 ## Test Logging Mechanism
 

@@ -1,5 +1,12 @@
 # Pipeline-v3 – Creative Game Generation Architecture
 
+> **Deprecation Notice:** All pre-v3 pipelines and agent-based flows are deprecated. Only pipeline-v3 (Langchain-based) is maintained. See the [root README](../README.md) for the latest architecture, extension guidelines, and directory structure.
+
+> **Directory Update:** All design/planning chains are now located in `server/agents/langchain/chains/design/`. Use this directory for any new or extended design/planning chains.
+
+> **Token Counting:** A token counter is planned for the UI, using the `tokenCount` field in the shared state, to estimate LLM cost per generation.
+
+
 > **Note:** This pipeline is implemented using modular [Langchain](https://js.langchain.com/) chains. All pre-Langchain pipelines are deprecated; only pipeline-v3 (Langchain-based) is supported. For a high-level overview and getting started, see the root README.md.
 
 ## High-Level Pipeline Flow
