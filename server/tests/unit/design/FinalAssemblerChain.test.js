@@ -21,4 +21,25 @@ describe('FinalAssemblerChain', () => {
       entities: input.entities
     });
   });
+
+  it('throws if input is missing', async () => {
+    await expect(FinalAssemblerChain.invoke()).rejects.toThrow();
+  });
+
+  it('throws if required fields are missing', async () => {
+    await expect(FinalAssemblerChain.invoke({})).rejects.toThrow();
+    await expect(FinalAssemblerChain.invoke({ title: 'foo' })).rejects.toThrow();
+    await expect(FinalAssemblerChain.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow();
+  });
+
+  it('returns malformed output if monkey-patched (simulate)', async () => {
+    const orig = FinalAssemblerChain.invoke;
+    FinalAssemblerChain.invoke = async () => ({ bad: 'data' });
+    try {
+      const result = await FinalAssemblerChain.invoke({ title: 'Laser Leap', pitch: 'desc', mechanics: [], winCondition: '', entities: [] });
+      expect(result).toEqual({ bad: 'data' });
+    } finally {
+      FinalAssemblerChain.invoke = orig;
+    }
+  });
 });

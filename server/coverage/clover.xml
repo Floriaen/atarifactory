@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1750435571245" clover="3.2.0">
-  <project timestamp="1750435571245" name="All files">
-    <metrics statements="1073" coveredstatements="886" conditionals="104" coveredconditionals="50" methods="30" coveredmethods="26" elements="1207" coveredelements="962" complexity="0" loc="1073" ncloc="1073" packages="9" files="26" classes="26"/>
+<coverage generated="1750437664937" clover="3.2.0">
+  <project timestamp="1750437664937" name="All files">
+    <metrics statements="1151" coveredstatements="885" conditionals="114" coveredconditionals="33" methods="30" coveredmethods="26" elements="1295" coveredelements="944" complexity="0" loc="1151" ncloc="1151" packages="9" files="26" classes="26"/>
     <package name="server">
       <metrics statements="142" coveredstatements="99" conditionals="12" coveredconditionals="2" methods="2" coveredmethods="2"/>
       <file name="controller.js" path="/Users/florian/Sources/game-agent-v2/server/controller.js">
@@ -412,40 +412,52 @@
       </file>
     </package>
     <package name="server.agents.langchain.chains.design">
-      <metrics statements="148" coveredstatements="147" conditionals="24" coveredconditionals="15" methods="10" coveredmethods="10"/>
+      <metrics statements="226" coveredstatements="167" conditionals="40" coveredconditionals="10" methods="10" coveredmethods="10"/>
       <file name="EntityListBuilderChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/EntityListBuilderChain.js">
-        <metrics statements="9" coveredstatements="9" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <metrics statements="16" coveredstatements="12" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="3" type="stmt"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="6" count="3" type="stmt"/>
-        <line num="7" count="3" type="stmt"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
-      </file>
-      <file name="FinalAssemblerChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/FinalAssemblerChain.js">
-        <metrics statements="16" coveredstatements="16" conditionals="7" coveredconditionals="1" methods="1" coveredmethods="1"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="2" type="stmt"/>
-        <line num="5" count="2" type="stmt"/>
-        <line num="6" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="7" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="8" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="9" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="4" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
         <line num="10" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="11" count="2" type="cond" truecount="0" falsecount="1"/>
-        <line num="12" count="2" type="stmt"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
         <line num="13" count="2" type="stmt"/>
         <line num="14" count="2" type="stmt"/>
         <line num="15" count="1" type="stmt"/>
         <line num="16" count="1" type="stmt"/>
       </file>
+      <file name="FinalAssemblerChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/FinalAssemblerChain.js">
+        <metrics statements="21" coveredstatements="17" conditionals="9" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="4" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="8" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="9" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="10" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="11" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="12" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="13" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="15" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="16" count="0" type="stmt"/>
+        <line num="17" count="0" type="stmt"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="19" count="2" type="stmt"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="21" count="1" type="stmt"/>
+      </file>
       <file name="GameDesignChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/GameDesignChain.js">
-        <metrics statements="75" coveredstatements="74" conditionals="9" coveredconditionals="6" methods="3" coveredmethods="3"/>
+        <metrics statements="110" coveredstatements="79" conditionals="13" coveredconditionals="3" methods="3" coveredmethods="3"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -476,114 +488,180 @@
         <line num="28" count="14" type="stmt"/>
         <line num="29" count="2" type="stmt"/>
         <line num="30" count="2" type="stmt"/>
-        <line num="31" count="2" type="stmt"/>
-        <line num="32" count="2" type="stmt"/>
-        <line num="33" count="2" type="stmt"/>
-        <line num="34" count="2" type="stmt"/>
+        <line num="31" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="32" count="0" type="stmt"/>
+        <line num="33" count="0" type="stmt"/>
+        <line num="34" count="0" type="stmt"/>
         <line num="35" count="2" type="stmt"/>
         <line num="36" count="2" type="stmt"/>
-        <line num="37" count="2" type="stmt"/>
-        <line num="38" count="2" type="stmt"/>
-        <line num="39" count="2" type="stmt"/>
-        <line num="40" count="2" type="stmt"/>
+        <line num="37" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="38" count="0" type="stmt"/>
+        <line num="39" count="0" type="stmt"/>
+        <line num="40" count="0" type="stmt"/>
         <line num="41" count="2" type="stmt"/>
         <line num="42" count="2" type="stmt"/>
-        <line num="43" count="2" type="stmt"/>
-        <line num="44" count="2" type="stmt"/>
-        <line num="45" count="2" type="stmt"/>
-        <line num="46" count="2" type="stmt"/>
+        <line num="43" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="44" count="0" type="stmt"/>
+        <line num="45" count="0" type="stmt"/>
+        <line num="46" count="0" type="stmt"/>
         <line num="47" count="2" type="stmt"/>
         <line num="48" count="2" type="stmt"/>
-        <line num="49" count="2" type="stmt"/>
-        <line num="50" count="2" type="stmt"/>
-        <line num="51" count="2" type="stmt"/>
-        <line num="52" count="2" type="stmt"/>
+        <line num="49" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="50" count="0" type="stmt"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="52" count="0" type="stmt"/>
         <line num="53" count="2" type="stmt"/>
         <line num="54" count="2" type="stmt"/>
-        <line num="55" count="2" type="stmt"/>
-        <line num="56" count="2" type="stmt"/>
-        <line num="57" count="2" type="stmt"/>
-        <line num="58" count="2" type="stmt"/>
+        <line num="55" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="56" count="0" type="stmt"/>
+        <line num="57" count="0" type="stmt"/>
+        <line num="58" count="0" type="stmt"/>
         <line num="59" count="2" type="stmt"/>
         <line num="60" count="2" type="stmt"/>
-        <line num="61" count="2" type="stmt"/>
-        <line num="62" count="2" type="stmt"/>
-        <line num="63" count="2" type="stmt"/>
-        <line num="64" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="65" count="1" type="cond" truecount="0" falsecount="1"/>
-        <line num="66" count="1" type="stmt"/>
-        <line num="67" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="61" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="62" count="0" type="stmt"/>
+        <line num="63" count="0" type="stmt"/>
+        <line num="64" count="0" type="stmt"/>
+        <line num="65" count="2" type="stmt"/>
+        <line num="66" count="2" type="stmt"/>
+        <line num="67" count="2" type="stmt"/>
         <line num="68" count="2" type="stmt"/>
-        <line num="69" count="1" type="stmt"/>
-        <line num="70" count="1" type="stmt"/>
-        <line num="71" count="2" type="cond" truecount="1" falsecount="0"/>
+        <line num="69" count="2" type="stmt"/>
+        <line num="70" count="2" type="stmt"/>
+        <line num="71" count="2" type="stmt"/>
         <line num="72" count="2" type="stmt"/>
         <line num="73" count="2" type="stmt"/>
-        <line num="74" count="1" type="stmt"/>
-        <line num="75" count="1" type="stmt"/>
+        <line num="74" count="2" type="stmt"/>
+        <line num="75" count="2" type="stmt"/>
+        <line num="76" count="2" type="stmt"/>
+        <line num="77" count="2" type="stmt"/>
+        <line num="78" count="2" type="stmt"/>
+        <line num="79" count="2" type="stmt"/>
+        <line num="80" count="2" type="stmt"/>
+        <line num="81" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="82" count="0" type="stmt"/>
+        <line num="83" count="0" type="stmt"/>
+        <line num="84" count="0" type="stmt"/>
+        <line num="85" count="0" type="stmt"/>
+        <line num="86" count="0" type="stmt"/>
+        <line num="87" count="0" type="stmt"/>
+        <line num="88" count="0" type="stmt"/>
+        <line num="89" count="0" type="stmt"/>
+        <line num="90" count="0" type="stmt"/>
+        <line num="91" count="0" type="stmt"/>
+        <line num="92" count="2" type="stmt"/>
+        <line num="93" count="2" type="stmt"/>
+        <line num="94" count="2" type="stmt"/>
+        <line num="95" count="2" type="stmt"/>
+        <line num="96" count="2" type="stmt"/>
+        <line num="97" count="2" type="stmt"/>
+        <line num="98" count="2" type="stmt"/>
+        <line num="99" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="100" count="0" type="stmt"/>
+        <line num="101" count="0" type="stmt"/>
+        <line num="102" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="103" count="2" type="stmt"/>
+        <line num="104" count="1" type="stmt"/>
+        <line num="105" count="1" type="stmt"/>
+        <line num="106" count="3" type="cond" truecount="1" falsecount="0"/>
+        <line num="107" count="3" type="stmt"/>
+        <line num="108" count="3" type="stmt"/>
+        <line num="109" count="1" type="stmt"/>
+        <line num="110" count="1" type="stmt"/>
       </file>
       <file name="IdeaGeneratorChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/IdeaGeneratorChain.js">
-        <metrics statements="10" coveredstatements="10" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <metrics statements="17" coveredstatements="13" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="3" type="stmt"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="6" count="3" type="stmt"/>
-        <line num="7" count="3" type="stmt"/>
-        <line num="8" count="3" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
-        <line num="10" count="1" type="stmt"/>
-      </file>
-      <file name="LoopClarifierChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/LoopClarifierChain.js">
-        <metrics statements="9" coveredstatements="9" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="2" type="stmt"/>
-        <line num="5" count="2" type="stmt"/>
-        <line num="6" count="2" type="stmt"/>
-        <line num="7" count="2" type="stmt"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
-      </file>
-      <file name="MechanicExtractorChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/MechanicExtractorChain.js">
-        <metrics statements="10" coveredstatements="10" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="stmt"/>
-        <line num="4" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="5" count="2" type="stmt"/>
-        <line num="6" count="2" type="stmt"/>
-        <line num="7" count="2" type="stmt"/>
-        <line num="8" count="2" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
-        <line num="10" count="1" type="stmt"/>
-      </file>
-      <file name="PlayabilityHeuristicChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/PlayabilityHeuristicChain.js">
-        <metrics statements="10" coveredstatements="10" conditionals="3" coveredconditionals="3" methods="1" coveredmethods="1"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="4" type="cond" truecount="1" falsecount="0"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="6" count="3" type="cond" truecount="1" falsecount="0"/>
+        <line num="4" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
         <line num="7" count="1" type="stmt"/>
         <line num="8" count="1" type="stmt"/>
         <line num="9" count="1" type="stmt"/>
         <line num="10" count="1" type="stmt"/>
+        <line num="11" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="0" type="stmt"/>
+        <line num="14" count="1" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
       </file>
-      <file name="WinConditionBuilderChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/WinConditionBuilderChain.js">
-        <metrics statements="9" coveredstatements="9" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
+      <file name="LoopClarifierChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/LoopClarifierChain.js">
+        <metrics statements="16" coveredstatements="12" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
-        <line num="4" count="3" type="stmt"/>
-        <line num="5" count="3" type="stmt"/>
-        <line num="6" count="3" type="stmt"/>
-        <line num="7" count="3" type="stmt"/>
-        <line num="8" count="1" type="stmt"/>
-        <line num="9" count="1" type="stmt"/>
+        <line num="4" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
+        <line num="10" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="2" type="stmt"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="16" count="1" type="stmt"/>
+      </file>
+      <file name="MechanicExtractorChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/MechanicExtractorChain.js">
+        <metrics statements="17" coveredstatements="13" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="4" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="5" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="0" type="stmt"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
+        <line num="10" count="2" type="stmt"/>
+        <line num="11" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="0" type="stmt"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="15" count="2" type="stmt"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+      </file>
+      <file name="PlayabilityHeuristicChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/PlayabilityHeuristicChain.js">
+        <metrics statements="13" coveredstatements="9" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="4" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="10" count="0" type="stmt"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+        <line num="13" count="1" type="stmt"/>
+      </file>
+      <file name="WinConditionBuilderChain.js" path="/Users/florian/Sources/game-agent-v2/server/agents/langchain/chains/design/WinConditionBuilderChain.js">
+        <metrics statements="16" coveredstatements="12" conditionals="3" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="2" count="1" type="stmt"/>
+        <line num="3" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="4" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="2" type="stmt"/>
+        <line num="8" count="2" type="stmt"/>
+        <line num="9" count="2" type="stmt"/>
+        <line num="10" count="2" type="cond" truecount="0" falsecount="1"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="2" type="stmt"/>
+        <line num="14" count="2" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="16" count="1" type="stmt"/>
       </file>
     </package>
     <package name="server.agents.langchain.pipeline">
@@ -944,27 +1022,27 @@
         <line num="59" count="1" type="stmt"/>
         <line num="60" count="1" type="stmt"/>
         <line num="61" count="1" type="stmt"/>
-        <line num="62" count="6" type="cond" truecount="1" falsecount="0"/>
-        <line num="63" count="6" type="stmt"/>
-        <line num="64" count="6" type="stmt"/>
-        <line num="65" count="6" type="stmt"/>
-        <line num="66" count="6" type="stmt"/>
-        <line num="67" count="6" type="stmt"/>
-        <line num="68" count="6" type="stmt"/>
-        <line num="69" count="6" type="stmt"/>
-        <line num="70" count="6" type="stmt"/>
-        <line num="71" count="6" type="stmt"/>
-        <line num="72" count="6" type="stmt"/>
-        <line num="73" count="6" type="stmt"/>
-        <line num="74" count="6" type="stmt"/>
-        <line num="75" count="6" type="stmt"/>
-        <line num="76" count="6" type="stmt"/>
-        <line num="77" count="6" type="stmt"/>
-        <line num="78" count="6" type="stmt"/>
-        <line num="79" count="6" type="stmt"/>
-        <line num="80" count="6" type="stmt"/>
-        <line num="81" count="6" type="stmt"/>
-        <line num="82" count="6" type="stmt"/>
+        <line num="62" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="63" count="1" type="stmt"/>
+        <line num="64" count="1" type="stmt"/>
+        <line num="65" count="1" type="stmt"/>
+        <line num="66" count="1" type="stmt"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="68" count="1" type="stmt"/>
+        <line num="69" count="1" type="stmt"/>
+        <line num="70" count="1" type="stmt"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="72" count="1" type="stmt"/>
+        <line num="73" count="1" type="stmt"/>
+        <line num="74" count="1" type="stmt"/>
+        <line num="75" count="1" type="stmt"/>
+        <line num="76" count="1" type="stmt"/>
+        <line num="77" count="1" type="stmt"/>
+        <line num="78" count="1" type="stmt"/>
+        <line num="79" count="1" type="stmt"/>
+        <line num="80" count="1" type="stmt"/>
+        <line num="81" count="1" type="stmt"/>
+        <line num="82" count="1" type="stmt"/>
         <line num="83" count="1" type="stmt"/>
         <line num="84" count="1" type="stmt"/>
         <line num="85" count="1" type="stmt"/>
@@ -983,28 +1061,28 @@
       </file>
     </package>
     <package name="server.utils">
-      <metrics statements="183" coveredstatements="149" conditionals="27" coveredconditionals="19" methods="5" coveredmethods="4"/>
+      <metrics statements="183" coveredstatements="128" conditionals="21" coveredconditionals="7" methods="5" coveredmethods="4"/>
       <file name="cleanUp.js" path="/Users/florian/Sources/game-agent-v2/server/utils/cleanUp.js">
-        <metrics statements="97" coveredstatements="87" conditionals="20" coveredconditionals="17" methods="2" coveredmethods="2"/>
+        <metrics statements="97" coveredstatements="66" conditionals="14" coveredconditionals="5" methods="2" coveredmethods="2"/>
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
         <line num="4" count="1" type="stmt"/>
         <line num="5" count="1" type="stmt"/>
         <line num="6" count="1" type="stmt"/>
-        <line num="7" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="8" count="5" type="stmt"/>
-        <line num="9" count="5" type="stmt"/>
-        <line num="10" count="5" type="stmt"/>
-        <line num="11" count="5" type="stmt"/>
-        <line num="12" count="5" type="stmt"/>
-        <line num="13" count="5" type="stmt"/>
-        <line num="14" count="5" type="stmt"/>
-        <line num="15" count="5" type="stmt"/>
-        <line num="16" count="5" type="stmt"/>
-        <line num="17" count="5" type="stmt"/>
-        <line num="18" count="5" type="stmt"/>
-        <line num="19" count="5" type="cond" truecount="1" falsecount="0"/>
+        <line num="7" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="8" count="1" type="stmt"/>
+        <line num="9" count="1" type="stmt"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="11" count="1" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+        <line num="13" count="1" type="stmt"/>
+        <line num="14" count="1" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="18" count="1" type="stmt"/>
+        <line num="19" count="1" type="cond" truecount="1" falsecount="0"/>
         <line num="20" count="8" type="stmt"/>
         <line num="21" count="8" type="stmt"/>
         <line num="22" count="8" type="cond" truecount="0" falsecount="1"/>
@@ -1014,72 +1092,72 @@
         <line num="26" count="0" type="stmt"/>
         <line num="27" count="0" type="stmt"/>
         <line num="28" count="0" type="stmt"/>
-        <line num="29" count="5" type="stmt"/>
-        <line num="30" count="5" type="stmt"/>
-        <line num="31" count="5" type="stmt"/>
-        <line num="32" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="33" count="31" type="cond" truecount="3" falsecount="0"/>
-        <line num="34" count="18" type="stmt"/>
-        <line num="35" count="18" type="stmt"/>
-        <line num="36" count="5" type="stmt"/>
-        <line num="37" count="5" type="stmt"/>
-        <line num="38" count="5" type="stmt"/>
-        <line num="39" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="40" count="31" type="cond" truecount="1" falsecount="0"/>
-        <line num="41" count="4" type="stmt"/>
-        <line num="42" count="4" type="cond" truecount="1" falsecount="0"/>
+        <line num="29" count="1" type="stmt"/>
+        <line num="30" count="1" type="stmt"/>
+        <line num="31" count="1" type="stmt"/>
+        <line num="32" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="33" count="1" type="cond" truecount="0" falsecount="3"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="39" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="40" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="41" count="0" type="stmt"/>
+        <line num="42" count="0" type="cond" truecount="1" falsecount="0"/>
         <line num="43" count="4" type="stmt"/>
         <line num="44" count="4" type="stmt"/>
         <line num="45" count="4" type="stmt"/>
         <line num="46" count="4" type="stmt"/>
         <line num="47" count="4" type="stmt"/>
         <line num="48" count="4" type="stmt"/>
-        <line num="49" count="4" type="stmt"/>
-        <line num="50" count="31" type="cond" truecount="2" falsecount="0"/>
-        <line num="51" count="18" type="cond" truecount="1" falsecount="0"/>
-        <line num="52" count="10" type="stmt"/>
-        <line num="53" count="10" type="stmt"/>
-        <line num="54" count="27" type="cond" truecount="1" falsecount="0"/>
-        <line num="55" count="9" type="cond" truecount="1" falsecount="0"/>
-        <line num="56" count="8" type="stmt"/>
-        <line num="57" count="9" type="cond" truecount="1" falsecount="0"/>
-        <line num="58" count="8" type="stmt"/>
-        <line num="59" count="8" type="stmt"/>
-        <line num="60" count="8" type="stmt"/>
-        <line num="61" count="8" type="cond" truecount="0" falsecount="1"/>
+        <line num="49" count="0" type="stmt"/>
+        <line num="50" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="51" count="0" type="stmt"/>
+        <line num="52" count="0" type="stmt"/>
+        <line num="53" count="0" type="stmt"/>
+        <line num="54" count="1" type="stmt"/>
+        <line num="55" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="56" count="0" type="stmt"/>
+        <line num="57" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="58" count="0" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+        <line num="60" count="0" type="stmt"/>
+        <line num="61" count="0" type="stmt"/>
         <line num="62" count="0" type="stmt"/>
         <line num="63" count="0" type="stmt"/>
-        <line num="64" count="9" type="cond" truecount="1" falsecount="0"/>
+        <line num="64" count="1" type="stmt"/>
         <line num="65" count="1" type="stmt"/>
         <line num="66" count="1" type="stmt"/>
-        <line num="67" count="5" type="stmt"/>
-        <line num="68" count="5" type="stmt"/>
-        <line num="69" count="5" type="stmt"/>
-        <line num="70" count="5" type="stmt"/>
-        <line num="71" count="5" type="stmt"/>
-        <line num="72" count="5" type="cond" truecount="1" falsecount="0"/>
-        <line num="73" count="4" type="stmt"/>
-        <line num="74" count="4" type="stmt"/>
-        <line num="75" count="4" type="stmt"/>
-        <line num="76" count="4" type="stmt"/>
-        <line num="77" count="4" type="stmt"/>
-        <line num="78" count="4" type="stmt"/>
-        <line num="79" count="4" type="cond" truecount="0" falsecount="1"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="68" count="1" type="stmt"/>
+        <line num="69" count="1" type="stmt"/>
+        <line num="70" count="1" type="stmt"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="72" count="1" type="cond" truecount="0" falsecount="1"/>
+        <line num="73" count="0" type="stmt"/>
+        <line num="74" count="0" type="stmt"/>
+        <line num="75" count="0" type="stmt"/>
+        <line num="76" count="0" type="stmt"/>
+        <line num="77" count="0" type="stmt"/>
+        <line num="78" count="0" type="stmt"/>
+        <line num="79" count="0" type="stmt"/>
         <line num="80" count="0" type="stmt"/>
         <line num="81" count="0" type="stmt"/>
-        <line num="82" count="4" type="stmt"/>
-        <line num="83" count="5" type="stmt"/>
-        <line num="84" count="5" type="stmt"/>
-        <line num="85" count="5" type="stmt"/>
-        <line num="86" count="5" type="stmt"/>
-        <line num="87" count="5" type="stmt"/>
-        <line num="88" count="5" type="stmt"/>
-        <line num="89" count="5" type="stmt"/>
-        <line num="90" count="5" type="stmt"/>
-        <line num="91" count="5" type="stmt"/>
-        <line num="92" count="5" type="stmt"/>
-        <line num="93" count="5" type="stmt"/>
-        <line num="94" count="5" type="stmt"/>
+        <line num="82" count="0" type="stmt"/>
+        <line num="83" count="1" type="stmt"/>
+        <line num="84" count="1" type="stmt"/>
+        <line num="85" count="1" type="stmt"/>
+        <line num="86" count="1" type="stmt"/>
+        <line num="87" count="1" type="stmt"/>
+        <line num="88" count="1" type="stmt"/>
+        <line num="89" count="1" type="stmt"/>
+        <line num="90" count="1" type="stmt"/>
+        <line num="91" count="1" type="stmt"/>
+        <line num="92" count="1" type="stmt"/>
+        <line num="93" count="1" type="stmt"/>
+        <line num="94" count="1" type="stmt"/>
         <line num="95" count="1" type="stmt"/>
         <line num="96" count="1" type="stmt"/>
         <line num="97" count="1" type="stmt"/>

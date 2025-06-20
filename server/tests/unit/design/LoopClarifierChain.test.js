@@ -8,4 +8,28 @@ describe('LoopClarifierChain', () => {
     expect(result).toHaveProperty('loop');
     expect(typeof result.loop).toBe('string');
   });
+
+  it('throws if input is missing', async () => {
+    await expect(LoopClarifierChain.invoke()).rejects.toThrow();
+  });
+
+  it('throws if title or pitch missing', async () => {
+    await expect(LoopClarifierChain.invoke({ pitch: 'foo' })).rejects.toThrow();
+    await expect(LoopClarifierChain.invoke({ title: 'foo' })).rejects.toThrow();
+  });
+
+  it('handles nonsense input gracefully', async () => {
+    await expect(LoopClarifierChain.invoke({ foo: 'bar' })).rejects.toThrow();
+  });
+
+  it('returns malformed output if monkey-patched (simulate)', async () => {
+    const orig = LoopClarifierChain.invoke;
+    LoopClarifierChain.invoke = async () => ({ bad: 'data' });
+    try {
+      const result = await LoopClarifierChain.invoke({ title: 'Laser Leap', pitch: 'desc' });
+      expect(result).toEqual({ bad: 'data' });
+    } finally {
+      LoopClarifierChain.invoke = orig;
+    }
+  });
 });

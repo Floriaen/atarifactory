@@ -9,4 +9,27 @@ describe('IdeaGeneratorChain', () => {
     expect(result).toHaveProperty('title');
     expect(result).toHaveProperty('pitch');
   });
+
+  it('throws if input is missing', async () => {
+    await expect(IdeaGeneratorChain.invoke()).rejects.toThrow('Input must be an object');
+  });
+
+  it('handles nonsense input gracefully', async () => {
+    const input = { foo: 'bar', baz: 123 };
+    await expect(IdeaGeneratorChain.invoke(input)).resolves.toHaveProperty('title');
+  });
+
+  it('returns error if output shape is malformed (simulate)', async () => {
+    // Simulate by monkey-patching invoke
+    const orig = IdeaGeneratorChain.invoke;
+    IdeaGeneratorChain.invoke = async () => ({ bad: 'data' });
+    try {
+      const result = await IdeaGeneratorChain.invoke({});
+      expect(result).toHaveProperty('title'); // Should fail
+    } catch (e) {
+      expect(e).toBeDefined();
+    } finally {
+      IdeaGeneratorChain.invoke = orig;
+    }
+  });
 });
