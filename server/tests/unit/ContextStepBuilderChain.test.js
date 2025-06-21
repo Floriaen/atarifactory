@@ -1,4 +1,4 @@
-const { createContextStepBuilderChain } = require('../../agents/langchain/chains/ContextStepBuilderChain');
+const { createContextStepBuilderChain } = require('../../agents/chains/ContextStepBuilderChain');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 describe('ContextStepBuilderChain', () => {
   let promptString;
   beforeAll(async () => {
-    const promptPath = path.join(__dirname, '../../agents/langchain/prompts/ContextStepBuilderChain.prompt.md');
+    const promptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.prompt.md');
     promptString = await fs.readFile(promptPath, 'utf8');
   });
 

@@ -1,6 +1,6 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
-const { createPlayabilityValidatorChain } = require("../../agents/langchain/chains/PlayabilityValidatorChain");
+const { createPlayabilityValidatorChain } = require("../../agents/chains/PlayabilityValidatorChain");
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const fs = require("fs/promises");
 const { ChatOpenAI } = (() => { try { return require("@langchain/openai"); } catch { return {}; } })();
@@ -28,7 +28,7 @@ describe("PlayabilityValidatorChain Pipeline Tests", () => {
   // 2. Unit test: Prompt template
   describe("Prompt Template", () => {
     it("loads prompt file and checks content", async () => {
-      const promptPath = path.join(__dirname, "../../agents/langchain/prompts/PlayabilityValidatorChain.prompt.md");
+      const promptPath = path.join(__dirname, "../../agents/prompts/PlayabilityValidatorChain.prompt.md");
       const promptString = await fs.readFile(promptPath, "utf8");
       expect(promptString).toMatch(/mechanics/);
       expect(promptString).toMatch(/winCondition/);

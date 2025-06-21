@@ -1,33 +1,44 @@
-const { PlayabilityHeuristicChain } = require('../../../agents/langchain/chains/design/PlayabilityHeuristicChain');
+const { createPlayabilityHeuristicChain } = require('../../../agents/langchain/chains/design/PlayabilityHeuristicChain');
 
 describe('PlayabilityHeuristicChain', () => {
-  it('validates a playable game', async () => {
-    const gameDef = {
-      title: 'Laser Leap',
-      mechanics: ['move', 'jump'],
-      winCondition: 'Survive for 45 seconds',
-      entities: ['player', 'platform', 'timer']
-    };
-    const result = await PlayabilityHeuristicChain.invoke({ gameDef });
+  it('returns valid for win condition', async () => {
+    const mockLLM = { call: async () => 'valid' };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    const input = { gameDef: { winCondition: 'Survive' } };
+    const result = await chain.invoke(input);
     expect(result).toBe('valid');
   });
 
-  it('returns valid if winCondition present, invalid otherwise', async () => {
-    const gameDef = { title: 'No Win', mechanics: ['move'], entities: ['player'] };
-    const result = await PlayabilityHeuristicChain.invoke({ gameDef });
-    expect(result).toMatch(/^invalid:/);
+  it('returns invalid for missing win condition', async () => {
+    const mockLLM = { call: async () => 'invalid: missing win condition' };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    const input = { gameDef: { foo: 'bar' } };
+    const result = await chain.invoke(input);
+    expect(result).toBe('invalid: missing win condition');
   });
 
   it('throws if input is missing', async () => {
-    await expect(PlayabilityHeuristicChain.invoke()).rejects.toThrow();
+    const mockLLM = { call: async () => 'valid' };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    await expect(chain.invoke()).rejects.toThrow();
   });
 
   it('throws if gameDef is missing', async () => {
-    await expect(PlayabilityHeuristicChain.invoke({})).rejects.toThrow();
+    const mockLLM = { call: async () => 'valid' };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    await expect(chain.invoke({})).rejects.toThrow();
+  });
+
+  it('throws if output is malformed', async () => {
+    const mockLLM = { call: async () => ({ foo: 'bar' }) };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    await expect(chain.invoke({ gameDef: { winCondition: 'Survive' } })).rejects.toThrow('Output missing required playability string');
   });
 
   it('throws if output is malformed (simulate)', async () => {
-    // Not needed here since output is always a string, but test for robustness
+    const mockLLM = { call: async () => 123 };
+    const chain = createPlayabilityHeuristicChain(mockLLM);
+    await expect(chain.invoke({ gameDef: { winCondition: 'foo' } })).rejects.toThrow('Output missing required playability string');
     const orig = PlayabilityHeuristicChain.invoke;
     PlayabilityHeuristicChain.invoke = async () => 123;
     try {

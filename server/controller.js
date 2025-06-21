@@ -87,8 +87,8 @@ async function runPipeline(title, onStatusUpdate) {
 }
 
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
-  const { runPlanningPipeline } = require('./agents/langchain/pipeline/planningPipeline');
-  const { runCodingPipeline } = require('./agents/langchain/pipeline/codingPipeline');
+  const { runPlanningPipeline } = require('./agents/pipeline/planningPipeline');
+  const { runCodingPipeline } = require('./agents/pipeline/codingPipeline');
 
   // MOCK_PIPELINE: Serve static debug/game.js and mock gameDef
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE

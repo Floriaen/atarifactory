@@ -1,4 +1,4 @@
-const { createGameDesignChain } = require('../../../agents/langchain/chains/design/GameDesignChain');
+const { createGameDesignChain } = require('../../../agents/chains/design/GameDesignChain');
 
 describe('GameDesignChain extensibility', () => {
   it('allows replacing a chain and reflects new behavior', async () => {

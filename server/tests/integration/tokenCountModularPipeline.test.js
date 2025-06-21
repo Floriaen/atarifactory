@@ -1,4 +1,4 @@
-const { runCodingPipeline } = require('../../agents/langchain/pipeline/codingPipeline');
+const { runCodingPipeline } = require('../../agents/pipeline/codingPipeline');
 const { createSharedState } = require('../../types/SharedState');
 
 describe('Token Count Modular Pipeline Integration', () => {

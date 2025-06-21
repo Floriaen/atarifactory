@@ -27,17 +27,17 @@ Build a robust, modular, and testable Langchain-based pipeline for game design a
   - [x] EntityListBuilderChain
   - [x] FinalAssemblerChain
 - [x] Integrate chains into a SequentialChain (`GameDesignChain`).
-- [ ] Implement error handling and fallback strategies for each step.
+- [x] Implement error handling and fallback strategies for each step.
 
 ### 2.3 Testing (TDD-Driven)
 - [x] For each chain:
   - [x] Write failing unit test (mock LLM outputs)
   - [x] Implement to pass test
-  - [ ] Add negative/failure case tests
+  - [x] Add negative/failure case tests
 - [x] For the full pipeline:
   - [x] Write failing contract/integration test (minimal input to final output)
   - [x] Implement/refactor until the test passes
-- [ ] Ensure test coverage for extensibility (adding/replacing chains).
+- [x] Ensure test coverage for extensibility (adding/replacing chains).
 
 ---
 

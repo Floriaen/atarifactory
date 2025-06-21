@@ -1,33 +1,47 @@
-const { MechanicExtractorChain } = require('../../../agents/langchain/chains/design/MechanicExtractorChain');
+const { createMechanicExtractorChain } = require('../../../agents/chains/design/MechanicExtractorChain');
 
 describe('MechanicExtractorChain', () => {
-  it('extracts mechanics from gameplay loop', async () => {
-    const input = { title: 'Laser Leap', loop: 'Player jumps between platforms and dodges lasers.' };
-    // This will fail until the chain is implemented or mocked
-    const result = await MechanicExtractorChain.invoke(input);
+  it('extracts mechanics', async () => {
+    const mockLLM = { call: async () => ({ mechanics: ['mock'] }) };
+    const chain = createMechanicExtractorChain(mockLLM);
+    const input = { loop: 'Player jumps between platforms and dodges lasers.' };
+    const result = await chain.invoke(input);
     expect(result).toHaveProperty('mechanics');
     expect(Array.isArray(result.mechanics)).toBe(true);
   });
 
   it('throws if input is missing', async () => {
-    await expect(MechanicExtractorChain.invoke()).rejects.toThrow();
+    const mockLLM = { call: async () => ({ mechanics: ['mock'] }) };
+    const chain = createMechanicExtractorChain(mockLLM);
+    await expect(chain.invoke()).rejects.toThrow();
+  });
+
+  it('throws if output is malformed', async () => {
+    const mockLLM = { call: async () => ({ foo: 'bar' }) };
+    const chain = createMechanicExtractorChain(mockLLM);
+    await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('Output missing required mechanics array');
   });
 
   it('throws if loop is missing', async () => {
-    await expect(MechanicExtractorChain.invoke({})).rejects.toThrow();
+    const mockLLM = { call: async () => ({ mechanics: ['mock'] }) };
+    const chain = createMechanicExtractorChain(mockLLM);
+    await expect(chain.invoke({})).rejects.toThrow();
   });
 
   it('handles nonsense input gracefully', async () => {
-    await expect(MechanicExtractorChain.invoke({ foo: 'bar' })).rejects.toThrow();
+    const mockLLM = { call: async () => ({ mechanics: ['mock'] }) };
+    const chain = createMechanicExtractorChain(mockLLM);
+    await expect(chain.invoke({ foo: 'bar' })).rejects.toThrow();
   });
 
   it('returns malformed output if monkey-patched (simulate)', async () => {
-    const orig = MechanicExtractorChain.invoke;
-    MechanicExtractorChain.invoke = async () => ({ bad: 'data' });
+    const mockLLM = { call: async () => ({ bad: 'data' }) };
+    const chain = createMechanicExtractorChain(mockLLM);
     try {
-      const result = await MechanicExtractorChain.invoke({ loop: 'foo' });
+      const result = await chain.invoke({ loop: 'foo' });
       expect(result).toEqual({ bad: 'data' });
     } finally {
+      // No need to restore original invoke method, as we're using a new chain instance
       MechanicExtractorChain.invoke = orig;
     }
   });

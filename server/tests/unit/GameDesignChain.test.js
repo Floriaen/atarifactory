@@ -1,6 +1,6 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
-const { createGameDesignChain } = require('../../agents/langchain/chains/design/GameDesignChain');
+const { createGameDesignChain } = require('../../agents/chains/design/GameDesignChain');
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const fs = require("fs/promises");
 const { ChatOpenAI } = (() => { try { return require("@langchain/openai"); } catch { return {}; } })();

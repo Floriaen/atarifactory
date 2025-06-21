@@ -1,6 +1,6 @@
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
-const { createPlayabilityAutoFixChain } = require("../../agents/langchain/chains/PlayabilityAutoFixChain");
+const { createPlayabilityAutoFixChain } = require("../../agents/chains/PlayabilityAutoFixChain");
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const fs = require("fs/promises");
 const { ChatOpenAI } = (() => { try { return require("@langchain/openai"); } catch { return {}; } })();
@@ -34,7 +34,7 @@ describe("PlayabilityAutoFixChain Pipeline Tests", () => {
   // 2. Unit test: Prompt template
   describe("Prompt Template", () => {
     it("loads prompt file and checks content", async () => {
-      const promptPath = path.join(__dirname, "../../agents/langchain/prompts/PlayabilityAutoFixChain.prompt.md");
+      const promptPath = path.join(__dirname, "../../agents/prompts/PlayabilityAutoFixChain.prompt.md");
       const promptString = await fs.readFile(promptPath, "utf8");
       expect(promptString).toMatch(/gameDef/);
       expect(promptString).toMatch(/suggestion/);

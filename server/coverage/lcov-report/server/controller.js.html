@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.71% </span>
+                <span class="strong">54.22% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>99/142</span>
+                <span class='fraction'>77/142</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">15.38% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/12</span>
+                <span class='fraction'>2/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.71% </span>
+                <span class="strong">54.22% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>99/142</span>
+                <span class='fraction'>77/142</span>
             </div>
         
             
@@ -245,8 +245,8 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -275,17 +275,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -308,15 +299,24 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -385,9 +385,9 @@ async function runPipeline(title, onStatusUpdate) {
 <span class="cstat-no" title="statement not covered" >    }</span>
 &nbsp;
     // Get code and game design info (with env var fallback logic)
-    const sharedState = await generateGameSourceCode(title, logger, onStatusUpdate);
-    const code = sharedState.code;
-    const gameDef = sharedState.gameDef;
+    const sharedState = await generateGameSourceCode(title, logger, onStatusUpdate)<span class="branch-0 cbranch-no" title="branch not covered" >;</span>
+<span class="cstat-no" title="statement not covered" >    const code = sharedState.code;</span>
+<span class="cstat-no" title="statement not covered" >    const gameDef = sharedState.gameDef;</span>
     const gameName = gameDef?.title<span class="branch-0 cbranch-no" title="branch not covered" > || title;</span>
 &nbsp;
     try {
@@ -407,7 +407,7 @@ async function runPipeline(title, onStatusUpdate) {
       html = html
         .replace('{{title}}', gameName)
         .replace('{{description}}', gameDef.description<span class="branch-0 cbranch-no" title="branch not covered" > || '')</span>
-        .replace('{{instructions}}', Array.isArray(gameDef.mechanics) ? gameDef.mechanics.join(', ')<span class="branch-0 cbranch-no" title="branch not covered" > : gameDef.mechanics || '')</span>
+        .replace('{{instructions}}', Array.isArray(gameDef.mechanics)<span class="branch-0 cbranch-no" title="branch not covered" > ? gameDef.mechanics.join(', ')<span class="branch-0 cbranch-no" title="branch not covered" > </span>: gameDef.mechanics || '')</span>
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
@@ -416,21 +416,21 @@ async function runPipeline(title, onStatusUpdate) {
 <span class="cstat-no" title="statement not covered" >      console.error('Failed to write game files', err);</span>
 <span class="cstat-no" title="statement not covered" >      throw err;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-&nbsp;
-    // Update manifest
-    if (!global.gamesManifest) global.gamesManifest = [];
-    const gameMeta = { id: gameId, name: gameName, date: gameDate, url: `/games/${gameId}/` };
-    global.gamesManifest.unshift(gameMeta);
-    // Emit final SSE event if callback
-    onStatusUpdate<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; onStatusUpdate('Done', { game: gameMeta });</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    // Update manifest</span>
+<span class="cstat-no" title="statement not covered" >    if (!global.gamesManifest) global.gamesManifest = [];</span>
+<span class="cstat-no" title="statement not covered" >    const gameMeta = { id: gameId, name: gameName, date: gameDate, url: `/games/${gameId}/` };</span>
+<span class="cstat-no" title="statement not covered" >    global.gamesManifest.unshift(gameMeta);</span>
+<span class="cstat-no" title="statement not covered" >    // Emit final SSE event if callback</span>
+    onStatusUpdate &amp;&amp; onStatusUpdate('Done', { game: gameMeta });
     return {
       game: gameMeta
     };
-  } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
-<span class="cstat-no" title="statement not covered" >    logger.error('Pipeline error', { traceId, error: err, errorMessage: err &amp;&amp; err.message, errorStack: err &amp;&amp; err.stack });</span>
-<span class="cstat-no" title="statement not covered" >    onStatusUpdate &amp;&amp; onStatusUpdate('Error', { error: err.message, stack: err.stack });</span>
-<span class="cstat-no" title="statement not covered" >    throw err;</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
+  } catch (err) {
+    logger.error('Pipeline error', { traceId, error: err, errorMessage: err &amp;&amp; err.message, errorStack: err &amp;&amp; err.stack });
+    onStatusUpdate<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; onStatusUpdate('Error', { error: err.message, stack: err.stack });</span>
+    throw err;
+  }
 }
 &nbsp;
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
@@ -439,25 +439,25 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
 &nbsp;
   // MOCK_PIPELINE: Serve static debug/game.js and mock gameDef
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
-  if (process.env.MOCK_PIPELINE === '1') {
-    logger &amp;&amp; logger.info &amp;&amp; logger.info('MOCK_PIPELINE is active: using debug/game.js');
-    const sharedState = createSharedState();
-    sharedState.title = title;
-    sharedState.gameDef = {
-      title: title,
-      description: 'A mock game for testing purposes',
-      mechanics: ['move', 'jump'],
-      winCondition: 'Collect all coins',
-      entities: ['player', 'coin']
-    };
-    sharedState.code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
-    sharedState.plan = [
-      { id: 1, description: 'Set up the HTML canvas and main game loop' },
-      { id: 2, description: 'Create the player entity and implement left/right movement' },
-      { id: 3, description: 'Implement win condition when player reaches the right edge' }
-    ];
-    return sharedState;
-  }<span class="branch-0 cbranch-no" title="branch not covered" > else if (process.env.MINIMAL_GAME === '1') {</span>
+  if (process.env.MOCK_PIPELINE === '1') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >    logger &amp;&amp; logger.info &amp;&amp; logger.info('MOCK_PIPELINE is active: using debug/game.js');</span>
+<span class="cstat-no" title="statement not covered" >    const sharedState = createSharedState();</span>
+<span class="cstat-no" title="statement not covered" >    sharedState.title = title;</span>
+<span class="cstat-no" title="statement not covered" >    sharedState.gameDef = {</span>
+<span class="cstat-no" title="statement not covered" >      title: title,</span>
+<span class="cstat-no" title="statement not covered" >      description: 'A mock game for testing purposes',</span>
+<span class="cstat-no" title="statement not covered" >      mechanics: ['move', 'jump'],</span>
+<span class="cstat-no" title="statement not covered" >      winCondition: 'Collect all coins',</span>
+<span class="cstat-no" title="statement not covered" >      entities: ['player', 'coin']</span>
+<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >    sharedState.code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');</span>
+<span class="cstat-no" title="statement not covered" >    sharedState.plan = [</span>
+<span class="cstat-no" title="statement not covered" >      { id: 1, description: 'Set up the HTML canvas and main game loop' },</span>
+<span class="cstat-no" title="statement not covered" >      { id: 2, description: 'Create the player entity and implement left/right movement' },</span>
+<span class="cstat-no" title="statement not covered" >      { id: 3, description: 'Implement win condition when player reaches the right edge' }</span>
+<span class="cstat-no" title="statement not covered" >    ];</span>
+<span class="cstat-no" title="statement not covered" >    return sharedState;</span>
+<span class="cstat-no" title="statement not covered" >  } else if (process.env.MINIMAL_GAME === '1') {</span>
 <span class="cstat-no" title="statement not covered" >    // MINIMAL_GAME: only run coding pipeline with minimal gameDef/plan/code</span>
 <span class="cstat-no" title="statement not covered" >    logger &amp;&amp; logger.info &amp;&amp; logger.info('MINIMAL_GAME is active: running coding pipeline only');</span>
 <span class="cstat-no" title="statement not covered" >    const sharedState = createSharedState();</span>
@@ -493,7 +493,7 @@ module.exports = { runPipeline, generateGameSourceCode }; </pre></td></tr></tabl
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-20T16:41:04.894Z
+                at 2025-06-21T09:10:55.762Z
             </div>
         <script src="../prettify.js"></script>
         <script>
