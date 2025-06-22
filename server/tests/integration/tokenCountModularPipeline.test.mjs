@@ -1,5 +1,5 @@
-const { runCodingPipeline } = require('../../agents/pipeline/codingPipeline');
-const { createSharedState } = require('../../types/SharedState');
+import { runCodingPipeline } from '../../agents/pipeline/codingPipeline.mjs';
+import { createSharedState } from '../../types/SharedState.js';
 
 describe('Token Count Modular Pipeline Integration', () => {
   it('should increment token count in sharedState and emit updates (modular pipeline)', async () => {

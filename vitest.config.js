@@ -12,6 +12,10 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    include: [
+      'server/**/*.test.mjs',
+      'server/**/*.spec.mjs'
+    ],
     server: {
       deps: {
         interopDefault: true,

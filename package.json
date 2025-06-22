@@ -18,7 +18,7 @@
   },
   "scripts": {
     "test:vitest": "vitest",
-    "test:jest": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test:jest": "node --experimental-vm-modules ./node_modules/.bin/jest --testPathIgnorePatterns=\\.mjs$",
     "test": "npm run test:jest && npm run test:vitest",
     "test:vm": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "start": "node server/start.js",

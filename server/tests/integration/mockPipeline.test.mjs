@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { runPipeline } = require('../../controller');
+import fs from 'fs';
+import path from 'path';
+import { runPipeline } from '../../controller.js';
 
 describe('Mock Pipeline Integration', () => {
   beforeAll(() => {
@@ -23,4 +23,4 @@ describe('Mock Pipeline Integration', () => {
     const generatedCode = fs.readFileSync(path.join(gameFolder, 'game.js'), 'utf8');
     expect(generatedCode.trim()).toBe(mockCode.trim());
   });
-}); 
+});

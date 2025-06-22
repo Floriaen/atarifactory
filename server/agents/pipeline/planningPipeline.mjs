@@ -1,9 +1,9 @@
 // Planning Pipeline: runs GameInventor, GameDesign, PlayabilityValidator, PlayabilityAutoFix, Planner
-const { createGameInventorChain } = require('../chains/GameInventorChain');
-const { createGameDesignChain } = require('../chains/design/GameDesignChain');
-const { createPlayabilityValidatorChain } = require('../chains/PlayabilityValidatorChain');
-const { createPlayabilityAutoFixChain } = require('../chains/PlayabilityAutoFixChain');
-const { createPlannerChain } = require('../chains/PlannerChain');
+import { createGameInventorChain } from '../chains/GameInventorChain.js';
+import { createGameDesignChain } from '../chains/design/GameDesignChain.mjs';
+import { createPlayabilityValidatorChain } from '../chains/PlayabilityValidatorChain.js';
+import { createPlayabilityAutoFixChain } from '../chains/PlayabilityAutoFixChain.js';
+import { createPlannerChain } from '../chains/PlannerChain.js';
 
 async function runPlanningPipeline(sharedState, onStatusUpdate) {
   // 1. Game Inventor
@@ -67,4 +67,4 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   return sharedState;
 }
 
-module.exports = { runPlanningPipeline };
+export { runPlanningPipeline };

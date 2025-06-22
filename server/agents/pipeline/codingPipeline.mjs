@@ -1,8 +1,8 @@
 // Coding Pipeline: runs ContextStepBuilder, Feedback, StaticChecker, SyntaxSanity, RuntimePlayability
-const { createContextStepBuilderChain } = require('../chains/ContextStepBuilderChain');
-const { createFeedbackChain } = require('../chains/FeedbackChain');
-const { run: staticCheckerRun } = require('../chains/StaticCheckerChain');
-const { estimateTokens } = require('../../../utils/tokenUtils');
+import { createContextStepBuilderChain } from '../chains/ContextStepBuilderChain.js';
+import { createFeedbackChain } from '../chains/FeedbackChain.js';
+import { run as staticCheckerRun } from '../chains/StaticCheckerChain.js';
+import { estimateTokens } from '../../utils/tokenUtils.js';
 
 async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   let tokenCount = 0;
@@ -112,4 +112,5 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   return sharedState;
 }
 
-module.exports = { runCodingPipeline };
+export { runCodingPipeline };
+
