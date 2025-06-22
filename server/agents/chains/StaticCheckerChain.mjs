@@ -1,8 +1,8 @@
 // StaticCheckerChain: wraps StaticCheckerAgent for pipeline compatibility (does not use LLM)
 
-const { ESLint } = require('eslint');
-const { cleanUp } = require('../../utils/cleanUp');
-const pipelineConfig = require('../../config/pipeline.eslint.config');
+import { ESLint } from 'eslint';
+import { cleanUp } from '../../utils/cleanUp.js';
+import pipelineConfig from '../../config/pipeline.eslint.config.js';
 
 async function run({ currentCode, stepCode, logger = console, traceId = 'test' }) {
   logger.info('StaticCheckerChain input:', {
@@ -40,8 +40,7 @@ async function run({ currentCode, stepCode, logger = console, traceId = 'test' }
 
   try {
     const eslint = new ESLint({
-      overrideConfig: pipelineConfig,
-      useEslintrc: false
+      overrideConfig: pipelineConfig
     });
     const results = await eslint.lintText(codeToCheck);
     if (!results || !Array.isArray(results) || results.length === 0) {
@@ -73,4 +72,4 @@ async function run({ currentCode, stepCode, logger = console, traceId = 'test' }
   }
 }
 
-module.exports = { run };
+export { run };

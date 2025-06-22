@@ -1,7 +1,7 @@
 // Coding Pipeline: runs ContextStepBuilder, Feedback, StaticChecker, SyntaxSanity, RuntimePlayability
 import { createContextStepBuilderChain } from '../chains/ContextStepBuilderChain.js';
 import { createFeedbackChain } from '../chains/FeedbackChain.js';
-import { run as staticCheckerRun } from '../chains/StaticCheckerChain.js';
+import { run as staticCheckerRun } from '../chains/StaticCheckerChain.mjs';
 import { estimateTokens } from '../../utils/tokenUtils.js';
 
 async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
