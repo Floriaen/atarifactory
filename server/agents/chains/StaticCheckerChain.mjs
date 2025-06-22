@@ -2,7 +2,7 @@
 
 import { ESLint } from 'eslint';
 import { cleanUp } from '../../utils/cleanUp.js';
-import pipelineConfig from '../../config/pipeline.eslint.config.js';
+import pipelineConfig from '../../config/staticchecker.eslint.config.js';
 
 async function run({ currentCode, stepCode, logger = console, traceId = 'test' }) {
   logger.info('StaticCheckerChain input:', {
