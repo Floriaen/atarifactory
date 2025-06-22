@@ -1,6 +1,11 @@
-Assemble the final game definition using the following components:
+# Final Assembler Prompt
+
+Given the following components, assemble a complete game definition object.
+
 Title: {title}
-Pitch: {pitch}
+
 Mechanics: {mechanics}
 Win Condition: {winCondition}
 Entities: {entities}
+
+Return the result as: gameDef: {{ title, mechanics, winCondition, entities }}

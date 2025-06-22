@@ -53,3 +53,5 @@ function createIdeaGeneratorChain(llmOptionsOrInstance) {
   };
 }
 export { createIdeaGeneratorChain };
+export default { invoke: async (input) => createIdeaGeneratorChain().invoke(input) };
+
