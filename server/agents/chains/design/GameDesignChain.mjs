@@ -1,11 +1,11 @@
 // Minimal integration for TDD - wires up the chain stubs
-import { IdeaGeneratorChain } from './IdeaGeneratorChain.mjs';
+import { createIdeaGeneratorChain } from './IdeaGeneratorChain.mjs';
 import { LoopClarifierChain } from './LoopClarifierChain.mjs';
 import { MechanicExtractorChain } from './MechanicExtractorChain.mjs';
 import { WinConditionBuilderChain } from './WinConditionBuilderChain.mjs';
 import { PlayabilityHeuristicChain } from './PlayabilityHeuristicChain.mjs';
-import { EntityListBuilderChain } from './EntityListBuilderChain.mjs';
-import { FinalAssemblerChain } from './FinalAssemblerChain.mjs';
+import { createEntityListBuilderChain } from './EntityListBuilderChain.mjs';
+import { createFinalAssemblerChain } from './FinalAssemblerChain.mjs';
 import fs from 'fs';
 import path from 'path';
 const COT_LOG_PATH = path.join(__dirname, '../GameDesignChain.cot.log.txt');
@@ -26,7 +26,7 @@ const GameDesignChain = {
         // Fail silently if logging fails
       }
     }
-    const idea = await IdeaGeneratorChain.invoke(input);
+    const idea = await createIdeaGeneratorChain().invoke(input);
     await logCOT('IdeaGeneratorChain', input, idea);
     if (!idea || typeof idea !== 'object' || !idea.title || !idea.pitch) {
       await logCOT('Error', input, { error: 'Invalid output from IdeaGeneratorChain', idea });

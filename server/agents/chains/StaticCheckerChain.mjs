@@ -1,7 +1,4 @@
-// StaticCheckerChain: wraps StaticCheckerAgent for pipeline compatibility (does not use LLM)
-
 import { ESLint } from 'eslint';
-import { cleanUp } from '../../utils/cleanUp.js';
 import pipelineConfig from '../../config/staticchecker.eslint.config.js';
 
 async function run({ currentCode, stepCode, logger = console, traceId = 'test' }) {
@@ -11,38 +8,11 @@ async function run({ currentCode, stepCode, logger = console, traceId = 'test' }
     stepCode: stepCode || '(empty)'
   });
 
-  // Use stepCode directly (merge logic removed)
-  let codeToCheck;
-  try {
-    codeToCheck = cleanUp(stepCode);
-  } catch (parseError) {
-    logger.error('StaticCheckerChain: Parse error in cleanUp', {
-      traceId,
-      error: parseError.message,
-      stack: parseError.stack
-    });
-    const syntaxError = {
-      line: 1,
-      column: 0,
-      message: `Syntax error: ${parseError.message}`,
-      ruleId: 'parse-error'
-    };
-    return {
-      staticCheckPassed: false,
-      errors: [syntaxError]
-    };
-  }
-
-  logger.info('StaticCheckerChain merged+cleaned code:', {
-    traceId,
-    codeToCheck: codeToCheck || '(empty)'
-  });
-
   try {
     const eslint = new ESLint({
       overrideConfig: pipelineConfig
     });
-    const results = await eslint.lintText(codeToCheck);
+    const results = await eslint.lintText(stepCode);
     if (!results || !Array.isArray(results) || results.length === 0) {
       logger.warn('StaticCheckerChain: No ESLint results returned', { traceId });
       return {

@@ -1,5 +1,10 @@
+const importPlugin = require('eslint-plugin-import');
+
 module.exports = [
   {
+    plugins: {
+      import: importPlugin,
+    },
     ignores: [
       'node_modules',
       'coverage',
@@ -23,6 +28,11 @@ module.exports = [
       'no-console': 'off',
       'semi': ['error', 'always'],
       'quotes': ['error', 'single'],
+      // import plugin rules
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
     },
   },
   {

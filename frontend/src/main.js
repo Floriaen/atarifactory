@@ -252,7 +252,6 @@ document.getElementById('generate-btn').onclick = async function() {
     const reader = response.body.getReader();
     let buffer = '';
     let done = false;
-    let gameId = null;
     while (!done) {
       const { value, done: streamDone } = await reader.read();
       done = streamDone;

@@ -1,22 +1,22 @@
-import js from '@eslint/js';
-
-export default [
-  js.configs.recommended,
-  {
-    files: ['**/*.js', '**/*.mjs'],
-    languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: 'script',
-      globals: {
-        window: 'readonly',
-        document: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        requestAnimationFrame: 'readonly',
-        CustomEvent: 'readonly'
-      }
-    },
-    rules: {
+const config = {
+  env: {
+    browser: true,
+    node: true,
+    es2021: true
+  },
+  parserOptions: {
+    ecmaVersion: 2021,
+    sourceType: 'script'
+  },
+  globals: {
+    window: 'readonly',
+    document: 'readonly',
+    setTimeout: 'readonly',
+    clearTimeout: 'readonly',
+    requestAnimationFrame: 'readonly',
+    CustomEvent: 'readonly'
+  },
+  rules: {
     // Only critical rules that affect functionality
     'no-undef': 'error',
     'no-empty': 'off',
@@ -57,6 +57,7 @@ export default [
     'no-extra-bind': 'off',
     'no-extra-new': 'off',
     'no-extra-comma': 'off'
-    }
   }
-];
+};
+
+module.exports = config;

@@ -11,6 +11,7 @@
     "@babel/preset-env": "^7.27.2",
     "@babel/traverse": "^7.27.4",
     "eslint": "^9.28.0",
+    "eslint-plugin-import": "^2.32.0",
     "jest": "^30.0.2",
     "supertest": "^7.1.1",
     "uuid": "^10.0.0",
@@ -37,7 +38,6 @@
     "openai": "^5.5.1",
     "prettier": "2.8.8",
     "puppeteer": "^24.10.0",
-    "recast": "^0.23.11",
     "winston": "^3.17.0",
     "zod": "^3.25.67"
   },
@@ -45,4 +45,3 @@
     "uuid": "^10.0.0"
   }
 }
-

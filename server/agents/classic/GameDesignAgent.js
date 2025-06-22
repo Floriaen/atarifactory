@@ -22,10 +22,9 @@ const mockLogger = { info: () => {}, error: () => {}, warn: () => {} };
 const logger = process.env.TEST_LOGS ? console : mockLogger;
 const fs = require('fs');
 const path = require('path');
-const { SmartOpenAI } = require('../utils/SmartOpenAI');
 const { estimateTokens } = require('../utils/tokenUtils');
 
-async function GameDesignAgent(sharedState, { logger, traceId, llmClient }) {
+async function GameDesignAgent(sharedState, { traceId, llmClient }) {
   const { name, description } = sharedState;
   if (!name || !description || typeof name !== 'string' || typeof description !== 'string') {
     logger?.error && logger.error('GameDesignAgent error', { traceId, error: new Error('GameDesignAgent: name and description are required in sharedState'), input: { name, description } });

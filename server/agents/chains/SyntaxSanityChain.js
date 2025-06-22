@@ -1,6 +1,6 @@
 // SyntaxSanityChain: stub for E2E pipeline compatibility (does not use LLM)
 
-async function run({ currentCode, logger = console, traceId = 'test' }) {
+async function run() {
   // Return a mock syntaxOk value for pipeline/test compatibility
   return {
     syntaxOk: true
