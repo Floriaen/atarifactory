@@ -14,10 +14,10 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.61",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-
     "uuid": "^9.0.0"
   },
   "devDependencies": {

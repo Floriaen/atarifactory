@@ -1,4 +1,5 @@
 module.exports = {
+
     transform: {},
   testEnvironment: 'node',
   rootDir: '.',
@@ -10,8 +11,11 @@ testEnvironment: 'node',
   setupFiles: ['./jest.setup.js'],
   testMatch: [
     '**/tests/unit/**/*.test.js',
+    '**/tests/unit/**/*.test.mjs',
     '**/tests/integration/**/*.test.js',
-    '**/tests/mocks/**/*.test.js'
+    '**/tests/integration/**/*.test.mjs',
+    '**/tests/mocks/**/*.test.js',
+    '**/tests/mocks/**/*.test.mjs'
   ],
   testPathIgnorePatterns: ['/node_modules/'],
   moduleDirectories: [
@@ -22,6 +26,7 @@ testEnvironment: 'node',
   ],
   moduleDirectories: [
     'node_modules',
-    '<rootDir>/node_modules'
+    '<rootDir>/node_modules',
+    '<rootDir>/server/node_modules'
   ],
 };
