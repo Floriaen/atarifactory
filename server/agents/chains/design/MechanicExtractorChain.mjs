@@ -1,6 +1,4 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

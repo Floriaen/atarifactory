@@ -140,6 +140,28 @@ TEST_LOGS=1 npm test
 
 This pattern is used throughout the design chain unit tests (see `EntityListBuilderChain.test.mjs` for examples).
 
+### LCEL Chain Composition: `lcelChainWithContentWrapper`
+
+To ensure your parser always receives `{ content: ... }` (regardless of whether the LLM or mock returns a string or object), use the `lcelChainWithContentWrapper` utility when composing LCEL pipelines:
+
+```javascript
+import { lcelChainWithContentWrapper } from '../utils/lcelChainWithContentWrapper.js';
+
+function parseLLMOutput(output) {
+  if (!output || typeof output.content !== 'string') {
+    throw new Error('LLM output missing content');
+  }
+  // ...parse as needed
+}
+
+const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
+```
+
+This pattern:
+- Ensures robust, DRY composition for both real and mock LLMs
+- Prevents subtle bugs from inconsistent LLM output shapes
+- Should be used for all chains where the parser expects `{ content: ... }`
+
 ### Best Practices
 
 1. **Test Structure**

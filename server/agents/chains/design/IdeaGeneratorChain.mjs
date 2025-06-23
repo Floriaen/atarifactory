@@ -1,5 +1,5 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
+import { lcelChainWithContentWrapper } from '../../../utils/lcelChainWithContentWrapper.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +42,7 @@ function createIdeaGeneratorChain(llm) {
     return { title: data.title, pitch: data.pitch };
   }
 
-  const chain = prompt.pipe(llm).pipe(parseLLMOutput);
+  const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
 
   return {
     async invoke(input) {

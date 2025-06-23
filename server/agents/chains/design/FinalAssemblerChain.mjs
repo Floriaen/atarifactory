@@ -1,5 +1,5 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { RunnableLambda } from '@langchain/core/runnables';
+import { lcelChainWithContentWrapper } from '../../../utils/lcelChainWithContentWrapper.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -45,17 +45,8 @@ function createFinalAssemblerChain(llm) {
     return data;
   }
 
-  // Compose the chain:
-  // 1. prompt.pipe(llm): feeds formatted prompt to the LLM
-  // 2. .pipe(RunnableLambda.from(llmResult => ({ content: llmResult }))):
-  //    Ensures the parser always receives an object with a `content` property, regardless of LLM output shape.
-  //    This is necessary because some LLMs/mocks may return a string directly, but the parser expects `{ content: ... }`.
-  //    Prevents subtle bugs if LangChain optimizes away steps or if LLMs/mocks have inconsistent output shapes.
-  // 3. .pipe(RunnableLambda.from(parseLLMOutput)): parses and validates the final result.
-  const chain = prompt
-    .pipe(llm)
-    .pipe(RunnableLambda.from(llmResult => ({ content: llmResult })))
-    .pipe(RunnableLambda.from(parseLLMOutput));
+
+  const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
 
   return {
     async invoke(input) {
