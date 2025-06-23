@@ -1,62 +1,18 @@
-import { PromptTemplate } from '@langchain/core/prompts';
-import { lcelChainWithContentWrapper } from '../../../utils/lcelChainWithContentWrapper.js';
-import fs from 'fs';
-import path from 'path';
+import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
 import { fileURLToPath } from 'url';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
 
 function createIdeaGeneratorChain(llm) {
-  const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
-  let promptString;
-  try {
-    promptString = fs.readFileSync(promptPath, 'utf8');
-  } catch (err) {
-    throw new Error(`Prompt file not found: ${promptPath}`);
-  }
-  const prompt = new PromptTemplate({
-    template: promptString,
+  return createJsonExtractionChain({
+    llm,
+    promptFile: promptPath,
     inputVariables: ['constraints'],
+    schemaName: 'idea (title, pitch)'
   });
-
-  // Support both injected LLM (for testing) and options (for prod)
-  if (!llm || typeof llm.invoke !== 'function') {
-    throw new Error('createIdeaGeneratorChain requires an LLM instance with an .invoke method');
-  }
-
-  // Add a parser after the LLM to extract {title, pitch}
-  function parseLLMOutput(output) {
-    if (!output || typeof output.content !== 'string') {
-      throw new Error('LLM output missing content');
-    }
-    let data;
-    try {
-      data = JSON.parse(output.content);
-    } catch (err) {
-      throw new Error('LLM output is not valid JSON');
-    }
-    if (!data || typeof data !== 'object' || !data.title || !data.pitch) {
-      throw new Error('LLM output missing required fields (title, pitch)');
-    }
-    return { title: data.title, pitch: data.pitch };
-  }
-
-  const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
-
-  return {
-    async invoke(input) {
-      if (!input || typeof input !== 'object') {
-        throw new Error('Input must be an object');
-      }
-      const result = await chain.invoke(input);
-      if (!result.title || !result.pitch) {
-        throw new Error('Output missing required fields');
-      }
-      return result;
-    }
-  };
 }
-export { createIdeaGeneratorChain };
-export default { invoke: async (input) => createIdeaGeneratorChain().invoke(input) };
 
+export { createIdeaGeneratorChain };
