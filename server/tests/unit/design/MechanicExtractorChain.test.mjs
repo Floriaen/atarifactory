@@ -1,10 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { RunnableLambda } from '@langchain/core/runnables';
+import { MockLLM } from '../../helpers/MockLLM.js';
+import { FlexibleMalformedLLM } from '../../helpers/MalformedLLM.js';
 import { createMechanicExtractorChain } from '../../../agents/chains/design/MechanicExtractorChain.mjs';
 
+/**
+ * MechanicExtractorChain unit tests
+ * - Positive: valid JSON output from MockLLM
+ * - Negative: malformed LLM output via FlexibleMalformedLLM
+ * - Contract: expects { content: JSON.stringify({ mechanics: [...] }) }
+ */
 describe('MechanicExtractorChain (ESM)', () => {
-  it('extracts mechanics', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'jump, dodge' }) });
+  it('extracts mechanics (happy path)', async () => {
+    const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
     const chain = createMechanicExtractorChain(mockLLM);
     const input = { loop: 'Player jumps between platforms and dodges lasers.' };
     const result = await chain.invoke(input);
@@ -15,30 +22,32 @@ describe('MechanicExtractorChain (ESM)', () => {
   });
 
   it('throws if input is missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'jump, dodge' }) });
+    const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
     const chain = createMechanicExtractorChain(mockLLM);
-    await expect(chain.invoke()).rejects.toThrow();
+    await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: loop');
   });
 
-  it('throws if output is malformed', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({}) });
-    const chain = createMechanicExtractorChain(mockLLM);
+  it('throws if LLM output missing content', async () => {
+    const llm = new FlexibleMalformedLLM('missingContent');
+    const chain = createMechanicExtractorChain(llm);
     await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
-    // Now test with empty content
-    const mockLLM2 = new RunnableLambda({ func: async () => ({ content: '' }) });
-    const chain2 = createMechanicExtractorChain(mockLLM2);
-    await expect(chain2.invoke({ loop: 'foo' })).rejects.toThrow('Output missing required mechanics array');
   });
 
-  it('throws if loop is missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'jump, dodge' }) });
-    const chain = createMechanicExtractorChain(mockLLM);
-    await expect(chain.invoke({})).rejects.toThrow();
+  it('throws if LLM output is not JSON', async () => {
+    const llm = new FlexibleMalformedLLM('notJson');
+    const chain = createMechanicExtractorChain(llm);
+    await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
   });
 
-  it('handles nonsense input gracefully', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'jump, dodge' }) });
+  it('throws if LLM output missing mechanics array', async () => {
+    const llm = new FlexibleMalformedLLM('missingMechanics');
+    const chain = createMechanicExtractorChain(llm);
+    await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
+  });
+
+  it('throws if loop is missing in input', async () => {
+    const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
     const chain = createMechanicExtractorChain(mockLLM);
-    await expect(chain.invoke({ foo: 'bar' })).rejects.toThrow();
+    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with required fields: loop');
   });
 });

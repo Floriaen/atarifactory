@@ -24,6 +24,8 @@ export class FlexibleMalformedLLM extends BaseLLM {
         return { content: 'not json' };
       case 'missingLoop':
         return { content: JSON.stringify({ notLoop: 'foo' }) };
+      case 'missingMechanics':
+        return { content: JSON.stringify({ notMechanics: 'foo' }) };
       // Add more cases here as needed
       default:
         throw new Error(`Unknown FlexibleMalformedLLM mode: ${this.mode}`);
@@ -38,6 +40,8 @@ export class FlexibleMalformedLLM extends BaseLLM {
         return { generations: prompts.map(() => [{ text: 'not json' }]), llmOutput: {} };
       case 'missingLoop':
         return { generations: prompts.map(() => [{ text: JSON.stringify({ notLoop: 'foo' }) }]), llmOutput: {} };
+      case 'missingMechanics':
+        return { generations: prompts.map(() => [{ text: JSON.stringify({ notMechanics: 'foo' }) }]), llmOutput: {} };
       // Add more cases here as needed
       default:
         throw new Error(`Unknown FlexibleMalformedLLM mode: ${this.mode}`);
