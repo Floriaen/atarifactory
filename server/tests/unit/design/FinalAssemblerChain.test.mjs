@@ -31,7 +31,7 @@ describe('FinalAssemblerChain (ESM)', () => {
     const mockContent = JSON.stringify({ gameDef: { title: 'Laser Leap', description: pitch, mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } });
     const mockLLM = new MockLLM(mockContent);
     const chain = createFinalAssemblerChain(mockLLM);
-    await expect(chain.invoke()).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
+    await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: title, pitch, loop, mechanics, winCondition, entities');
   });
 
   it('throws if required fields are missing', async () => {
@@ -39,8 +39,8 @@ describe('FinalAssemblerChain (ESM)', () => {
     const mockContent = JSON.stringify({ gameDef: { title: 'Laser Leap', description: pitch, mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } });
     const mockLLM = new MockLLM(mockContent);
     const chain = createFinalAssemblerChain(mockLLM);
-    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
-    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
+    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with required fields: title, pitch, loop, mechanics, winCondition, entities');
+    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow('Input must be an object with required fields: title, pitch, loop, mechanics, winCondition, entities');
   });
 
   it('throws if output is malformed', async () => {
