@@ -1,2 +1,24 @@
-Evaluate the playability of the following game definition:
+# Playability Heuristic Prompt
+
+Given the following game definition, assess its playability. Consider aspects such as clarity of the core loop, engagement, replayability, difficulty, and accessibility.
+
+Game Definition:
 {gameDef}
+
+Return your assessment as a JSON object matching this schema:
+
+{{
+  "playabilityAssessment": "<short summary of playability (1-2 sentences)>",
+  "strengths": ["<strength 1>", "<strength 2>", "..."],
+  "potentialIssues": ["<issue 1>", "<issue 2>", "..."],
+  "score": <number from 1 (unplayable) to 10 (highly playable)>
+}}
+
+For example:
+
+{{
+  "playabilityAssessment": "The game is engaging and easy to understand, but may become repetitive without more variety.",
+  "strengths": ["Clear core loop", "Accessible to new players"],
+  "potentialIssues": ["Limited replayability", "Difficulty may not scale well"],
+  "score": 7
+}}

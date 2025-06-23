@@ -21,6 +21,7 @@ module.exports = defineConfig({
         interopDefault: true,
         inline: ['@langchain/core']
       }
-    }
+    },
+    setupFiles: ['./vitest.setup.js']
   }
 });
