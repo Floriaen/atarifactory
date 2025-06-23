@@ -103,6 +103,33 @@ const GameDesignChain = new SequentialChain({
 
 ---
 
+## 📦 Game Definition Object (`gameDef`) Schema
+
+The `gameDef` object is the unified output of the pipeline and the main input for validation and downstream use. Its shape is:
+
+```jsonc
+{
+  "title": "string",         // The name of the game
+  "description": "string",   // A short description or pitch for the game
+  "mechanics": ["string"],   // List of gameplay mechanics
+  "winCondition": "string",  // The win condition for the game
+  "entities": ["string"]     // List of entities involved in the game
+  // Optionally, other fields added by later steps (e.g., playability, rationale)
+}
+```
+
+**Required fields:**
+- `title` (`string`)
+- `description` (`string`)
+- `mechanics` (`string[]`)
+- `winCondition` (`string`)
+- `entities` (`string[]`)
+
+**Optional/Extension fields:**
+- Additional fields (e.g., `playability`, `rationale`) may be added by later chains or for advanced features.
+
+---
+
 ## 🔍 Heuristic Validator (PlayabilityHeuristicChain)
 
 ### Prompt:

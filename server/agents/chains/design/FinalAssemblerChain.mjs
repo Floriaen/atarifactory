@@ -1,5 +1,5 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
+import { RunnableLambda } from '@langchain/core/runnables';
 import fs from 'fs';
 import path from 'path';
 
@@ -19,7 +19,7 @@ function createFinalAssemblerChain(llm) {
   }
   const prompt = new PromptTemplate({
     template: promptString,
-    inputVariables: ['title', 'mechanics', 'winCondition', 'entities']
+    inputVariables: ['title', 'pitch', 'loop', 'mechanics', 'winCondition', 'entities']
   });
 
   if (!llm || typeof llm.invoke !== 'function') {
@@ -27,27 +27,52 @@ function createFinalAssemblerChain(llm) {
   }
 
   function parseLLMOutput(output) {
-    if (!output || !output.gameDef) {
-      throw new Error('Output missing required gameDef fields');
+    // DEBUG: log what is received from the LLM
+    console.debug('[FinalAssemblerChain.parseLLMOutput] Received output:', output);
+    // Expect output.content to be a JSON string with { gameDef }
+    if (!output || typeof output.content !== 'string') {
+      throw new Error('LLM output missing content');
     }
-    return output;
+    let data;
+    try {
+      data = JSON.parse(output.content);
+    } catch (err) {
+      throw new Error('LLM output is not valid JSON');
+    }
+    if (!data || typeof data !== 'object' || !data.gameDef) {
+      throw new Error('LLM output missing required gameDef field');
+    }
+    return data;
   }
 
-  const chain = prompt.pipe(llm).pipe(parseLLMOutput);
+  // Compose the chain:
+  // 1. prompt.pipe(llm): feeds formatted prompt to the LLM
+  // 2. .pipe(RunnableLambda.from(llmResult => ({ content: llmResult }))):
+  //    Ensures the parser always receives an object with a `content` property, regardless of LLM output shape.
+  //    This is necessary because some LLMs/mocks may return a string directly, but the parser expects `{ content: ... }`.
+  //    Prevents subtle bugs if LangChain optimizes away steps or if LLMs/mocks have inconsistent output shapes.
+  // 3. .pipe(RunnableLambda.from(parseLLMOutput)): parses and validates the final result.
+  const chain = prompt
+    .pipe(llm)
+    .pipe(RunnableLambda.from(llmResult => ({ content: llmResult })))
+    .pipe(RunnableLambda.from(parseLLMOutput));
 
   return {
     async invoke(input) {
-      if (!input || typeof input !== 'object' ||
-          !('title' in input) ||
-
-          !('mechanics' in input) ||
-          !('winCondition' in input) ||
-          !('entities' in input)) {
-        throw new Error('Input must be an object with title, mechanics, winCondition, and entities');
+      if (
+        !input || typeof input !== 'object' ||
+        !('title' in input) ||
+        !('pitch' in input) ||
+        !('loop' in input) ||
+        !('mechanics' in input) ||
+        !('winCondition' in input) ||
+        !('entities' in input)
+      ) {
+        throw new Error('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
       }
       const result = await chain.invoke(input);
       if (!result || !result.gameDef) {
-        throw new Error('Output missing required gameDef fields');
+        throw new Error('Output missing required gameDef field');
       }
       return result;
     }

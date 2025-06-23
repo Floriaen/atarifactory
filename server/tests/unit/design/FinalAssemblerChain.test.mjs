@@ -1,12 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { createFinalAssemblerChain } from '../../../agents/chains/design/FinalAssemblerChain.mjs';
+import { MockLLM } from '../../helpers/MockLLM.js';
+import { MalformedLLM } from '../../helpers/MalformedLLM.js';
 
 describe('FinalAssemblerChain (ESM)', () => {
   it('assembles a game definition', async () => {
-    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
+    const pitch = 'Dodge lasers and leap between platforms.';
+    const mockContent = JSON.stringify({ gameDef: { title: 'Laser Leap', description: pitch, mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } });
+    const mockLLM = new MockLLM(mockContent);
     const chain = createFinalAssemblerChain(mockLLM);
     const input = {
       title: 'Laser Leap',
+      pitch: 'Dodge lasers and leap between platforms.',
+      loop: 'Player jumps between platforms and dodges lasers.',
       mechanics: ['move', 'jump', 'avoid'],
       winCondition: 'Survive for 45 seconds',
       entities: ['player', 'platform', 'laser', 'timer']
@@ -21,30 +27,33 @@ describe('FinalAssemblerChain (ESM)', () => {
   });
 
   it('throws if input is missing', async () => {
-    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
+    const pitch = 'Dodge lasers and leap between platforms.';
+    const mockContent = JSON.stringify({ gameDef: { title: 'Laser Leap', description: pitch, mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } });
+    const mockLLM = new MockLLM(mockContent);
     const chain = createFinalAssemblerChain(mockLLM);
-    await expect(chain.invoke()).rejects.toThrow();
+    await expect(chain.invoke()).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
   });
 
   it('throws if required fields are missing', async () => {
-    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
+    const pitch = 'Dodge lasers and leap between platforms.';
+    const mockContent = JSON.stringify({ gameDef: { title: 'Laser Leap', description: pitch, mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } });
+    const mockLLM = new MockLLM(mockContent);
     const chain = createFinalAssemblerChain(mockLLM);
-    await expect(chain.invoke({})).rejects.toThrow();
-    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow();
-    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow();
+    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
+    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow('Input must be an object with title, pitch, loop, mechanics, winCondition, and entities');
   });
 
   it('throws if output is malformed', async () => {
-    const mockLLM = { invoke: async () => ({ content: '{}' }) };
+    const mockLLM = new MalformedLLM();
     const chain = createFinalAssemblerChain(mockLLM);
     // Provide all required input fields so output validation is exercised
-    await expect(chain.invoke({ title: 'foo', mechanics: [], winCondition: '', entities: [] })).rejects.toThrow('Output missing required gameDef fields');
-  });
-
-  it('throws if output is unexpected (monkey-patched)', async () => {
-    const mockLLM = { invoke: async () => ({ content: '{}' }) };
-    const chain = createFinalAssemblerChain(mockLLM);
-    // Provide all required input fields so output validation is exercised
-    await expect(chain.invoke({ title: 'Laser Leap', mechanics: [], winCondition: '', entities: [] })).rejects.toThrow('Output missing required gameDef fields');
+    await expect(chain.invoke({
+      title: 'foo',
+      pitch: 'bar',
+      loop: 'baz',
+      mechanics: [],
+      winCondition: '',
+      entities: []
+    })).rejects.toThrow('LLM output missing content');
   });
 });
