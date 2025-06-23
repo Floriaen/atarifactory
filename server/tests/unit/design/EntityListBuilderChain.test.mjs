@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createEntityListBuilderChain } from '../../../agents/chains/design/EntityListBuilderChain.mjs';
 import { jsonToMarkdownCodeBlock } from '../../../utils/jsonToMarkdownCodeBlock';
 import { MockLLM } from '../../helpers/MockLLM.js';
+import { FlexibleMalformedLLM } from '../../helpers/MalformedLLM.js';
 
 describe('EntityListBuilderChain (ESM)', () => {
   it('extracts entity list from mechanics', async () => {
@@ -23,21 +24,21 @@ describe('EntityListBuilderChain (ESM)', () => {
 
   it('throws if input is missing', async () => {
     // The mock LLM should never be called in this test
-    const mockLLM2 = { invoke: async () => { throw new Error('Should not be called'); } };
+    const mockLLM2 = new FlexibleMalformedLLM('missingContent');
     const chain2 = createEntityListBuilderChain(mockLLM2);
-    await expect(chain2.invoke()).rejects.toThrow('Input must be an object with mechanics, loop, and winCondition');
+    await expect(chain2.invoke()).rejects.toThrow('Input must be an object with required fields: mechanics, loop, winCondition');
   });
 
   it('handles nonsense input gracefully', async () => {
     // LLM returns valid JSON string, but missing entities array
-    const mockLLM4 = { invoke: async () => ({ content: '{"notEntities":[]}' }) };
+    const mockLLM4 = new FlexibleMalformedLLM('missingMechanics');
     const chain4 = createEntityListBuilderChain(mockLLM4);
-    await expect(chain4.invoke({ mechanics: ['foo'], loop: 'bar', winCondition: 'baz' })).rejects.toThrow("Cannot read properties of undefined (reading 'content')");
+    await expect(chain4.invoke({ mechanics: ['foo'], loop: 'bar', winCondition: 'baz' })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if output is malformed (mock returns bad data)', async () => {
     // LLM returns non-JSON or missing entities
-    const mockLLM5 = { invoke: async () => ({ content: '' }) };
+    const mockLLM5 = new FlexibleMalformedLLM('notJson');
     const chain5 = createEntityListBuilderChain(mockLLM5);
     await expect(
       chain5.invoke({
@@ -45,7 +46,7 @@ describe('EntityListBuilderChain (ESM)', () => {
         loop: 'bar',
         winCondition: 'baz'
       })
-    ).rejects.toThrow("Cannot read properties of undefined (reading 'content')");
+    ).rejects.toThrow('LLM output missing content');
     // Previously: await expect(chain5.invoke()).rejects.toThrow(...);
     await expect(
       chain5.invoke({
@@ -53,6 +54,6 @@ describe('EntityListBuilderChain (ESM)', () => {
         loop: 'bar',
         winCondition: 'baz'
       })
-    ).rejects.toThrow("Cannot read properties of undefined (reading 'content')");
+    ).rejects.toThrow('LLM output missing content');
   });
 });
