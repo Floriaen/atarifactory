@@ -1,4 +1,4 @@
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
+import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 

@@ -20,7 +20,7 @@ This guide standardizes the implementation of all *design chain agents* in the c
 **Always use the utility:**
 
 ```js
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
+import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -89,7 +89,7 @@ it('throws if input is missing', async () => {
 
 - Handles prompt loading, format instructions, mapping, parsing, and error handling.
 - Enforces explicit LLM injection and strict input/output contracts.
-- See `server/utils/createJsonExtractionChain.js` for API.
+- See `server/utils/createJsonExtractionChain.mjs` for API.
 
 ---
 

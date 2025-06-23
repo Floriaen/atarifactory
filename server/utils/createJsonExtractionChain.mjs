@@ -4,7 +4,6 @@ import { RunnableLambda } from '@langchain/core/runnables';
 import { ensureContentPresent } from './ensureContentPresent.js';
 import fs from 'fs';
 
-
 /**
  * Generic factory for LCEL JSON extraction chains.
  * @param {Object} opts
@@ -21,7 +20,7 @@ export function createJsonExtractionChain({ llm, promptFile, inputVariables, sch
   let promptString;
   try {
     promptString = fs.readFileSync(promptFile, 'utf8');
-  } catch { 
+  } catch {
     throw new Error(`Prompt file not found: ${promptFile}`);
   }
   const parser = new JsonOutputParser();
