@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createIdeaGeneratorChain } from '../../../agents/chains/design/IdeaGeneratorChain.mjs';
 import { MockLLM } from '../../helpers/MockLLM.js';
-import { MalformedLLM } from '../../helpers/MalformedLLM.js';
+import { FlexibleMalformedLLM } from '../../helpers/MalformedLLM.js';
 
 // Basic smoke test for ESM import and minimal behavior
 describe('createIdeaGeneratorChain (ESM)', () => {
@@ -18,7 +18,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
   });
 
   it('throws if output is malformed', async () => {
-    const mockLLM = new MalformedLLM();
+    const mockLLM = new FlexibleMalformedLLM('missingContent');
     const chain = createIdeaGeneratorChain(mockLLM);
     await expect(chain.invoke({ constraints: 'test' })).rejects.toThrow('LLM output missing content');
   });

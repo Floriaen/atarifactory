@@ -1,4 +1,5 @@
 import { PromptTemplate } from '@langchain/core/prompts';
+import { lcelChainWithContentWrapper } from '../../../utils/lcelChainWithContentWrapper.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -29,23 +30,19 @@ function createLoopClarifierChain(llm) {
     if (!output || typeof output.content !== 'string') {
       throw new Error('LLM output missing content');
     }
-    // Try to match 'Loop: ...' pattern
-    const match = output.content.match(/Loop:\s*(.*)/);
-    if (match) {
-      return { loop: match[1].trim() };
+    let data;
+    try {
+      data = JSON.parse(output.content);
+    } catch (err) {
+      throw new Error('LLM output is not valid JSON');
     }
-    // Fallback: only accept if content is non-empty and not a generic negative
-    const fallback = output.content.trim();
-    const negativePatterns = [/^no loop here\.?$/i, /^none$/i, /^n\/a$/i, /^not applicable$/i];
-    if (!fallback || negativePatterns.some(rx => rx.test(fallback))) {
-      console.error('[LoopClarifierChain] Fallback rejected: output is empty or negative. Output:', fallback);
-      throw new Error('Output missing required loop string');
+    if (!data || typeof data !== 'object' || !data.loop || typeof data.loop !== 'string') {
+      throw new Error('LLM output missing required field: loop');
     }
-    console.warn('[LoopClarifierChain] No "Loop:" prefix found, using full content as loop description. Output:', fallback);
-    return { loop: fallback };
+    return { loop: data.loop };
   }
 
-  const chain = prompt.pipe(llm).pipe(parseLLMOutput);
+  const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
 
   return {
     async invoke(input) {
@@ -61,4 +58,3 @@ function createLoopClarifierChain(llm) {
   };
 }
 export { createLoopClarifierChain };
-export const LoopClarifierChain = { invoke: async (input) => createLoopClarifierChain().invoke(input) };

@@ -134,11 +134,30 @@ TEST_LOGS=1 npm test
 
 ### LLM Mocking Guidelines
 
-- **Use `MockLLM`** for all tests where you want to simulate valid, malformed, or edge-case LLM output. This ensures your tests mimic real LLM output shape and behavior, and keeps your mapping steps clean and consistent.
+- **Use `MockLLM`** for all tests where you want to simulate valid, well-formed LLM output.
+- **Use `FlexibleMalformedLLM`** for negative-path tests where you want to simulate malformed, missing, or otherwise invalid LLM output. This class allows you to parameterize the type of malformed output via a `mode` argument (see below for details).
 - **Use a simple throwing stub** (e.g., `{ invoke: async () => { throw new Error('Should not be called'); } }`) for tests where the LLM should never be called (such as input validation or short-circuit logic). This makes the test's intent explicit and guarantees the LLM is not invoked.
-- Do not over-engineer negative-path tests by subclassing `MockLLM` to throw—direct stubs are clearer for these cases.
 
-This pattern is used throughout the design chain unit tests (see `EntityListBuilderChain.test.mjs` for examples).
+#### FlexibleMalformedLLM Usage
+
+`FlexibleMalformedLLM` is a test helper for negative-path scenarios. It simulates various malformed LLM outputs via its `mode` constructor argument:
+
+- `'missingContent'`: returns an object with no `.content` property
+- `'notJson'`: returns `{ content: 'not json' }`
+- `'missingLoop'`: returns `{ content: JSON.stringify({ notLoop: 'foo' }) }`
+- *(add more modes as needed for your test cases)*
+
+**Example:**
+```js
+import { FlexibleMalformedLLM } from '../tests/helpers/MalformedLLM.js';
+
+// Simulate LLM output missing the required .content property
+const llm = new FlexibleMalformedLLM('missingContent');
+const chain = createLoopClarifierChain(llm);
+await expect(chain.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing content');
+```
+
+This pattern is now used throughout the design chain unit tests (see `LoopClarifierChain.test.mjs` and `FinalAssemblerChain.test.mjs` for examples).
 
 ### LCEL Chain Composition: `lcelChainWithContentWrapper`
 

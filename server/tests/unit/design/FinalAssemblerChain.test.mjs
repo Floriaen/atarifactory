@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createFinalAssemblerChain } from '../../../agents/chains/design/FinalAssemblerChain.mjs';
 import { MockLLM } from '../../helpers/MockLLM.js';
-import { MalformedLLM } from '../../helpers/MalformedLLM.js';
+import { FlexibleMalformedLLM } from '../../helpers/MalformedLLM.js';
 
 describe('FinalAssemblerChain (ESM)', () => {
   it('assembles a game definition', async () => {
@@ -44,7 +44,7 @@ describe('FinalAssemblerChain (ESM)', () => {
   });
 
   it('throws if output is malformed', async () => {
-    const mockLLM = new MalformedLLM();
+    const mockLLM = new FlexibleMalformedLLM('missingContent');
     const chain = createFinalAssemblerChain(mockLLM);
     // Provide all required input fields so output validation is exercised
     await expect(chain.invoke({
