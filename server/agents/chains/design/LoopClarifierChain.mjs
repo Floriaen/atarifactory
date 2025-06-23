@@ -2,8 +2,12 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-function createLoopClarifierChain(llmOptionsOrInstance) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function createLoopClarifierChain(llm) {
   const promptPath = path.join(__dirname, '../../prompts/design/loop-clarifier.md');
   let promptString;
   try {
@@ -16,24 +20,30 @@ function createLoopClarifierChain(llmOptionsOrInstance) {
     inputVariables: ['title', 'pitch']
   });
 
-  let llm;
-  if (llmOptionsOrInstance && typeof llmOptionsOrInstance.invoke === 'function') {
-    llm = llmOptionsOrInstance;
-  } else {
-    llm = new ChatOpenAI(llmOptionsOrInstance);
+  if (!llm || typeof llm.invoke !== 'function') {
+    throw new Error('createLoopClarifierChain requires an LLM instance with an .invoke method');
   }
 
   function parseLLMOutput(output) {
-
+    // DEBUG: Log the LLM output before parsing
+    console.debug('[LoopClarifierChain] Raw LLM output:', output);
     if (!output || typeof output.content !== 'string') {
       throw new Error('LLM output missing content');
     }
-    // Parse: Loop: ...
+    // Try to match 'Loop: ...' pattern
     const match = output.content.match(/Loop:\s*(.*)/);
-    if (!match) {
+    if (match) {
+      return { loop: match[1].trim() };
+    }
+    // Fallback: only accept if content is non-empty and not a generic negative
+    const fallback = output.content.trim();
+    const negativePatterns = [/^no loop here\.?$/i, /^none$/i, /^n\/a$/i, /^not applicable$/i];
+    if (!fallback || negativePatterns.some(rx => rx.test(fallback))) {
+      console.error('[LoopClarifierChain] Fallback rejected: output is empty or negative. Output:', fallback);
       throw new Error('Output missing required loop string');
     }
-    return { loop: match[1].trim() };
+    console.warn('[LoopClarifierChain] No "Loop:" prefix found, using full content as loop description. Output:', fallback);
+    return { loop: fallback };
   }
 
   const chain = prompt.pipe(llm).pipe(parseLLMOutput);

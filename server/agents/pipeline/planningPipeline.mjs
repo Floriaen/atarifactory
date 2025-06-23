@@ -5,10 +5,19 @@ import { createPlayabilityValidatorChain } from '../chains/PlayabilityValidatorC
 import { createPlayabilityAutoFixChain } from '../chains/PlayabilityAutoFixChain.js';
 import { createPlannerChain } from '../chains/PlannerChain.js';
 
+import { ChatOpenAI } from '@langchain/openai';
+
 async function runPlanningPipeline(sharedState, onStatusUpdate) {
   // 1. Game Inventor
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameInventor', status: 'start' });
-  const gameInventorChain = await createGameInventorChain();
+  const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
+  const ideaLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+  const designLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+  const playabilityValidatorLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+  const playabilityAutoFixLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+  const plannerLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+
+  const gameInventorChain = await createGameInventorChain(ideaLLM);
   const inventorOut = await gameInventorChain.invoke({});
   if (typeof inventorOut !== 'object' || inventorOut === null) {
     console.error('GameInventorChain returned non-object:', inventorOut);
@@ -19,8 +28,15 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
 
   // 2. Game Design
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameDesign', status: 'start' });
-  const gameDesignChain = await createGameDesignChain();
-  const designOut = await gameDesignChain.invoke({ name: sharedState.idea, description: sharedState.idea });
+  const gameDesignChain = await createGameDesignChain(designLLM);
+  // Ensure 'constraints' is always present for downstream chains
+  let constraints = '';
+  if (typeof sharedState.idea === 'object' && sharedState.idea.constraints) {
+    constraints = sharedState.idea.constraints;
+  } else if (typeof sharedState.idea === 'string') {
+    constraints = sharedState.idea;
+  }
+  const designOut = await gameDesignChain.invoke({ name: sharedState.idea, description: sharedState.idea, constraints });
   if (!designOut) throw new Error('GameDesignChain returned nothing');
   if (designOut.gameDef) {
     sharedState.gameDef = designOut.gameDef;
@@ -33,7 +49,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
 
   // 3. Playability Validator
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'start' });
-  const playabilityValidatorChain = await createPlayabilityValidatorChain();
+  const playabilityValidatorChain = await createPlayabilityValidatorChain(playabilityValidatorLLM);
   const validatorOut = await playabilityValidatorChain.invoke({ mechanics: sharedState.gameDef.mechanics || [], winCondition: sharedState.gameDef.winCondition || '' });
   sharedState.isPlayable = validatorOut.isPlayable;
   sharedState.suggestion = validatorOut.suggestion;
@@ -43,7 +59,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   let fixedGameDef = sharedState.gameDef;
   if (!sharedState.isPlayable) {
     if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'start' });
-    const playabilityAutoFixChain = await createPlayabilityAutoFixChain();
+    const playabilityAutoFixChain = await createPlayabilityAutoFixChain(playabilityAutoFixLLM);
     const autoFixOut = await playabilityAutoFixChain.invoke({ gameDef: sharedState.gameDef, suggestion: sharedState.suggestion });
     fixedGameDef = autoFixOut.gameDef;
     sharedState.fixed = autoFixOut.fixed;
@@ -53,7 +69,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
 
   // 5. Planner
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'Planner', status: 'start' });
-  const plannerChain = await createPlannerChain();
+  const plannerChain = await createPlannerChain(plannerLLM);
   const planOut = await plannerChain.invoke({ gameDefinition: fixedGameDef });
   let planArr = null;
   if (Array.isArray(planOut)) {

@@ -2,8 +2,12 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-function createIdeaGeneratorChain(llmOptionsOrInstance) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function createIdeaGeneratorChain(llm) {
   const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
   let promptString;
   try {
@@ -17,11 +21,8 @@ function createIdeaGeneratorChain(llmOptionsOrInstance) {
   });
 
   // Support both injected LLM (for testing) and options (for prod)
-  let llm;
-  if (llmOptionsOrInstance && typeof llmOptionsOrInstance.invoke === 'function') {
-    llm = llmOptionsOrInstance;
-  } else {
-    llm = new ChatOpenAI(llmOptionsOrInstance);
+  if (!llm || typeof llm.invoke !== 'function') {
+    throw new Error('createIdeaGeneratorChain requires an LLM instance with an .invoke method');
   }
 
   // Add a parser after the LLM to extract {title, pitch}
@@ -29,12 +30,16 @@ function createIdeaGeneratorChain(llmOptionsOrInstance) {
     if (!output || typeof output.content !== 'string') {
       throw new Error('LLM output missing content');
     }
-    // Parse: Title: ...\nPitch: ...
-    const match = output.content.match(/Title:\s*(.*)\nPitch:\s*(.*)/);
-    if (!match) {
-      throw new Error('LLM output not in expected format');
+    let data;
+    try {
+      data = JSON.parse(output.content);
+    } catch (err) {
+      throw new Error('LLM output is not valid JSON');
     }
-    return { title: match[1].trim(), pitch: match[2].trim() };
+    if (!data || typeof data !== 'object' || !data.title || !data.pitch) {
+      throw new Error('LLM output missing required fields (title, pitch)');
+    }
+    return { title: data.title, pitch: data.pitch };
   }
 
   const chain = prompt.pipe(llm).pipe(parseLLMOutput);

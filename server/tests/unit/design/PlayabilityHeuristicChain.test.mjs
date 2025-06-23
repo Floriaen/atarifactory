@@ -4,29 +4,30 @@ import { createPlayabilityHeuristicChain } from '../../../agents/chains/design/P
 
 describe('PlayabilityHeuristicChain (ESM)', () => {
   it('returns valid for win condition', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'valid' }) });
+    const mockLLM = new RunnableLambda({ func: async () => ({ content: '{"playabilityScore": 8, "rationale": "Has a clear win condition."}' }) });
     const chain = createPlayabilityHeuristicChain(mockLLM);
     const input = { gameDef: { winCondition: 'Survive' } };
     const result = await chain.invoke(input);
-    expect(result).toBe('valid');
+    expect(result).toEqual({ playabilityScore: 8, rationale: 'Has a clear win condition.' });
   });
 
   it('returns invalid for missing win condition', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'invalid: missing win condition' }) });
+    // Simulate LLM returning JSON but rationale explains missing win condition
+    const mockLLM = new RunnableLambda({ func: async () => ({ content: '{"playabilityScore": 2, "rationale": "No win condition specified."}' }) });
     const chain = createPlayabilityHeuristicChain(mockLLM);
     const input = { gameDef: { foo: 'bar' } };
     const result = await chain.invoke(input);
-    expect(result).toBe('invalid: missing win condition');
+    expect(result).toEqual({ playabilityScore: 2, rationale: 'No win condition specified.' });
   });
 
   it('throws if input is missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'valid' }) });
+    const mockLLM = new RunnableLambda({ func: async () => ({ content: '{"playabilityScore": 8, "rationale": "Has a clear win condition."}' }) });
     const chain = createPlayabilityHeuristicChain(mockLLM);
     await expect(chain.invoke()).rejects.toThrow();
   });
 
   it('throws if gameDef is missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ content: 'valid' }) });
+    const mockLLM = new RunnableLambda({ func: async () => ({ content: '{"playabilityScore": 8, "rationale": "Has a clear win condition."}' }) });
     const chain = createPlayabilityHeuristicChain(mockLLM);
     await expect(chain.invoke({})).rejects.toThrow();
   });
@@ -38,6 +39,7 @@ describe('PlayabilityHeuristicChain (ESM)', () => {
   });
 
   it('throws if output is malformed (simulate)', async () => {
+    // Not a JSON string
     const mockLLM = new RunnableLambda({ func: async () => ({ content: 123 }) });
     const chain = createPlayabilityHeuristicChain(mockLLM);
     await expect(chain.invoke({ gameDef: { winCondition: 'Survive' } })).rejects.toThrow('LLM output missing content');

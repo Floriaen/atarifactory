@@ -2,8 +2,12 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-function createMechanicExtractorChain(llmOptionsOrInstance) {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function createMechanicExtractorChain(llm) {
   const promptPath = path.join(__dirname, '../../prompts/design/mechanic-extractor.md');
   let promptString;
   try {
@@ -16,11 +20,8 @@ function createMechanicExtractorChain(llmOptionsOrInstance) {
     inputVariables: ['loop']
   });
 
-  let llm;
-  if (llmOptionsOrInstance && typeof llmOptionsOrInstance.invoke === 'function') {
-    llm = llmOptionsOrInstance;
-  } else {
-    llm = new ChatOpenAI(llmOptionsOrInstance);
+  if (!llm || typeof llm.invoke !== 'function') {
+    throw new Error('createMechanicExtractorChain requires an LLM instance with an .invoke method');
   }
 
   function parseLLMOutput(output) {

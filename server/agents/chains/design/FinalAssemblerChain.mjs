@@ -3,7 +3,12 @@ import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 import path from 'path';
 
-function createFinalAssemblerChain(llmOptionsOrInstance) {
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function createFinalAssemblerChain(llm) {
   const promptPath = path.join(__dirname, '../../prompts/design/final-assembler.md');
   let promptString;
   try {
@@ -17,11 +22,8 @@ function createFinalAssemblerChain(llmOptionsOrInstance) {
     inputVariables: ['title', 'mechanics', 'winCondition', 'entities']
   });
 
-  let llm;
-  if (llmOptionsOrInstance && typeof llmOptionsOrInstance.invoke === 'function') {
-    llm = llmOptionsOrInstance;
-  } else {
-    llm = new ChatOpenAI(llmOptionsOrInstance);
+  if (!llm || typeof llm.invoke !== 'function') {
+    throw new Error('createFinalAssemblerChain requires an LLM instance with an .invoke method');
   }
 
   function parseLLMOutput(output) {

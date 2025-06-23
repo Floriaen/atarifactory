@@ -132,6 +132,14 @@ TEST_LOGS=1 npm test
 
 ## Writing Tests
 
+### LLM Mocking Guidelines
+
+- **Use `MockLLM`** for all tests where you want to simulate valid, malformed, or edge-case LLM output. This ensures your tests mimic real LLM output shape and behavior, and keeps your mapping steps clean and consistent.
+- **Use a simple throwing stub** (e.g., `{ invoke: async () => { throw new Error('Should not be called'); } }`) for tests where the LLM should never be called (such as input validation or short-circuit logic). This makes the test's intent explicit and guarantees the LLM is not invoked.
+- Do not over-engineer negative-path tests by subclassing `MockLLM` to throw—direct stubs are clearer for these cases.
+
+This pattern is used throughout the design chain unit tests (see `EntityListBuilderChain.test.mjs` for examples).
+
 ### Best Practices
 
 1. **Test Structure**

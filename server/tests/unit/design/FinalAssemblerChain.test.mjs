@@ -1,12 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createFinalAssemblerChain } from '../../../agents/chains/design/FinalAssemblerChain.mjs';
-import { RunnableLambda } from '@langchain/core/runnables';
 
 describe('FinalAssemblerChain (ESM)', () => {
   it('assembles a game definition', async () => {
-    const mockLLM = new RunnableLambda({
-      func: async () => ({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } })
-    });
+    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
     const chain = createFinalAssemblerChain(mockLLM);
     const input = {
       title: 'Laser Leap',
@@ -24,13 +21,13 @@ describe('FinalAssemblerChain (ESM)', () => {
   });
 
   it('throws if input is missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) });
+    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
     const chain = createFinalAssemblerChain(mockLLM);
     await expect(chain.invoke()).rejects.toThrow();
   });
 
   it('throws if required fields are missing', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) });
+    const mockLLM = { invoke: async () => ({ content: JSON.stringify({ gameDef: { title: 'Laser Leap', description: 'Dodge lasers', mechanics: ['move'], winCondition: 'Survive', entities: ['player'] } }) }) };
     const chain = createFinalAssemblerChain(mockLLM);
     await expect(chain.invoke({})).rejects.toThrow();
     await expect(chain.invoke({ title: 'foo' })).rejects.toThrow();
@@ -38,14 +35,14 @@ describe('FinalAssemblerChain (ESM)', () => {
   });
 
   it('throws if output is malformed', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ foo: 'bar' }) });
+    const mockLLM = { invoke: async () => ({ content: '{}' }) };
     const chain = createFinalAssemblerChain(mockLLM);
     // Provide all required input fields so output validation is exercised
     await expect(chain.invoke({ title: 'foo', mechanics: [], winCondition: '', entities: [] })).rejects.toThrow('Output missing required gameDef fields');
   });
 
   it('throws if output is unexpected (monkey-patched)', async () => {
-    const mockLLM = new RunnableLambda({ func: async () => ({ bad: 'data' }) });
+    const mockLLM = { invoke: async () => ({ content: '{}' }) };
     const chain = createFinalAssemblerChain(mockLLM);
     // Provide all required input fields so output validation is exercised
     await expect(chain.invoke({ title: 'Laser Leap', mechanics: [], winCondition: '', entities: [] })).rejects.toThrow('Output missing required gameDef fields');
