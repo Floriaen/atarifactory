@@ -4,6 +4,8 @@
 
 This Langchain-powered `GameDesignChain` builds a **fun, coherent, and playable** game design through step-by-step reasoning.
 
+> **All chain outputs must be strict JSON objects or arrays. Never output a raw string or free-form text. Prompts, parsers, and tests must all enforce this contract.**
+
 ---
 
 ## 🧪 Example Output
@@ -52,7 +54,10 @@ This Langchain-powered `GameDesignChain` builds a **fun, coherent, and playable*
 ### ✅ Playability Heuristic Check
 
 ```json
-"valid"
+{
+  "valid": true,
+  "rationale": "Game has a clear win condition and all required entities."
+}
 ```
 
 ### 🤩 Final Game Definition
@@ -98,7 +103,7 @@ const GameDesignChain = new SequentialChain({
 | **MechanicExtractorChain**| `{ title, pitch, loop }`                  | `{ mechanics }`            | Extracts a list of mechanics needed for the loop. |
 | **WinConditionBuilderChain** | `{ mechanics, loop }`                   | `{ winCondition }`         | Defines a clear win condition for the game. |
 | **EntityListBuilderChain**| `{ mechanics, loop, winCondition }`       | `{ entities }`             | Lists all entities required for the mechanics and win condition. |
-| **PlayabilityHeuristicChain** | `{ gameDef }` (full object so far)     | `'valid'` or `'invalid: <reason>'` | Validates playability and coherence. |
+| **PlayabilityHeuristicChain** | `{ gameDef }` (full object so far)     | `{ valid: boolean, rationale: string }` | Validates playability and coherence. |
 | **FinalAssemblerChain**   | `{ title, pitch, loop, mechanics, winCondition, entities }` | `{ gameDef }` | Assembles the final game definition object. |
 
 ---
@@ -113,8 +118,12 @@ The `gameDef` object is the unified output of the pipeline and the main input fo
   "description": "string",   // A short description or pitch for the game
   "mechanics": ["string"],   // List of gameplay mechanics
   "winCondition": "string",  // The win condition for the game
-  "entities": ["string"]     // List of entities involved in the game
-  // Optionally, other fields added by later steps (e.g., playability, rationale)
+  "entities": ["string"],    // List of entities involved in the game
+  "playability": {            // Playability check result
+    "valid": true,            // or false
+    "rationale": "string"    // Explanation for validity/invalidity
+  }
+  // Optionally, other fields added by later steps
 }
 ```
 
