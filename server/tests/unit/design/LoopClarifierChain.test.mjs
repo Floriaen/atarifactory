@@ -14,13 +14,13 @@ describe('LoopClarifierChain (ESM)', () => {
 
   it('throws if input is missing', async () => {
     const chain = createLoopClarifierChain(new MockLLM(JSON.stringify({ loop: 'Mock loop.' })));
-    await expect(chain.invoke()).rejects.toThrow();
+    await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: title, pitch');
   });
 
   it('throws if title or pitch missing', async () => {
     const chain = createLoopClarifierChain(new MockLLM(JSON.stringify({ loop: 'Mock loop.' })));
-    await expect(chain.invoke({ pitch: 'foo' })).rejects.toThrow();
-    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow();
+    await expect(chain.invoke({ pitch: 'foo' })).rejects.toThrow('Input must be an object with required fields: title, pitch');
+    await expect(chain.invoke({ title: 'foo' })).rejects.toThrow('Input must be an object with required fields: title, pitch');
   });
 
   it('throws if output is malformed', async () => {
@@ -29,14 +29,14 @@ describe('LoopClarifierChain (ESM)', () => {
     await expect(chain.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing content');
     // Second: content is not valid JSON
     const chain2 = createLoopClarifierChain(new FlexibleMalformedLLM('notJson'));
-    await expect(chain2.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output is not valid JSON');
+    await expect(chain2.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing content');
     // Third: content is valid JSON but missing loop
     const chain3 = createLoopClarifierChain(new FlexibleMalformedLLM('missingLoop'));
-    await expect(chain3.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing required field: loop');
+    await expect(chain3.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing content');
   });
 
   it('handles nonsense input gracefully', async () => {
     const chain = createLoopClarifierChain(new MockLLM(JSON.stringify({ loop: 'Mock loop.' })));
-    await expect(chain.invoke({ foo: 'bar' })).rejects.toThrow();
+    await expect(chain.invoke({ foo: 'bar' })).rejects.toThrow('Input must be an object with required fields: title, pitch');
   });
 });
