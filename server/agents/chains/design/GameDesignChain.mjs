@@ -1,11 +1,8 @@
 // Minimal integration for TDD - wires up the chain stubs
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const COT_LOG_PATH = path.join(__dirname, '../../../logs/GameDesignChain.cot.log.txt'); // Chain-of-Thought log
+const COT_LOG_PATH = path.join(process.cwd(), 'logs/GameDesignChain.cot.log.txt'); // Chain-of-Thought log
 
 import { createIdeaGeneratorChain } from './IdeaGeneratorChain.mjs';
 import { createLoopClarifierChain } from './LoopClarifierChain.mjs';
@@ -36,6 +33,9 @@ function createGameDesignChain({
           output: stepOutput
         };
         try {
+          // Ensure logs directory exists
+          await fs.promises.mkdir(path.dirname(COT_LOG_PATH), { recursive: true });
+          // Append log entry (creates file if missing)
           await fs.promises.appendFile(COT_LOG_PATH, JSON.stringify(logEntry) + '\n');
         } catch (e) {
           // Fail silently if logging fails
@@ -79,7 +79,7 @@ function createGameDesignChain({
       const playability = await createPlayabilityHeuristicChain(playabilityLLM).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
       console.debug('[DEBUG] PlayabilityHeuristicChain LLM output:', playability);
       await logCOT('PlayabilityHeuristicChain', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, playability);
-      if (typeof playability !== 'string') {
+      if (!playability || typeof playability !== 'object' || !playability.playabilityAssessment || !playability.strengths || !playability.potentialIssues || !playability.score) {
         await logCOT('Error', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, { error: 'Invalid output from PlayabilityHeuristicChain', playability });
         throw new Error('Invalid output from PlayabilityHeuristicChain');
       }

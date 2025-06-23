@@ -16,7 +16,7 @@ export class FlexibleMalformedLLM extends BaseLLM {
     this.mode = mode;
   }
 
-  async _call(prompt, options) {
+  async _call() {
     switch (this.mode) {
       case 'missingContent':
         return {};
@@ -32,7 +32,7 @@ export class FlexibleMalformedLLM extends BaseLLM {
     }
   }
 
-  async _generate(prompts, options) {
+  async _generate(prompts) {
     switch (this.mode) {
       case 'missingContent':
         return { generations: prompts.map(() => [{}]), llmOutput: {} };
