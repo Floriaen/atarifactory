@@ -137,7 +137,9 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     const sharedState = createSharedState();
     sharedState.title = title;
     await runPlanningPipeline(sharedState, onStatusUpdate);
+    console.debug('[controller] sharedState after planning:', JSON.stringify(sharedState, null, 2));
     await runCodingPipeline(sharedState, onStatusUpdate);
+    console.debug('[controller] sharedState after coding:', JSON.stringify(sharedState, null, 2));
     return sharedState;
   }
 }

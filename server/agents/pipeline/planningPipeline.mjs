@@ -3,6 +3,7 @@ import { createGameInventorChain } from '../chains/GameInventorChain.js';
 import { createGameDesignChain } from '../chains/design/GameDesignChain.mjs';
 import { createPlayabilityValidatorChain } from '../chains/PlayabilityValidatorChain.js';
 import { createPlayabilityAutoFixChain } from '../chains/PlayabilityAutoFixChain.js';
+import { createPlayabilityHeuristicChain } from '../chains/design/PlayabilityHeuristicChain.mjs';
 import { createPlannerChain } from '../chains/PlannerChain.js';
 
 import { ChatOpenAI } from '@langchain/openai';
@@ -16,8 +17,16 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const playabilityValidatorLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   const playabilityAutoFixLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   const plannerLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+  console.debug('[DIAG] LLMs instantiated:', {
+    ideaLLM: ideaLLM && typeof ideaLLM.invoke,
+    designLLM: designLLM && typeof designLLM.invoke,
+    playabilityValidatorLLM: playabilityValidatorLLM && typeof playabilityValidatorLLM.invoke,
+    playabilityAutoFixLLM: playabilityAutoFixLLM && typeof playabilityAutoFixLLM.invoke,
+    plannerLLM: plannerLLM && typeof plannerLLM.invoke
+  });
 
   const gameInventorChain = await createGameInventorChain(ideaLLM);
+  console.debug('[DIAG] gameInventorChain constructed:', typeof gameInventorChain.invoke);
   const inventorOut = await gameInventorChain.invoke({});
   if (typeof inventorOut !== 'object' || inventorOut === null) {
     console.error('GameInventorChain returned non-object:', inventorOut);
@@ -28,7 +37,16 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
 
   // 2. Game Design
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameDesign', status: 'start' });
-  const gameDesignChain = await createGameDesignChain(designLLM);
+  const gameDesignChain = await createGameDesignChain({
+    ideaLLM: designLLM,
+    loopLLM: designLLM,
+    mechanicLLM: designLLM,
+    winLLM: designLLM,
+    entityLLM: designLLM,
+    playabilityLLM: designLLM,
+    finalLLM: designLLM
+  });
+  console.debug('[DIAG] gameDesignChain constructed:', typeof gameDesignChain.invoke);
   // Ensure 'constraints' is always present for downstream chains
   let constraints = '';
   if (typeof sharedState.idea === 'object' && sharedState.idea.constraints) {
@@ -40,7 +58,9 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   if (!designOut) throw new Error('GameDesignChain returned nothing');
   if (designOut.gameDef) {
     sharedState.gameDef = designOut.gameDef;
-  } else if (designOut.name && designOut.mechanics && designOut.winCondition) {
+  // TODO [refactor]: Accepts both 'name' and 'title' as valid game definition fields for now.
+  // Standardize chain output to use a single canonical property (e.g., always 'title' or always 'name').
+  } else if ((designOut.name || designOut.title) && designOut.mechanics && designOut.winCondition) {
     sharedState.gameDef = designOut;
   } else {
     throw new Error('GameDesignChain did not return a valid game definition. Output: ' + JSON.stringify(designOut));
@@ -55,22 +75,59 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   sharedState.suggestion = validatorOut.suggestion;
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'done', output: validatorOut });
 
+  // 4. Playability Heuristic
+  let playability;
+  if (playabilityValidatorLLM) {
+    const playabilityHeuristicChain = await createPlayabilityHeuristicChain(playabilityValidatorLLM);
+    playability = await playabilityHeuristicChain.invoke({ ...sharedState, gameDef: sharedState.gameDef });
+    sharedState.playability = playability;
+    if (typeof playability?.score === 'number') {
+      sharedState.isPlayable = playability.score >= 5; // or your own threshold
+    } else if (sharedState.gameDef && sharedState.gameDef.mechanics && sharedState.gameDef.winCondition) {
+      sharedState.isPlayable = true; // fallback: if core fields exist, assume playable
+    } else {
+      sharedState.isPlayable = false;
+    }
+    if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityHeuristic', status: 'done', output: playability });
+  }
+
   // 4. Playability AutoFix (if needed)
+  console.debug('[DEBUG] sharedState before fixedGameDef assignment:', sharedState);
   let fixedGameDef = sharedState.gameDef;
+  console.debug('[DEBUG] sharedState.gameDef after assignment:', sharedState.gameDef);
+  console.debug('[DEBUG] fixedGameDef after assignment:', fixedGameDef);
   if (!sharedState.isPlayable) {
     if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'start' });
     const playabilityAutoFixChain = await createPlayabilityAutoFixChain(playabilityAutoFixLLM);
-    const autoFixOut = await playabilityAutoFixChain.invoke({ gameDef: sharedState.gameDef, suggestion: sharedState.suggestion });
-    fixedGameDef = autoFixOut.gameDef;
-    sharedState.fixed = autoFixOut.fixed;
-    sharedState.fixedGameDef = fixedGameDef;
-    if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: autoFixOut });
+    const autofixResult = await playabilityAutoFixChain.invoke({
+      ...sharedState,
+      gameDef: fixedGameDef,
+    });
+    console.debug('[DEBUG] PlayabilityAutoFixChain result:', autofixResult);
+    if (autofixResult && typeof autofixResult === 'object' && Object.keys(autofixResult).length > 0) {
+      fixedGameDef = autofixResult;
+      if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
+    } else {
+      console.warn('[WARN] PlayabilityAutoFixChain returned invalid or empty result; keeping previous fixedGameDef.');
+      if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
+    }
   }
 
   // 5. Planner
   if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'Planner', status: 'start' });
+  console.debug('[DEBUG] fixedGameDef before planner error check:', fixedGameDef);
+  if (
+    typeof fixedGameDef === 'undefined' ||
+    fixedGameDef === null ||
+    typeof fixedGameDef !== 'object' ||
+    Array.isArray(fixedGameDef)
+  ) {
+    throw new Error('No valid game definition object for planning step: ' + JSON.stringify(fixedGameDef));
+  }
   const plannerChain = await createPlannerChain(plannerLLM);
-  const planOut = await plannerChain.invoke({ gameDefinition: fixedGameDef });
+  console.debug('[DIAG] fixedGameDef:', fixedGameDef);
+  const planOut = await plannerChain.invoke({ gameDefinition: JSON.stringify(fixedGameDef, null, 2) });
+  console.debug('[PlannerChain] output:', planOut);
   let planArr = null;
   if (Array.isArray(planOut)) {
     planArr = planOut;

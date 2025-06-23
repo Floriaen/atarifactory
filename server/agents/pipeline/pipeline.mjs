@@ -9,9 +9,11 @@ import { runPlanningPipeline } from './planningPipeline.mjs';
 // For partial execution (e.g. coding only), callers should use the split pipelines directly.
 async function runModularGameSpecPipeline(sharedState) {
   await runPlanningPipeline(sharedState);
+  console.debug('[pipeline] sharedState after planning:', JSON.stringify(sharedState, null, 2));
   // Dynamically import runCodingPipeline from CJS module
   const codingPipelineModule = await import('./codingPipeline.mjs');
   await codingPipelineModule.runCodingPipeline(sharedState);
+  console.debug('[pipeline] sharedState after coding:', JSON.stringify(sharedState, null, 2));
   return sharedState;
 }
 

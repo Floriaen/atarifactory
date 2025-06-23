@@ -41,58 +41,100 @@ function createGameDesignChain({
           // Fail silently if logging fails
         }
       }
-      const idea = await createIdeaGeneratorChain(ideaLLM).invoke(input);
-      console.debug('[DEBUG] IdeaGeneratorChain LLM output:', idea);
+      let idea;
+      try {
+        idea = await createIdeaGeneratorChain(ideaLLM).invoke(input);
+        console.debug('[DEBUG] IdeaGeneratorChain LLM output:', idea);
+      } catch (err) {
+        console.error('[IdeaGeneratorChain] JSON parse error:', err, '\nRaw LLM output:', typeof idea !== 'undefined' ? idea : '[no output]');
+        throw err;
+      }
       await logCOT('IdeaGeneratorChain', input, idea);
       if (!idea || typeof idea !== 'object' || !idea.title || !idea.pitch) {
         await logCOT('Error', input, { error: 'Invalid output from IdeaGeneratorChain', idea });
         throw new Error('Invalid output from IdeaGeneratorChain');
       }
-      const loop = await createLoopClarifierChain(loopLLM).invoke({ ...input, ...idea });
-      console.debug('[DEBUG] LoopClarifierChain LLM output:', loop);
+      let loop;
+      try {
+        loop = await createLoopClarifierChain(loopLLM).invoke({ ...input, ...idea });
+        console.debug('[DEBUG] LoopClarifierChain LLM output:', loop);
+      } catch (err) {
+        console.error('[LoopClarifierChain] JSON parse error:', err, '\nRaw LLM output:', typeof loop !== 'undefined' ? loop : '[no output]');
+        throw err;
+      }
       await logCOT('LoopClarifierChain', { ...input, ...idea }, loop);
       if (!loop || typeof loop !== 'object' || !loop.loop) {
         await logCOT('Error', { ...input, ...idea }, { error: 'Invalid output from LoopClarifierChain', loop });
         throw new Error('Invalid output from LoopClarifierChain');
       }
-      const mechanics = await createMechanicExtractorChain(mechanicLLM).invoke({ ...input, ...idea, ...loop });
-      console.debug('[DEBUG] MechanicExtractorChain LLM output:', mechanics);
+      let mechanics;
+      try {
+        mechanics = await createMechanicExtractorChain(mechanicLLM).invoke({ ...input, ...idea, ...loop });
+        console.debug('[DEBUG] MechanicExtractorChain LLM output:', mechanics);
+      } catch (err) {
+        console.error('[MechanicExtractorChain] JSON parse error:', err, '\nRaw LLM output:', typeof mechanics !== 'undefined' ? mechanics : '[no output]');
+        throw err;
+      }
       await logCOT('MechanicExtractorChain', { ...input, ...idea, ...loop }, mechanics);
       if (!mechanics || typeof mechanics !== 'object' || !Array.isArray(mechanics.mechanics)) {
         await logCOT('Error', { ...input, ...idea, ...loop }, { error: 'Invalid output from MechanicExtractorChain', mechanics });
         throw new Error('Invalid output from MechanicExtractorChain');
       }
-      const win = await createWinConditionBuilderChain(winLLM).invoke({ ...input, ...idea, ...loop, ...mechanics });
-      console.debug('[DEBUG] WinConditionBuilderChain LLM output:', win);
+      let win;
+      try {
+        win = await createWinConditionBuilderChain(winLLM).invoke({ ...input, ...idea, ...loop, ...mechanics });
+        console.debug('[DEBUG] WinConditionBuilderChain LLM output:', win);
+      } catch (err) {
+        console.error('[WinConditionBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof win !== 'undefined' ? win : '[no output]');
+        throw err;
+      }
       await logCOT('WinConditionBuilderChain', { ...input, ...idea, ...loop, ...mechanics }, win);
       if (!win || typeof win !== 'object' || !win.winCondition) {
         await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics }, { error: 'Invalid output from WinConditionBuilderChain', win });
         throw new Error('Invalid output from WinConditionBuilderChain');
       }
-      const entities = await createEntityListBuilderChain(entityLLM).invoke({ ...input, ...idea, ...loop, ...mechanics, ...win });
-      console.debug('[DEBUG] EntityListBuilderChain LLM output:', entities);
+      let entities;
+      try {
+        entities = await createEntityListBuilderChain(entityLLM).invoke({ ...input, ...idea, ...loop, ...mechanics, ...win });
+        console.debug('[DEBUG] EntityListBuilderChain LLM output:', entities);
+      } catch (err) {
+        console.error('[EntityListBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof entities !== 'undefined' ? entities : '[no output]');
+        throw err;
+      }
       await logCOT('EntityListBuilderChain', { ...input, ...idea, ...loop, ...mechanics, ...win }, entities);
       if (!entities || typeof entities !== 'object' || !Array.isArray(entities.entities)) {
         await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics, ...win }, { error: 'Invalid output from EntityListBuilderChain', entities });
         throw new Error('Invalid output from EntityListBuilderChain');
       }
-      const playability = await createPlayabilityHeuristicChain(playabilityLLM).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
-      console.debug('[DEBUG] PlayabilityHeuristicChain LLM output:', playability);
+      let playability;
+      try {
+        playability = await createPlayabilityHeuristicChain(playabilityLLM).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
+        console.debug('[DEBUG] PlayabilityHeuristicChain LLM output:', playability);
+      } catch (err) {
+        console.error('[PlayabilityHeuristicChain] JSON parse error:', err, '\nRaw LLM output:', typeof playability !== 'undefined' ? playability : '[no output]');
+        throw err;
+      }
       await logCOT('PlayabilityHeuristicChain', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, playability);
       if (!playability || typeof playability !== 'object' || !playability.playabilityAssessment || !playability.strengths || !playability.potentialIssues || !playability.score) {
         await logCOT('Error', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, { error: 'Invalid output from PlayabilityHeuristicChain', playability });
         throw new Error('Invalid output from PlayabilityHeuristicChain');
       }
       // Assemble final game definition
-      const final = await createFinalAssemblerChain(finalLLM).invoke({
-        title: idea.title,
-        pitch: idea.pitch,
-        loop: loop.loop,
-        mechanics: mechanics.mechanics,
-        winCondition: win.winCondition,
-        entities: entities.entities
-      });
-      console.debug('[DEBUG] FinalAssemblerChain LLM output:', final);
+      let final;
+      try {
+        final = await createFinalAssemblerChain(finalLLM).invoke({
+          title: idea.title,
+          pitch: idea.pitch,
+          loop: loop.loop,
+          mechanics: mechanics.mechanics,
+          winCondition: win.winCondition,
+          entities: entities.entities
+        });
+        console.debug('[DEBUG] FinalAssemblerChain LLM output:', final);
+      } catch (err) {
+        console.error('[FinalAssemblerChain] JSON parse error:', err, '\nRaw LLM output:', typeof final !== 'undefined' ? final : '[no output]');
+        throw err;
+      }
       await logCOT('FinalAssemblerChain', {
         title: idea.title,
         pitch: idea.pitch,
