@@ -1,7 +1,7 @@
 import { PromptTemplate } from '@langchain/core/prompts';
 import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { RunnableLambda } from '@langchain/core/runnables';
-import { ensureContentPresent } from './ensureContentPresent.js';
+import { ensureContentPresent } from './ensureContentPresent.mjs';
 import fs from 'fs';
 
 /**
