@@ -1,6 +1,3 @@
-import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -20,4 +17,3 @@ function createWinConditionBuilderChain(llm) {
 }
 
 export { createWinConditionBuilderChain };
-export const WinConditionBuilderChain = { invoke: async (input) => createWinConditionBuilderChain().invoke(input) };
