@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 // ensure env is loaded even when index.js is executed directly (tests) 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 // Legacy imports removed after refactor. Core pipeline lives in controller.js
 const { runPipeline } = require('./controller');
 

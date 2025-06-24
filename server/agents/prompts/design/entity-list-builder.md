@@ -1,6 +1,9 @@
 # Entity List Builder Prompt
 
-Given the following mechanics, generate a list of entities required for the game.
+List only the entities the player sees or interacts with. 
+Do not include abstract or logic-only entities.
+
+Limit to a maximum of 3.
 
 Mechanics: {mechanics}
 

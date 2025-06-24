@@ -1,9 +1,14 @@
 # Playability Heuristic Prompt
 
-Given the following game definition, assess its playability. Consider aspects such as clarity of the core loop, engagement, replayability, difficulty, and accessibility.
+Given the following game definition, assess whether it is truly simple and playable within 5 minutes.
 
-Game Definition:
-{gameDef}
+Reject or reduce score if:
+- More than 2 mechanics
+- More than 3 entities
+- Win condition uses score, creativity, or memory
+- Game includes simulation, color theory, or indirect logic
+
+Game Definition: {gameDef}
 
 Return your assessment as a JSON object matching this schema:
 
