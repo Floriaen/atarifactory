@@ -1,3 +1,5 @@
+![CI](https://github.com/Floriaen/atarifactory/actions/workflows/ci.yml/badge.svg)
+
 ## Architecture Principles
 
 This project follows CLEAN architecture principles:
