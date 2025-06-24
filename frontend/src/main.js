@@ -283,8 +283,11 @@ document.getElementById('generate-btn').onclick = async function() {
               btn.disabled = false;
               return;
             }
-            if (data.step === 'TokenCount' && typeof data.tokenCount === 'number') {
+            if ((data.step === 'TokenCount' || data.step === 'PlanningStep') && typeof data.tokenCount === 'number') {
               tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
+            }
+            if (data.step === 'PlanningStep' && data.phase) {
+              setStatusLabel(`Planning: ${data.phase}...`);
             }
             setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
           }

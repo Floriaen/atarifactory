@@ -51,6 +51,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('IdeaGeneratorChain', input, idea);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'Idea', status: 'done', output: idea, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!idea || typeof idea !== 'object' || !idea.title || !idea.pitch) {
         await logCOT('Error', input, { error: 'Invalid output from IdeaGeneratorChain', idea });
         throw new Error('Invalid output from IdeaGeneratorChain');
@@ -64,6 +68,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('LoopClarifierChain', { ...input, ...idea }, loop);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'Loop', status: 'done', output: loop, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!loop || typeof loop !== 'object' || !loop.loop) {
         await logCOT('Error', { ...input, ...idea }, { error: 'Invalid output from LoopClarifierChain', loop });
         throw new Error('Invalid output from LoopClarifierChain');
@@ -77,6 +85,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('MechanicExtractorChain', { ...input, ...idea, ...loop }, mechanics);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'Mechanics', status: 'done', output: mechanics, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!mechanics || typeof mechanics !== 'object' || !Array.isArray(mechanics.mechanics)) {
         await logCOT('Error', { ...input, ...idea, ...loop }, { error: 'Invalid output from MechanicExtractorChain', mechanics });
         throw new Error('Invalid output from MechanicExtractorChain');
@@ -90,6 +102,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('WinConditionBuilderChain', { ...input, ...idea, ...loop, ...mechanics }, win);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'WinCondition', status: 'done', output: win, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!win || typeof win !== 'object' || !win.winCondition) {
         await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics }, { error: 'Invalid output from WinConditionBuilderChain', win });
         throw new Error('Invalid output from WinConditionBuilderChain');
@@ -103,6 +119,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('EntityListBuilderChain', { ...input, ...idea, ...loop, ...mechanics, ...win }, entities);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'Entities', status: 'done', output: entities, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!entities || typeof entities !== 'object' || !Array.isArray(entities.entities)) {
         await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics, ...win }, { error: 'Invalid output from EntityListBuilderChain', entities });
         throw new Error('Invalid output from EntityListBuilderChain');
@@ -116,6 +136,10 @@ function createGameDesignChain({
         throw err;
       }
       await logCOT('PlayabilityHeuristicChain', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, playability);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'Playability', status: 'done', output: playability, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!playability || typeof playability !== 'object' || !playability.playabilityAssessment || !playability.strengths || !playability.potentialIssues || !playability.score) {
         await logCOT('Error', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, { error: 'Invalid output from PlayabilityHeuristicChain', playability });
         throw new Error('Invalid output from PlayabilityHeuristicChain');
@@ -144,6 +168,10 @@ function createGameDesignChain({
         winCondition: win.winCondition,
         entities: entities.entities
       }, final);
+      if (sharedState && typeof sharedState.onStatusUpdate === 'function') {
+        sharedState.onStatusUpdate('PlanningStep', { phase: 'FinalAssembly', status: 'done', output: final, tokenCount: sharedState.tokenCount });
+        sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+      }
       if (!final || typeof final !== 'object' || !final.gameDef) {
         await logCOT('Error', {
           title: idea.title,

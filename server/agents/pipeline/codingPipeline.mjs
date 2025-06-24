@@ -9,7 +9,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
   const contextStepLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   const feedbackLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
-  let tokenCount = 0;
+  let tokenCount = typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0;
   // 1. Context Step Builder (iterate over all steps)
   const contextStepBuilderChain = factories.createContextStepBuilderChain
     ? await factories.createContextStepBuilderChain(contextStepLLM)
