@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [design-planning-improvements]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -20,7 +20,5 @@ jobs:
         run: |
           echo "OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}" >> .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-      - name: Debug env file
-        run: cat .env
       - run: npx eslint .
       - run: npm test
