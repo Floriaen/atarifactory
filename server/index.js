@@ -42,7 +42,7 @@ app.post('/generate-stream', async (req, res) => {
     if (typeof val === 'string') return val;
     try {
       return JSON.stringify(val, null, 2);
-    } catch (e) {
+    } catch {
       return String(val);
     }
   }

@@ -15,9 +15,7 @@ const { estimateTokens } = require('../utils/tokenUtils');
 // Never import or instantiate OpenAI/SmartOpenAI directly in this file.
 // See 'LLM Client & Dependency Injection Guidelines' in README.md.
 
-const logger = require('../utils/logger');
-
-async function FeedbackAgent(sharedState, { logger, traceId, llmClient }) {
+async function FeedbackAgent(sharedState, { traceId, llmClient }) {
   try {
     // Extract and validate required fields
     const { runtimeResults, currentStep } = sharedState;

@@ -1,3 +1,5 @@
+const importPlugin = require('eslint-plugin-import');
+
 module.exports = [
   {
     ignores: [
@@ -7,10 +9,20 @@ module.exports = [
       'dist',
       '*.min.js',
       'server/games/',
+      'eslint.config.js',
+      'server/eslint.config.js',
+      'server/**/*.json',
+      'server/**/*.html',
+      'server/**/*.css',
+      'server/**/*.log',
+      'server/**/*.txt',
     ],
   },
   {
     files: ['**/*.js'],
+    plugins: {
+      import: importPlugin,
+    },
     languageOptions: {
       ecmaVersion: 2021,
       sourceType: 'module',
@@ -23,6 +35,11 @@ module.exports = [
       'no-console': 'off',
       'semi': ['error', 'always'],
       'quotes': ['error', 'single'],
+      // import plugin rules
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
     },
   },
   {

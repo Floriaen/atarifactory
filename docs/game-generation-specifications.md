@@ -1,3 +1,5 @@
+> **Deprecation Notice:** This document is for historical reference only. For the current and only supported pipeline, see [pipeline-v3-design.md](./pipeline-v3-design.md) and the [root README](../README.md).
+
 ## Game Generation : Strategy – Technical Specification
 
 ### 1. Overview

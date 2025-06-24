@@ -87,8 +87,10 @@ async function runPipeline(title, onStatusUpdate) {
 }
 
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
-  const { runPlanningPipeline } = require('./agents/langchain/pipeline/planningPipeline');
-  const { runCodingPipeline } = require('./agents/langchain/pipeline/codingPipeline');
+  const planningPipelineModule = await import('./agents/pipeline/planningPipeline.mjs');
+  const { runPlanningPipeline } = planningPipelineModule;
+  const { runCodingPipeline } = (await import('./agents/pipeline/codingPipeline.mjs'));
+
 
   // MOCK_PIPELINE: Serve static debug/game.js and mock gameDef
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
@@ -135,7 +137,9 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     const sharedState = createSharedState();
     sharedState.title = title;
     await runPlanningPipeline(sharedState, onStatusUpdate);
+    console.debug('[controller] sharedState after planning:', JSON.stringify(sharedState, null, 2));
     await runCodingPipeline(sharedState, onStatusUpdate);
+    console.debug('[controller] sharedState after coding:', JSON.stringify(sharedState, null, 2));
     return sharedState;
   }
 }

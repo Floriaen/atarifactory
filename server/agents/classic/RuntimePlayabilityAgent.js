@@ -85,7 +85,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
         });
       }
       await page.keyboard.up('ArrowRight');
-    } catch (e) {
+    } catch {
       // If any error, assume not responsive
       inputResponsive = false;
     }
@@ -114,7 +114,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
       if (beforePos && afterPos) {
         playerMoved = beforePos.x !== afterPos.x || beforePos.y !== afterPos.y;
       }
-    } catch (e) {
+    } catch {
       playerMoved = false;
     }
 
@@ -136,7 +136,7 @@ async function RuntimePlayabilityAgent(sharedState, { logger, traceId }) {
         const bodyText = document.body.innerText.toLowerCase();
         return winTexts.some(txt => bodyText.includes(txt));
       });
-    } catch (e) {
+    } catch {
       winConditionReachable = false;
     }
 
