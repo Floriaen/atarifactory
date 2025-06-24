@@ -159,21 +159,18 @@ await expect(chain.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM 
 
 This pattern is now used throughout the design chain unit tests (see `LoopClarifierChain.test.mjs` and `FinalAssemblerChain.test.mjs` for examples).
 
-### LCEL Chain Composition: `lcelChainWithContentWrapper`
+### LCEL Chain Composition: Content Validation with ensureContentPresent
 
-To ensure your parser always receives `{ content: ... }` (regardless of whether the LLM or mock returns a string or object), use the `lcelChainWithContentWrapper` utility when composing LCEL pipelines:
+To ensure your parser always receives `{ content: ... }` (regardless of whether the LLM or mock returns a string or object), use a mapping step with `ensureContentPresent` (via `RunnableLambda.from`) when composing LCEL pipelines:
 
 ```javascript
-import { lcelChainWithContentWrapper } from '../utils/lcelChainWithContentWrapper.js';
+import { RunnableLambda } from '@langchain/core/runnables';
+import { ensureContentPresent } from '../utils/ensureContentPresent.mjs';
 
-function parseLLMOutput(output) {
-  if (!output || typeof output.content !== 'string') {
-    throw new Error('LLM output missing content');
-  }
-  // ...parse as needed
-}
-
-const chain = lcelChainWithContentWrapper(prompt, llm, parseLLMOutput);
+const chain = prompt
+  .pipe(llm)
+  .pipe(RunnableLambda.from(ensureContentPresent))
+  .pipe(parser);
 ```
 
 This pattern:

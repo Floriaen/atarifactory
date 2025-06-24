@@ -5,13 +5,15 @@ import { run as staticCheckerRun } from '../chains/StaticCheckerChain.mjs';
 import { estimateTokens } from '../../utils/tokenUtils.js';
 import { ChatOpenAI } from '@langchain/openai';
 
-async function runCodingPipeline(sharedState, onStatusUpdate) {
+async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
   const contextStepLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   const feedbackLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   let tokenCount = 0;
   // 1. Context Step Builder (iterate over all steps)
-  const contextStepBuilderChain = await createContextStepBuilderChain(contextStepLLM);
+  const contextStepBuilderChain = factories.createContextStepBuilderChain
+    ? await factories.createContextStepBuilderChain(contextStepLLM)
+    : await createContextStepBuilderChain(contextStepLLM);
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
@@ -75,7 +77,9 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   // 2. Feedback
   if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
-  const feedbackChain = await createFeedbackChain(feedbackLLM);
+  const feedbackChain = factories.createFeedbackChain
+    ? await factories.createFeedbackChain(feedbackLLM)
+    : await createFeedbackChain(feedbackLLM);
   const runtimeLogs = `Player reached the goal area after switching forms. No errors detected.`;
   const stepId = sharedState.plan && sharedState.plan[0] && sharedState.plan[0].id ? sharedState.plan[0].id : 'step-1';
   // Token counting for feedback input

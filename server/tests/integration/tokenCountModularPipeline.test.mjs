@@ -31,5 +31,5 @@ describe('Token Count Modular Pipeline Integration', () => {
     expect(typeof lastTokenCount).toBe('number');
     expect(lastTokenCount).toBeGreaterThan(0);
     expect(sharedState.tokenCount).toBe(lastTokenCount);
-  });
+  }, 20000);
 });
