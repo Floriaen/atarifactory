@@ -7,12 +7,13 @@ const __dirname = path.dirname(__filename);
 
 const promptPath = path.join(__dirname, '../../prompts/design/mechanic-extractor.md');
 
-function createMechanicExtractorChain(llm) {
+function createMechanicExtractorChain(llm, options = {}) {
   return createJsonExtractionChain({
     llm,
     promptFile: promptPath,
     inputVariables: ['loop'],
-    schemaName: 'mechanics array'
+    schemaName: 'mechanics array',
+    ...(options.sharedState ? { sharedState: options.sharedState } : {})
   });
 }
 

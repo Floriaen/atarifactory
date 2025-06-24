@@ -13,7 +13,9 @@ import fs from 'fs';
  * @param {string} [opts.schemaName] - Optional, for error messages.
  * @returns {{ invoke: (input: object) => Promise<object> }}
  */
-export function createJsonExtractionChain({ llm, promptFile, inputVariables, schemaName = 'output' }) {
+import { estimateTokens } from '../utils/tokenUtils.js';
+
+export function createJsonExtractionChain({ llm, promptFile, inputVariables, schemaName = 'output', sharedState } = {}) {
   if (!llm || typeof llm.invoke !== 'function') {
     throw new Error('createJsonExtractionChain requires an LLM instance with an .invoke method');
   }
@@ -42,7 +44,33 @@ export function createJsonExtractionChain({ llm, promptFile, inputVariables, sch
           `Input must be an object with required fields: ${inputVariables.join(', ')}`
         );
       }
+      const effectiveSharedState = sharedState;
+
+      if (!input || typeof input !== 'object' || inputVariables.some(v => !(v in input))) {
+        throw new Error(
+          `Input must be an object with required fields: ${inputVariables.join(', ')}`
+        );
+      }
       const result = await chain.invoke(input);
+      // Token counting logic
+      if (effectiveSharedState && typeof effectiveSharedState.tokenCount === 'number') {
+        // Try to get content from LLM result (mock or real)
+        let content = '';
+        if (result && typeof result === 'object') {
+          if (result.content) {
+            content = result.content;
+          } else if (typeof result === 'string') {
+            content = result;
+          } else {
+            content = JSON.stringify(result);
+          }
+        }
+        // Fallback: if input has constraints or prompt, add those too
+        if (input && input.constraints) content += input.constraints;
+        // Estimate and increment tokens
+        effectiveSharedState.tokenCount += estimateTokens(content);
+      }
+
       if (!result || typeof result !== 'object') {
         throw new Error(`Output missing required ${schemaName} object`);
       }

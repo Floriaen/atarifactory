@@ -19,7 +19,8 @@ function createGameDesignChain({
   winLLM,
   entityLLM,
   playabilityLLM,
-  finalLLM
+  finalLLM,
+  sharedState = undefined
 }) {
 
   return {
@@ -43,7 +44,7 @@ function createGameDesignChain({
       }
       let idea;
       try {
-        idea = await createIdeaGeneratorChain(ideaLLM).invoke(input);
+        idea = await createIdeaGeneratorChain(ideaLLM, { sharedState }).invoke(input);
         console.debug('[DEBUG] IdeaGeneratorChain LLM output:', idea);
       } catch (err) {
         console.error('[IdeaGeneratorChain] JSON parse error:', err, '\nRaw LLM output:', typeof idea !== 'undefined' ? idea : '[no output]');
@@ -56,7 +57,7 @@ function createGameDesignChain({
       }
       let loop;
       try {
-        loop = await createLoopClarifierChain(loopLLM).invoke({ ...input, ...idea });
+        loop = await createLoopClarifierChain(loopLLM, { sharedState }).invoke({ ...input, ...idea });
         console.debug('[DEBUG] LoopClarifierChain LLM output:', loop);
       } catch (err) {
         console.error('[LoopClarifierChain] JSON parse error:', err, '\nRaw LLM output:', typeof loop !== 'undefined' ? loop : '[no output]');
@@ -69,7 +70,7 @@ function createGameDesignChain({
       }
       let mechanics;
       try {
-        mechanics = await createMechanicExtractorChain(mechanicLLM).invoke({ ...input, ...idea, ...loop });
+        mechanics = await createMechanicExtractorChain(mechanicLLM, { sharedState }).invoke({ ...input, ...idea, ...loop });
         console.debug('[DEBUG] MechanicExtractorChain LLM output:', mechanics);
       } catch (err) {
         console.error('[MechanicExtractorChain] JSON parse error:', err, '\nRaw LLM output:', typeof mechanics !== 'undefined' ? mechanics : '[no output]');
@@ -82,7 +83,7 @@ function createGameDesignChain({
       }
       let win;
       try {
-        win = await createWinConditionBuilderChain(winLLM).invoke({ ...input, ...idea, ...loop, ...mechanics });
+        win = await createWinConditionBuilderChain(winLLM, { sharedState }).invoke({ ...input, ...idea, ...loop, ...mechanics });
         console.debug('[DEBUG] WinConditionBuilderChain LLM output:', win);
       } catch (err) {
         console.error('[WinConditionBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof win !== 'undefined' ? win : '[no output]');
@@ -95,7 +96,7 @@ function createGameDesignChain({
       }
       let entities;
       try {
-        entities = await createEntityListBuilderChain(entityLLM).invoke({ ...input, ...idea, ...loop, ...mechanics, ...win });
+        entities = await createEntityListBuilderChain(entityLLM, { sharedState }).invoke({ ...input, ...idea, ...loop, ...mechanics, ...win });
         console.debug('[DEBUG] EntityListBuilderChain LLM output:', entities);
       } catch (err) {
         console.error('[EntityListBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof entities !== 'undefined' ? entities : '[no output]');
@@ -108,7 +109,7 @@ function createGameDesignChain({
       }
       let playability;
       try {
-        playability = await createPlayabilityHeuristicChain(playabilityLLM).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
+        playability = await createPlayabilityHeuristicChain(playabilityLLM, { sharedState }).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
         console.debug('[DEBUG] PlayabilityHeuristicChain LLM output:', playability);
       } catch (err) {
         console.error('[PlayabilityHeuristicChain] JSON parse error:', err, '\nRaw LLM output:', typeof playability !== 'undefined' ? playability : '[no output]');

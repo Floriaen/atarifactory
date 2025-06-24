@@ -6,12 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const promptPath = path.join(__dirname, '../../prompts/design/playability-heuristic.md');
 
-function createPlayabilityHeuristicChain(llm) {
+function createPlayabilityHeuristicChain(llm, options = {}) {
   return createJsonExtractionChain({
     llm,
     promptFile: promptPath,
     inputVariables: ['gameDef'],
-    schemaName: 'playabilityScore and rationale'
+    schemaName: 'playability object',
+    ...(options.sharedState ? { sharedState: options.sharedState } : {})
   });
 }
 

@@ -22,5 +22,18 @@ describe('createIdeaGeneratorChain (ESM)', () => {
     const chain = createIdeaGeneratorChain(mockLLM);
     await expect(chain.invoke({ constraints: 'test' })).rejects.toThrow('LLM output missing content');
   });
+    it('should increment sharedState.tokenCount when provided', async () => {
+    // Arrange: create a mock LLM that returns a known string
+    const mockContent = JSON.stringify({ title: 'Token Game', pitch: 'Token pitch.' });
+    const mockLLM = new MockLLM(mockContent);
+    // Simulate sharedState
+    const sharedState = { tokenCount: 0 };
+    // Patch the chain to accept sharedState (future implementation)
+    const chain = createIdeaGeneratorChain(mockLLM, { sharedState });
+    // Act
+    await chain.invoke({ constraints: 'test' });
+    // The mockContent is 47 characters, so estimateTokens = 12
+    expect(sharedState.tokenCount).toBeGreaterThan(0); // Will fail until implemented
+  });
   // Add more tests as needed for actual logic
 });

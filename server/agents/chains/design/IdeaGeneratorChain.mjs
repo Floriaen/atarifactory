@@ -6,12 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
 
-function createIdeaGeneratorChain(llm) {
+function createIdeaGeneratorChain(llm, options = {}) {
   return createJsonExtractionChain({
     llm,
     promptFile: promptPath,
     inputVariables: ['constraints'],
-    schemaName: 'idea (title, pitch)'
+    schemaName: 'idea (title, pitch)',
+    ...(options.sharedState ? { sharedState: options.sharedState } : {})
   });
 }
 
