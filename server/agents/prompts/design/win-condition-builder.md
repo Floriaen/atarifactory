@@ -1,4 +1,8 @@
-Describe a clear win condition for a game with the following mechanics: {mechanics}
+Describe a clear, simple win condition. It must be binary (achieved or not), short, and reachable in under 5 minutes.
+
+Avoid scoring systems, creative evaluations, or memory tests.
+
+Mechanics: {mechanics}
 
 Respond ONLY with a JSON object matching this schema:
 
@@ -9,5 +13,5 @@ Respond ONLY with a JSON object matching this schema:
 Example:
 
 {{
-  "winCondition": "Survive for 45 seconds without touching any laser."
+  "winCondition": "Catch 5 critters before the timer ends."
 }}
