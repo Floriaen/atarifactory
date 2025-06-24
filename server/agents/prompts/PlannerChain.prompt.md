@@ -20,7 +20,7 @@ STRICT RULES:
 
 ---
 
-Respond ONLY with:
+Respond ONLY with a JSON array of steps matching this schema:
 [
 {{ "id": 1, "description": "..." }},
 {{ "id": 2, "description": "..." }},
