@@ -186,6 +186,27 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 
 - Ensure to set `OPENAI_API_KEY` in `server/.env` for tests and server functionality that require it.
 
+
+## Monorepo Dependency & Script Structure
+
+| Type                         | Where to Declare?                | Examples                                               | Notes                                      |
+|------------------------------|-----------------------------------|--------------------------------------------------------|---------------------------------------------|
+| **Backend dependencies**     | root `package.json`               | `express`, `langchain`, `@langchain/openai`, `cors`    | Only used by backend/server code            |
+| **Backend devDependencies**  | root `package.json`               | `jest`, `eslint`, `nodemon`                            | Backend test/lint/dev tools                 |
+| **Backend scripts**          | root `package.json`               | `start`, `dev:server`, `test:unit`                     | All backend scripts run from root           |
+| **Frontend dependencies**    | `frontend/package.json`           | `react`, `react-dom`, `vue`, `svelte`, `axios`         | Only used by frontend code                  |
+| **Frontend devDependencies** | `frontend/package.json`           | `vite`, `tailwindcss`, `@vitejs/plugin-react`          | Frontend build/test/dev tools               |
+| **Frontend scripts**         | `frontend/package.json`           | `dev`, `build`, `preview`                              | Run with `npm run` in `frontend/`           |
+| **Frontend root script**     | root `package.json`               | `start:frontend`                                       | Convenience: `npm run start:frontend`       |
+| **Shared tooling**           | root `package.json`               | `eslint`, `prettier`                                   | If used by both frontend and backend        |
+
+**Summary:**
+- Backend: All dependencies, devDependencies, and scripts in root.
+- Frontend: All dependencies, devDependencies, and scripts in `frontend/package.json`.
+- Shared tooling: Hoist to root if used by both frontend and backend.
+- Avoid duplicating dependencies across root and workspace `package.json` files.
+
+
 ## UI Token Counting (Planned)
 
 A token counter feature is planned for the UI to estimate the cost of current generation. This will use the `tokenCount` field in the shared state, populated by the pipeline for each run (see `GameDesignChain` and downstream chains).

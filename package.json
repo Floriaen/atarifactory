@@ -24,13 +24,13 @@
     "vitest": "^3.2.4"
   },
   "scripts": {
-    "test:vitest": "vitest",
-    "test:jest": "node --experimental-vm-modules ./node_modules/.bin/jest --testPathIgnorePatterns=\\.mjs$",
-    "test": "npm run test:jest && npm run test:vitest",
-    "test:vm": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "start": "node server/start.js",
-    "start:server": "cd server && node start.js",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "jest --testMatch=\"<rootDir>/server/tests/unit/**/*.test.js\" && vitest run server/tests/unit/**/*.test.mjs", 
+    "test:integration": "vitest run server/tests/integration/**/*.test.mjs server/tests/integration/*.test.mjs", 
+    "test:e2e": "vitest run server/tests/e2e/**/*.test.mjs server/tests/e2e/*.test.mjs", 
+    "start:server": "node server/start.js",
     "start:frontend": "cd frontend && npm run dev",
+    "dev:server": "nodemon server/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

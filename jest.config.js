@@ -1,10 +1,10 @@
 module.exports = {
-
-    transform: {},
+  testMatch: ['<rootDir>/server/tests/unit/**/*.test.js'],
+  transform: {},
   testEnvironment: 'node',
   rootDir: '.',
-transform: {},
-testEnvironment: 'node',
+  transform: {},
+  testEnvironment: 'node',
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
