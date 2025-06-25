@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { runDesignPhase } from './GameDesignChain.mjs';
+import { runDesignPhase } from '../../../agents/chains/design/GameDesignChain.mjs';
 
 // Mock chain with .invoke
 function createMockChain(output, shouldThrow = false) {
