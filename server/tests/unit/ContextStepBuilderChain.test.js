@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
+jest.setTimeout(20000);
 describe('ContextStepBuilderChain', () => {
   let promptString;
   beforeAll(async () => {

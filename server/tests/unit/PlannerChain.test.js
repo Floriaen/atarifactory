@@ -4,6 +4,7 @@ const { createPlannerChain } = require('../../agents/chains/PlannerChain');
 const { JsonOutputParser } = require('@langchain/core/output_parsers');
 const fs = require('fs/promises');
 
+jest.setTimeout(20000);
 describe('PlannerChain Pipeline Tests', () => {
   // 1. Unit test: Output parser
   describe('JsonOutputParser', () => {
