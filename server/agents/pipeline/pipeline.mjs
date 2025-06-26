@@ -1,22 +1,18 @@
 // Modular Game Spec Pipeline using LangChain v3 chains
 
-// Orchestrator for the full modular pipeline (for legacy compatibility)
-// Now simply delegates to planningPipeline and codingPipeline modules
+// Orchestrator for the full modular pipeline.
+// Delegates to planningPipeline and codingPipeline modules; progress is fully decoupled and unified only at this layer.
 import { runPlanningPipeline } from './planningPipeline.mjs';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.mjs';
 
 // Accepts a fully-formed sharedState object. Always runs both planning and coding pipelines.
+// Sub-pipelines emit only local progress (0–1); orchestrator maps to unified progress for frontend.
 // For partial execution (e.g. coding only), callers should use the split pipelines directly.
-async function runModularGameSpecPipeline(sharedState, config = {}) {
-  // Configurable progress weights (defaults: planning 0.3, coding 0.7)
-  const planningWeight = typeof config.planningWeight === 'number' ? config.planningWeight : 0.3;
-  const codingWeight = typeof config.codingWeight === 'number' ? config.codingWeight : 0.7;
-
+import { PROGRESS_WEIGHTS } from '../../config/pipeline.config.mjs';
+// Uses centrally defined PROGRESS_WEIGHTS from pipeline.config.js
+async function runModularGameSpecPipeline(sharedState) {
   // Set up ProgressionManager for unified progress
-  const progressionManager = new ProgressionManager({
-    planning: planningWeight,
-    coding: codingWeight,
-  });
+  const progressionManager = new ProgressionManager(PROGRESS_WEIGHTS);
 
   // Wire up orchestrator-level onStatusUpdate
   const frontendOnStatusUpdate = sharedState.onStatusUpdate || undefined;
@@ -46,19 +42,12 @@ async function runModularGameSpecPipeline(sharedState, config = {}) {
   }
 
   // Run planning pipeline (local progress events intercepted)
-  await runPlanningPipeline(sharedState, orchestratorOnStatusUpdate, 0, 100, { planningWeight, codingWeight });
+  await runPlanningPipeline(sharedState, orchestratorOnStatusUpdate);
   console.debug('[pipeline] sharedState after planning:', JSON.stringify(sharedState, null, 2));
-
-  // Calculate dynamic step counts
-  const planningPhases = 5; // GameInventor, GameDesign, PlayabilityValidator, PlayabilityHeuristic, Planner
-  const planSteps = Array.isArray(sharedState.plan) ? sharedState.plan.length : 0;
-  const codingPhases = 3; // Feedback, StaticChecker, Complete
-  const codingSteps = planSteps + codingPhases;
-  const totalSteps = planningPhases + codingSteps;
 
   // Dynamically import runCodingPipeline from ESM module
   const { runCodingPipeline } = await import('./codingPipeline.mjs');
-  await runCodingPipeline(sharedState, orchestratorOnStatusUpdate, {}, planningPhases, totalSteps, { planningWeight, codingWeight });
+  await runCodingPipeline(sharedState, orchestratorOnStatusUpdate);
   console.debug('[pipeline] sharedState after coding:', JSON.stringify(sharedState, null, 2));
   return sharedState;
 }
