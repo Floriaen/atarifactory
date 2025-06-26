@@ -4,21 +4,43 @@ import { createFeedbackChain } from '../chains/FeedbackChain.js';
 import { run as staticCheckerRun } from '../chains/StaticCheckerChain.mjs';
 import { estimateTokens } from '../../utils/tokenUtils.js';
 import { ChatOpenAI } from '@langchain/openai';
+import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
 
 async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
-  const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
+  const statusUpdate = onStatusUpdate || (() => { });
+
+  const openaiModel = process.env.OPENAI_MODEL;
+  if (!openaiModel) {
+    throw new Error('OPENAI_MODEL environment variable must be set');
+  }
   const contextStepLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   const feedbackLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   let tokenCount = typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0;
+
+  // Emit local progress (0–1) for each coding phase
+  const steps = [
+    'ContextStepBuilder',
+    'Feedback',
+    'StaticChecker',
+    'Complete'
+  ];
+  let localStep = 1;
+  const localTotal = steps.length;
+
   // 1. Context Step Builder (iterate over all steps)
+  // Emit Progress for each plan step
   const contextStepBuilderChain = factories.createContextStepBuilderChain
     ? await factories.createContextStepBuilderChain(contextStepLLM)
     : await createContextStepBuilderChain(contextStepLLM);
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'start' });
+  statusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'start' });
   for (const [i, step] of sharedState.plan.entries()) {
+    {
+      const localProgress = getClampedLocalProgress(localStep, localTotal);
+      statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
+    }
     if (sharedState.logger && typeof sharedState.logger.info === 'function') {
       sharedState.logger.info('CodingPipeline: Processing plan step', { step });
     } else {
@@ -53,7 +75,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
     tokenCount += estimateTokens(contextStepInput.gameSource) + estimateTokens(contextStepInput.plan) + estimateTokens(contextStepInput.step);
 
     const contextStepsOut = await contextStepBuilderChain.invoke(contextStepInput);
-    if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
+    statusUpdate('TokenCount', { tokenCount });
     // Log the raw LLM output for diagnosis
     if (sharedState.logger && typeof sharedState.logger.info === 'function') {
       sharedState.logger.info('[DEBUG] ContextStepBuilderChain.invoke output', { contextStepsOut });
@@ -67,16 +89,22 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
       accumulatedCode = contextStepsOut.code;
     }
     allStepContexts.push(contextStepsOut.contextSteps || contextStepsOut);
-    if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'stepDone', stepIndex: i, step, code: accumulatedCode });
+    statusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'stepDone', stepIndex: i, step, code: accumulatedCode });
     // No longer update accumulatedContext; only code is accumulated
     // (If you want to support updatedGameSource, adjust here)
+    localStep++;
   }
   sharedState.contextSteps = allStepContexts;
   sharedState.code = accumulatedCode.trim();
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'done', code: accumulatedCode });
+  statusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'done', code: accumulatedCode });
 
   // 2. Feedback
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
+  {
+    const localProgress = localStep / localTotal;
+    statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
+    statusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
+  }
+  localStep++;
   const feedbackChain = factories.createFeedbackChain
     ? await factories.createFeedbackChain(feedbackLLM)
     : await createFeedbackChain(feedbackLLM);
@@ -85,9 +113,9 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   // Token counting for feedback input
   tokenCount += estimateTokens(runtimeLogs) + estimateTokens(String(stepId));
   const feedbackOut = await feedbackChain.invoke({ runtimeLogs, stepId });
-  if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
+  statusUpdate('TokenCount', { tokenCount });
   let parsedFeedback = feedbackOut.feedback || feedbackOut;
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Feedback', status: 'done', feedback: parsedFeedback });
+  statusUpdate('CodingPipeline', { phase: 'Feedback', status: 'done', feedback: parsedFeedback });
   if (typeof parsedFeedback === 'string') {
     try {
       const parsed = JSON.parse(parsedFeedback);
@@ -102,23 +130,37 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   }
 
   // 3. Static Checker
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'start' });
+  localStep++;
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
+    statusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'start' });
+  }
+
   const staticCheckerOut = await staticCheckerRun({ currentCode: '{}', stepCode: '{}' });
   sharedState.staticCheckPassed = staticCheckerOut.staticCheckPassed;
   sharedState.staticCheckErrors = staticCheckerOut.errors;
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'done', staticCheckPassed: staticCheckerOut.staticCheckPassed, errors: staticCheckerOut.errors });
+  statusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'done', staticCheckPassed: staticCheckerOut.staticCheckPassed, errors: staticCheckerOut.errors });
 
   // 4. SyntaxSanity and RuntimePlayability (optional, add as needed)
-  if (onStatusUpdate) onStatusUpdate('CodingPipeline', { phase: 'Complete', status: 'done' });
+  localStep++;
+  // Do NOT emit progress=1.0 here; emit only the last intermediate progress (<1.0)
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
+    statusUpdate('CodingPipeline', { phase: 'Complete', status: 'done' });
+  }
+
   sharedState.syntaxOk = true;
   sharedState.runtimePlayable = true;
   sharedState.logs = ['Pipeline executed'];
 
+  // Emit a single final progress=1.0 event ONLY after all phases are complete
+  statusUpdate('Progress', { progress: 1.0, phase: 'coding' });
 
   sharedState.tokenCount = tokenCount;
-  if (onStatusUpdate) onStatusUpdate('TokenCount', { tokenCount });
+  statusUpdate('TokenCount', { tokenCount });
   return sharedState;
 }
 
 export { runCodingPipeline };
-

@@ -11,6 +11,12 @@ app.innerHTML = `
       <span id="btn-text">Generate Game</span>
     </button>
     <div id="token-count" class="token-count" style="display:none;"></div>
+    <div id="progress-bar-container" style="display:none; width: 240px; margin: 0.2em auto 0.6em auto;">
+      <div id="progress-bar-bg" style="background: #232329; border-radius: 0.5em; width: 100%; height: 14px; box-shadow: 0 1px 4px #0006;">
+        <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg,#ffb300,#ffd54f); border-radius: 0.5em; transition: width 0.25s;"></div>
+      </div>
+      <div id="progress-bar-label" style="text-align:center; color:#b0b0b8; font-size:0.97em; margin-top:2px; font-family:monospace;"></div>
+    </div>
     <div id="status-label" class="status-label" style="display:none;"></div>
   </div>
   <div class="gallery-container">
@@ -236,8 +242,15 @@ document.getElementById('close-modal').onclick = function() {
 
 document.getElementById('generate-btn').onclick = async function() {
   const tokenCountDiv = document.getElementById('token-count');
+  const progressBarContainer = document.getElementById('progress-bar-container');
+  const progressBar = document.getElementById('progress-bar');
+  const progressBarLabel = document.getElementById('progress-bar-label');
+  progressBarContainer.style.display = '';
+  progressBar.style.width = '0%';
+  progressBarLabel.textContent = '';
   tokenCountDiv.style.display = '';
   tokenCountDiv.textContent = '';
+  let progressState = null;
   const btn = this;
   setStatusLabel('Generating...');
   btn.disabled = true;
@@ -266,6 +279,9 @@ document.getElementById('generate-btn').onclick = async function() {
             if (data.step === 'Error') {
               setLog('Error: ' + (data.error || 'Unknown error'), 'error');
               setReady();
+              progressBarContainer.style.display = 'none';
+              progressBar.style.width = '0%';
+              progressBarLabel.textContent = '';
               btn.disabled = false;
               clearLog(4000);
               return;
@@ -273,6 +289,9 @@ document.getElementById('generate-btn').onclick = async function() {
             if (data.step === 'Done') {
               setStatusLabel('Done!');
               tokenCountDiv.style.display = 'none';
+              progressBarContainer.style.display = 'none';
+              progressBar.style.width = '0%';
+              progressBarLabel.textContent = '';
               // Update gallery and open game
               const games = await fetchGames();
               renderGallery(games);
@@ -286,6 +305,20 @@ document.getElementById('generate-btn').onclick = async function() {
             if ((data.step === 'TokenCount' || data.step === 'PlanningStep') && typeof data.tokenCount === 'number') {
               tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
             }
+            // Unified Progress Bar: Only use backend's unified progress value (contract enforced)
+if (data.step === 'Progress') {
+  if (typeof data.progress === 'number') {
+    const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
+    progressBar.style.width = pct + '%';
+    progressBarLabel.textContent = pct + '%';
+    progressBarContainer.style.display = '';
+  } else {
+    // Defensive: hide bar if no valid progress
+    progressBar.style.width = '0%';
+    progressBarLabel.textContent = '';
+    progressBarContainer.style.display = 'none';
+  }
+}
             if (data.step === 'PlanningStep' && data.phase) {
               setStatusLabel(`Planning: ${data.phase}...`);
             }

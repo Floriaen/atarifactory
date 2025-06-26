@@ -7,14 +7,29 @@ import { createPlayabilityHeuristicChain } from '../chains/design/PlayabilityHeu
 import { createPlannerChain } from '../chains/PlannerChain.js';
 
 import { ChatOpenAI } from '@langchain/openai';
+import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
 
-async function runPlanningPipeline(sharedState, onStatusUpdate) {
+async function runPlanningPipeline(sharedState, onStatusUpdate, factories = {}) {
+  const statusUpdate = onStatusUpdate || (() => { });
   if (typeof sharedState.tokenCount !== 'number') {
     sharedState.tokenCount = 0;
   }
+  // --- Pipeline Progress Bar: Progress Event Emission ---
+  // Only emit progress for main pipeline steps, not AutoFix
+  let localStep = 1;
+  const localTotal = 5;
+
   // 1. Game Inventor
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameInventor', status: 'start', tokenCount: sharedState.tokenCount });
-  const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'planning' });
+    statusUpdate('PlanningStep', { phase: 'GameInventor', status: 'start', tokenCount: sharedState.tokenCount });
+  }
+
+  const openaiModel = process.env.OPENAI_MODEL;
+  if (!openaiModel) {
+    throw new Error('OPENAI_MODEL environment variable must be set');
+  }
   const llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   // Use the same llm instance for all chains for single-LLM architecture
   const gameInventorChain = await createGameInventorChain(llm);
@@ -29,10 +44,15 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
     throw new Error('GameInventorChain did not return a valid object. Output: ' + String(inventorOut));
   }
   sharedState.idea = inventorOut.idea || inventorOut.name || inventorOut.title || inventorOut;
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameInventor', status: 'done', output: inventorOut, tokenCount: sharedState.tokenCount });
+  statusUpdate('PlanningStep', { phase: 'GameInventor', status: 'done', output: inventorOut, tokenCount: sharedState.tokenCount });
 
   // 2. Game Design
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameDesign', status: 'start', tokenCount: sharedState.tokenCount });
+  localStep++;
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'planning' });
+  }
+  statusUpdate('PlanningStep', { phase: 'GameDesign', status: 'start', tokenCount: sharedState.tokenCount });
   const gameDesignChain = await createGameDesignChain({
     llm,
     sharedState
@@ -48,24 +68,34 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   if (!designOut) throw new Error('GameDesignChain returned nothing');
   if (designOut.gameDef) {
     sharedState.gameDef = designOut.gameDef;
-  // TODO [refactor]: Accepts both 'name' and 'title' as valid game definition fields for now.
-  // Standardize chain output to use a single canonical property (e.g., always 'title' or always 'name').
+    // TODO [refactor]: Accepts both 'name' and 'title' as valid game definition fields for now.
+    // Standardize chain output to use a single canonical property (e.g., always 'title' or always 'name').
   } else if ((designOut.name || designOut.title) && designOut.mechanics && designOut.winCondition) {
     sharedState.gameDef = designOut;
   } else {
     throw new Error('GameDesignChain did not return a valid game definition. Output: ' + JSON.stringify(designOut));
   }
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'GameDesign', status: 'done', output: designOut, tokenCount: sharedState.tokenCount });
+  statusUpdate('PlanningStep', { phase: 'GameDesign', status: 'done', output: designOut, tokenCount: sharedState.tokenCount });
 
   // 3. Playability Validator
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'start', tokenCount: sharedState.tokenCount });
+  localStep++;
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'planning' });
+  }
+  statusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'start', tokenCount: sharedState.tokenCount });
   const playabilityValidatorChain = await createPlayabilityValidatorChain(llm);
   const validatorOut = await playabilityValidatorChain.invoke({ mechanics: sharedState.gameDef.mechanics || [], winCondition: sharedState.gameDef.winCondition || '' });
   sharedState.isPlayable = validatorOut.isPlayable;
   sharedState.suggestion = validatorOut.suggestion;
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'done', output: validatorOut, tokenCount: sharedState.tokenCount });
+  statusUpdate('PlanningStep', { phase: 'PlayabilityValidator', status: 'done', output: validatorOut, tokenCount: sharedState.tokenCount });
 
   // 4. Playability Heuristic
+  localStep++;
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'planning' });
+  }
   let playability;
   const playabilityHeuristicChain = await createPlayabilityHeuristicChain(llm);
   playability = await playabilityHeuristicChain.invoke({ ...sharedState, gameDef: sharedState.gameDef });
@@ -77,21 +107,18 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   } else {
     sharedState.isPlayable = false;
   }
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityHeuristic', status: 'done', output: playability, tokenCount: sharedState.tokenCount });
+  statusUpdate('PlanningStep', { phase: 'PlayabilityHeuristic', status: 'done', output: playability, tokenCount: sharedState.tokenCount });
 
   // 4. Playability AutoFix (if needed)
-  console.debug('[DEBUG] sharedState before fixedGameDef assignment:', sharedState);
   let fixedGameDef = sharedState.gameDef;
-  console.debug('[DEBUG] sharedState.gameDef after assignment:', sharedState.gameDef);
-  console.debug('[DEBUG] fixedGameDef after assignment:', fixedGameDef);
   if (!sharedState.isPlayable) {
-    if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'start', tokenCount: sharedState.tokenCount });
+    // Do NOT emit a progress event for AutoFix
+    statusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'start', tokenCount: sharedState.tokenCount });
     const playabilityAutoFixChain = await createPlayabilityAutoFixChain(llm);
     const autofixResult = await playabilityAutoFixChain.invoke({
       ...sharedState,
       gameDef: fixedGameDef,
     });
-    console.debug('[DEBUG] PlayabilityAutoFixChain result:', autofixResult);
     if (autofixResult && typeof autofixResult === 'object' && Object.keys(autofixResult).length > 0) {
       // Patch: increment token count for PlayabilityAutoFixChain output
       if (sharedState && typeof sharedState.tokenCount === 'number' && autofixResult) {
@@ -99,15 +126,19 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
         sharedState.tokenCount += estimateTokens(JSON.stringify(autofixResult));
       }
       fixedGameDef = autofixResult;
-      if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
+      statusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
     } else {
-      console.warn('[WARN] PlayabilityAutoFixChain returned invalid or empty result; keeping previous fixedGameDef.');
-      if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
+      statusUpdate('PlanningStep', { phase: 'PlayabilityAutoFix', status: 'done', output: fixedGameDef });
     }
   }
 
   // 5. Planner
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'Planner', status: 'start', tokenCount: sharedState.tokenCount });
+  localStep++;
+  {
+    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    statusUpdate('Progress', { progress: localProgress, phase: 'planning' });
+  }
+  statusUpdate('PlanningStep', { phase: 'Planner', status: 'start', tokenCount: sharedState.tokenCount });
   console.debug('[DEBUG] fixedGameDef before planner error check:', fixedGameDef);
   if (
     typeof fixedGameDef === 'undefined' ||
@@ -129,7 +160,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   }
   if (!planArr || planArr.length === 0) throw new Error('PlannerChain did not return a valid plan array. Output: ' + JSON.stringify(planOut));
   sharedState.plan = planArr;
-  if (onStatusUpdate) onStatusUpdate('PlanningStep', { phase: 'Planner', status: 'done', output: planArr, tokenCount: sharedState.tokenCount });
+  statusUpdate('PlanningStep', { phase: 'Planner', status: 'done', output: planArr, tokenCount: sharedState.tokenCount });
   return sharedState;
 }
 

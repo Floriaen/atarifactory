@@ -133,13 +133,12 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     await runCodingPipeline(sharedState, onStatusUpdate);
     return sharedState;
   } else {
-    // Normal: run planning then coding pipeline
+    // Normal: run full orchestrator pipeline for unified progress/events
     const sharedState = createSharedState();
     sharedState.title = title;
-    await runPlanningPipeline(sharedState, onStatusUpdate);
-    console.debug('[controller] sharedState after planning:', JSON.stringify(sharedState, null, 2));
-    await runCodingPipeline(sharedState, onStatusUpdate);
-    console.debug('[controller] sharedState after coding:', JSON.stringify(sharedState, null, 2));
+    sharedState.onStatusUpdate = onStatusUpdate;
+    const { runModularGameSpecPipeline } = await import('./agents/pipeline/pipeline.mjs');
+    await runModularGameSpecPipeline(sharedState, {});
     return sharedState;
   }
 }

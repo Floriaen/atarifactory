@@ -31,28 +31,31 @@ GameInventorChain
       ↓
 GameDesignChain
       ↓
+PlayabilityValidatorChain
+      ↓
+PlayabilityHeuristicChain
+      ↓
+PlayabilityAutoFixChain (optional)
+      ↓
 PlannerChain
       ↓
 ContextStepBuilderChain (×N)
       ↓
-StaticCheckerChain
-      ↓
-SyntaxSanityChain
-      ↓
-RuntimePlayabilityChain
-      ↓
 FeedbackChain
+      ↓
+StaticCheckerChain
 ```
 
 ### Chain Roles
 - **GameInventorChain:** Generates a new game idea (`name`, `description`).
-- **GameDesignChain:** Designs mechanics, entities, and win condition for the idea (see `chains/design/GameDesignChain.js`).
+- **GameDesignChain:** Designs mechanics, entities, and win condition for the idea.
+- **PlayabilityValidatorChain:** Checks if the game design is playable.
+- **PlayabilityHeuristicChain:** Provides a score for the game's playability.
+- **PlayabilityAutoFixChain:** Attempts to fix unplayable game designs.
 - **PlannerChain:** Breaks down the design into an ordered plan of implementation steps.
 - **ContextStepBuilderChain:** Iteratively implements each plan step, always working with the full game source code.
-- **StaticCheckerChain:** Lints and checks for forbidden patterns or errors.
-- **SyntaxSanityChain:** Ensures generated code is syntactically valid.
-- **RuntimePlayabilityChain:** Runs the game in a headless browser to check for playability.
 - **FeedbackChain:** Provides suggestions or triggers retries if issues are detected.
+- **StaticCheckerChain:** Lints and checks for forbidden patterns or errors.
 
 > **Naming Update:** All new chains follow the `XChain` naming convention (e.g., `GameDesignChain`, not `GameDesignAgent`).
 

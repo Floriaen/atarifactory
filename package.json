@@ -35,6 +35,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@google/gemini-cli": "^0.1.4",
     "@langchain/openai": "^0.5.13",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
