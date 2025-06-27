@@ -46,7 +46,7 @@ async function runModularGameSpecPipeline(sharedState) {
           type: 'PipelineStatus',
           phase: phaseObj,
           progress: unified,
-          tokenCount: typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0,
+          tokenCount: typeof payload.tokenCount === 'number' ? payload.tokenCount : 0,
           timestamp: new Date().toISOString()
         });
       }

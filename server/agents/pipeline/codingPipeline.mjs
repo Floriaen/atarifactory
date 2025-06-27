@@ -61,7 +61,6 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
     };
     // Token counting for input
     tokenCount += estimateTokens(contextStepInput.gameSource) + estimateTokens(contextStepInput.plan) + estimateTokens(contextStepInput.step);
-    // Emit progress event after tokenCount update
     statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
 
     const contextStepsOut = await contextStepBuilderChain.invoke(contextStepInput);
