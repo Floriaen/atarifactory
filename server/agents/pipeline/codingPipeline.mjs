@@ -25,7 +25,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
     'Complete'
   ];
   let localStep = 1;
-  const localTotal = steps.length;
+  const totalSteps = steps.length + sharedState.plan.length;
 
   // 1. Context Step Builder (iterate over all steps)
   // Emit Progress for each plan step
@@ -38,7 +38,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   statusUpdate('CodingPipeline', { phase: 'ContextStepBuilder', status: 'start' });
   for (const [i, step] of sharedState.plan.entries()) {
     {
-      const localProgress = getClampedLocalProgress(localStep, localTotal);
+      const localProgress = getClampedLocalProgress(localStep, totalSteps);
       statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
     }
     if (sharedState.logger && typeof sharedState.logger.info === 'function') {
@@ -100,7 +100,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
 
   // 2. Feedback
   {
-    const localProgress = localStep / localTotal;
+    const localProgress = getClampedLocalProgress(localStep, totalSteps);
     statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
     statusUpdate('CodingPipeline', { phase: 'Feedback', status: 'start' });
   }
@@ -132,7 +132,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   // 3. Static Checker
   localStep++;
   {
-    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    const localProgress = getClampedLocalProgress(localStep, totalSteps);
     statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
     statusUpdate('CodingPipeline', { phase: 'StaticChecker', status: 'start' });
   }
@@ -146,7 +146,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   localStep++;
   // Do NOT emit progress=1.0 here; emit only the last intermediate progress (<1.0)
   {
-    const localProgress = getClampedLocalProgress(localStep, localTotal);
+    const localProgress = getClampedLocalProgress(localStep, totalSteps);
     statusUpdate('Progress', { progress: localProgress, phase: 'coding' });
     statusUpdate('CodingPipeline', { phase: 'Complete', status: 'done' });
   }
@@ -155,8 +155,6 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   sharedState.runtimePlayable = true;
   sharedState.logs = ['Pipeline executed'];
 
-  // Emit a single final progress=1.0 event ONLY after all phases are complete
-  statusUpdate('Progress', { progress: 1.0, phase: 'coding' });
 
   sharedState.tokenCount = tokenCount;
   statusUpdate('TokenCount', { tokenCount });

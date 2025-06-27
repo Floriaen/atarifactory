@@ -21,10 +21,9 @@ async function runModularGameSpecPipeline(sharedState) {
       // Determine which phase emitted this progress
       // If planning pipeline is running, treat as 'planning', else 'coding'
       // We'll pass a 'phase' property in payload from each pipeline for clarity (future-proofing)
-      let phase = payload.phase;
+      const phase = payload.phase;
       if (!phase) {
-        // Heuristic: before plan is set, it's planning; after, it's coding
-        phase = Array.isArray(sharedState.plan) ? 'coding' : 'planning';
+        throw new Error('Progress event missing required "phase" property. All sub-pipelines must emit progress events with an explicit phase.');
       }
       // Accept only local progress (0-1)
       const localProgress = typeof payload.progress === 'number' ? payload.progress : 0;
@@ -33,7 +32,19 @@ async function runModularGameSpecPipeline(sharedState) {
       const unified = progressionManager.getUnifiedProgress();
       console.log(`[ORCHESTRATOR] Progress event: phase=${phase}, localProgress=${localProgress}, unified=${unified}`);
       if (frontendOnStatusUpdate) {
-        frontendOnStatusUpdate('Progress', { progress: unified });
+        // Canonical PipelineStatus event emission
+        const phaseObj = typeof phase === 'object' ? phase : {
+          name: phase,
+          label: phase === 'planning' ? 'Planning' : 'Coding',
+          description: phase === 'planning' ? 'Designing game' : 'Generating code'
+        };
+        frontendOnStatusUpdate('PipelineStatus', {
+          type: 'PipelineStatus',
+          phase: phaseObj,
+          progress: unified,
+          tokenCount: typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0,
+          timestamp: new Date().toISOString()
+        });
       }
     } else {
       // Forward all other events directly
@@ -49,6 +60,22 @@ async function runModularGameSpecPipeline(sharedState) {
   const { runCodingPipeline } = await import('./codingPipeline.mjs');
   await runCodingPipeline(sharedState, orchestratorOnStatusUpdate);
   console.debug('[pipeline] sharedState after coding:', JSON.stringify(sharedState, null, 2));
+
+  // Ensure a final PipelineStatus event with progress=1.0 is always emitted
+  if (frontendOnStatusUpdate) {
+    const phaseObj = {
+      name: 'coding',
+      label: 'Coding',
+      description: 'Generating code'
+    };
+    frontendOnStatusUpdate('PipelineStatus', {
+      type: 'PipelineStatus',
+      phase: phaseObj,
+      progress: 1.0,
+      tokenCount: typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0,
+      timestamp: new Date().toISOString()
+    });
+  }
   return sharedState;
 }
 

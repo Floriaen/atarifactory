@@ -8,9 +8,9 @@ import { ProgressionManager } from '../../utils/progress/ProgressionManager.mjs'
 vi.mock('../../agents/pipeline/planningPipeline.mjs', () => ({
   runPlanningPipeline: async (sharedState, onStatusUpdate) => {
     // Simulate 3 progress events for planning
-    onStatusUpdate('Progress', { progress: 0.2 });
-    onStatusUpdate('Progress', { progress: 0.5 });
-    onStatusUpdate('Progress', { progress: 1.0 });
+    onStatusUpdate('Progress', { progress: 0.2, phase: 'planning' });
+    onStatusUpdate('Progress', { progress: 0.5, phase: 'planning' });
+    onStatusUpdate('Progress', { progress: 1.0, phase: 'planning' });
     sharedState.plan = [1, 2, 3];
     return sharedState;
   }
@@ -18,8 +18,8 @@ vi.mock('../../agents/pipeline/planningPipeline.mjs', () => ({
 vi.mock('../../agents/pipeline/codingPipeline.mjs', () => ({
   runCodingPipeline: async (sharedState, onStatusUpdate) => {
     // Simulate 2 progress events for coding
-    onStatusUpdate('Progress', { progress: 0.3 });
-    onStatusUpdate('Progress', { progress: 1.0 });
+    onStatusUpdate('Progress', { progress: 0.3, phase: 'coding' });
+    onStatusUpdate('Progress', { progress: 1.0, phase: 'coding' });
     return sharedState;
   }
 }));
@@ -29,24 +29,31 @@ describe('Orchestrator unified progress integration', () => {
     const events = [];
     const sharedState = {
       onStatusUpdate: (type, payload) => {
-        if (type === 'Progress') {
-          events.push(payload.progress);
+        if (type === 'PipelineStatus') {
+          events.push(payload);
         }
       },
     };
     await runModularGameSpecPipeline(sharedState);
-    // Should emit progress values that are monotonically increasing and in (0, 1]
+    // Should emit PipelineStatus events with correct schema and monotonically increasing progress
     expect(events.length).toBeGreaterThan(0);
-    for (const p of events) {
-      expect(typeof p).toBe('number');
-      expect(p).toBeGreaterThanOrEqual(0);
-      expect(p).toBeLessThanOrEqual(1);
+    for (const evt of events) {
+      expect(evt).toHaveProperty('type', 'PipelineStatus');
+      expect(evt).toHaveProperty('phase');
+      expect(evt).toHaveProperty('progress');
+      expect(typeof evt.progress).toBe('number');
+      expect(evt.progress).toBeGreaterThanOrEqual(0);
+      expect(evt.progress).toBeLessThanOrEqual(1);
+      expect(evt).toHaveProperty('tokenCount');
+      expect(typeof evt.tokenCount).toBe('number');
+      expect(evt).toHaveProperty('timestamp');
+      expect(typeof evt.timestamp).toBe('string');
     }
     // Should be strictly increasing
     for (let i = 1; i < events.length; ++i) {
-      expect(events[i]).toBeGreaterThanOrEqual(events[i-1]);
+      expect(events[i].progress).toBeGreaterThanOrEqual(events[i-1].progress);
     }
     // Final progress should be 1
-    expect(events[events.length-1]).toBeCloseTo(1, 5);
+    expect(events[events.length-1].progress).toBeCloseTo(1, 5);
   });
 });

@@ -10,8 +10,8 @@ app.innerHTML = `
     <button id="generate-btn">
       <span id="btn-text">Generate Game</span>
     </button>
-    <div id="token-count" class="token-count" style="display:none;"></div>
-    <div id="progress-bar-container" style="display:none; width: 240px; margin: 0.2em auto 0.6em auto;">
+    <div id="token-count" class="token-count" style="visibility:hidden; opacity:0;"></div>
+    <div id="progress-bar-container" style="visibility:hidden; opacity:0; width: 240px; margin: 0.2em auto 0.6em auto;">
       <div id="progress-bar-bg" style="background: #232329; border-radius: 0.5em; width: 100%; height: 14px; box-shadow: 0 1px 4px #0006;">
         <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg,#ffb300,#ffd54f); border-radius: 0.5em; transition: width 0.25s;"></div>
       </div>
@@ -169,7 +169,8 @@ function setReady() {
   statusLabel.style.display = 'none';
   statusLabel.textContent = '';
   if (tokenCountDiv) {
-    tokenCountDiv.style.display = 'none';
+    tokenCountDiv.style.visibility = 'hidden';
+    tokenCountDiv.style.opacity = '0';
     tokenCountDiv.textContent = '';
   }
 }
@@ -229,7 +230,7 @@ async function openGame(id) {
   modal.style.display = 'flex';
 }
 
-document.getElementById('close-modal').onclick = function() {
+document.getElementById('close-modal').onclick = function () {
   document.getElementById('modal').style.display = 'none';
   document.getElementById('game-frame').src = '';
 };
@@ -240,15 +241,17 @@ document.getElementById('close-modal').onclick = function() {
 // On 'Error', show error
 // Fallback to /generate if needed
 
-document.getElementById('generate-btn').onclick = async function() {
+document.getElementById('generate-btn').onclick = async function () {
   const tokenCountDiv = document.getElementById('token-count');
   const progressBarContainer = document.getElementById('progress-bar-container');
   const progressBar = document.getElementById('progress-bar');
   const progressBarLabel = document.getElementById('progress-bar-label');
-  progressBarContainer.style.display = '';
+  progressBarContainer.style.visibility = 'visible';
+  progressBarContainer.style.opacity = '1';
   progressBar.style.width = '0%';
   progressBarLabel.textContent = '';
-  tokenCountDiv.style.display = '';
+  tokenCountDiv.style.visibility = 'visible';
+  tokenCountDiv.style.opacity = '1';
   tokenCountDiv.textContent = '';
   let progressState = null;
   const btn = this;
@@ -279,7 +282,8 @@ document.getElementById('generate-btn').onclick = async function() {
             if (data.step === 'Error') {
               setLog('Error: ' + (data.error || 'Unknown error'), 'error');
               setReady();
-              progressBarContainer.style.display = 'none';
+              progressBarContainer.style.visibility = 'hidden';
+              progressBarContainer.style.opacity = '0';
               progressBar.style.width = '0%';
               progressBarLabel.textContent = '';
               btn.disabled = false;
@@ -288,8 +292,10 @@ document.getElementById('generate-btn').onclick = async function() {
             }
             if (data.step === 'Done') {
               setStatusLabel('Done!');
-              tokenCountDiv.style.display = 'none';
-              progressBarContainer.style.display = 'none';
+              tokenCountDiv.style.visibility = 'hidden';
+              tokenCountDiv.style.opacity = '0';
+              progressBarContainer.style.visibility = 'hidden';
+              progressBarContainer.style.opacity = '0';
               progressBar.style.width = '0%';
               progressBarLabel.textContent = '';
               // Update gallery and open game
@@ -305,23 +311,32 @@ document.getElementById('generate-btn').onclick = async function() {
             if ((data.step === 'TokenCount' || data.step === 'PlanningStep') && typeof data.tokenCount === 'number') {
               tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
             }
-            // Unified Progress Bar: Only use backend's unified progress value (contract enforced)
-if (data.step === 'Progress') {
-  if (typeof data.progress === 'number') {
-    const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
-    progressBar.style.width = pct + '%';
-    progressBarLabel.textContent = pct + '%';
-    progressBarContainer.style.display = '';
-  } else {
-    // Defensive: hide bar if no valid progress
-    progressBar.style.width = '0%';
-    progressBarLabel.textContent = '';
-    progressBarContainer.style.display = 'none';
-  }
-}
+            // Unified Progress Bar: Only use canonical PipelineStatus events
+            if (data.type === 'PipelineStatus') {
+              if (typeof data.progress === 'number') {
+                const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
+                progressBar.style.width = pct + '%';
+                progressBarLabel.textContent = pct + '%';
+                progressBarContainer.style.visibility = 'visible';
+                progressBarContainer.style.opacity = '1';
+              } else {
+                // Defensive: hide bar if no valid progress
+                progressBar.style.width = '0%';
+                progressBarLabel.textContent = '';
+                progressBarContainer.style.visibility = 'hidden';
+                progressBarContainer.style.opacity = '0';
+              }
+              // Token count display from canonical event
+              if (typeof data.tokenCount === 'number') {
+                tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
+                tokenCountDiv.style.visibility = 'visible';
+                tokenCountDiv.style.opacity = '1';
+              }
+            }
             if (data.step === 'PlanningStep' && data.phase) {
               setStatusLabel(`Planning: ${data.phase}...`);
             }
+            console.log(data);
             setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
           }
         }

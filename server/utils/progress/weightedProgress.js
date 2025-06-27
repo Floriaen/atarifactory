@@ -34,7 +34,7 @@ function computeWeightedProgress(weights, currentChunk, localProgress) {
     progress += weight;
   }
   progress += weights[currentChunk] * localProgress;
-  return progress;
+  return Math.round(progress * 100) / 100;
 }
 
 /**

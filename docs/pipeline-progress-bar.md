@@ -14,22 +14,27 @@ This document describes the requirements, backend/frontend responsibilities, and
 ---
 
 ## 2. Backend Responsibilities
-- Each specialized pipeline (e.g., planning, coding) emits progress events as **local progress** in the range 0.0–1.0 (or 0–100%). Pipelines do not need to know their global weight or position in the unified process.
+- Each specialized pipeline (e.g., planning, coding) emits PipelineStatus events as **local progress** in the range 0.0–1.0 (or 0–100%). Pipelines do not need to know their global weight or position in the unified process.
 - The **orchestrator** is responsible for:
   - Knowing the global progress weights for each pipeline (e.g., planning = 30%, coding = 70%).
-  - Listening to local progress events from each pipeline.
+  - Listening to local PipelineStatus events from each pipeline.
   - Mapping each pipeline's local progress to the correct global progress chunk, using the formula:
     ```js
     globalProgress = chunkStart + localProgress * chunkWeight;
     ```
     For example, if planning is 0–0.3 and localProgress = 0.5, then globalProgress = 0.15 (15%).
-  - Emitting unified progress events to the frontend with the following payload:
+  - Emitting unified PipelineStatus events to the frontend with the following payload:
     ```json
     {
-      "progress": 0.0–1.0, // unified progress bar position (fraction)
-      "phase": "planning" | "coding" | ...,
-      "localProgress": 0.0–1.0, // progress within current pipeline
-      "chunkWeight": 0.3 // (optional) weight of current pipeline
+      "type": "PipelineStatus",
+      "phase": {
+        "name": "ContextStepBuilder",
+        "label": "Coding",
+        "description": "Add player orb"
+      },
+      "progress": 0.42,
+      "tokenCount": 374,
+      "timestamp": "2025-06-27T08:00:01.000Z"
     }
     ```
 - The backend/orchestrator is the single source of truth for unified progress.
@@ -38,9 +43,10 @@ This document describes the requirements, backend/frontend responsibilities, and
 ---
 
 ## 3. Frontend Responsibilities
-- The frontend listens for backend progress events (emitted by the orchestrator).
+- The frontend listens for backend PipelineStatus events (emitted by the orchestrator).
 - The progress bar is rendered below the "Tokens :" label.
-- The bar fill is computed directly from the `progress` value (a fraction 0–1) in the event payload.
+- The bar fill is computed directly from the `progress` value (a fraction 0–1) in the PipelineStatus event.
+- The frontend may also use `phase` and `tokenCount` fields from PipelineStatus for richer UI if desired.
 - No step names, icons, or extra labels are shown in the bar (the existing step label UI remains unchanged).
 - The bar is visually simple: no color changes, no animation, no icons.
 
@@ -56,10 +62,18 @@ This document describes the requirements, backend/frontend responsibilities, and
 ## Example Backend Event
 ```json
 {
-  "progress": 0.42
+  "type": "PipelineStatus",
+  "phase": {
+    "name": "ContextStepBuilder",
+    "label": "Coding",
+    "description": "Add player orb"
+  },
+  "progress": 0.42,
+  "tokenCount": 374,
+  "timestamp": "2025-06-27T08:00:01.000Z"
 }
 ```
-> Only the `progress` field is sent to and used by the frontend. Any other fields (such as phase, localProgress, chunkWeight) are for backend debugging or analytics only and must not be used by the frontend.
+> The frontend uses the `progress` field from PipelineStatus to render the progress bar. It may also use `phase` and `tokenCount` for enhanced UI. Only PipelineStatus events should be used for progress bar updates.
 
 ---
 

@@ -18,19 +18,17 @@ function handleProgressEvent(data) {
   const progressBarContainer = document.getElementById('progress-bar-container');
   const progressBar = document.getElementById('progress-bar');
   const progressBarLabel = document.getElementById('progress-bar-label');
-  // Unified Progress Bar: Only use backend's unified progress value (contract enforced)
-  if (data.step === 'Progress') {
-    if (typeof data.progress === 'number') {
-      const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
-      progressBar.style.width = pct + '%';
-      progressBarLabel.textContent = pct + '%';
-      progressBarContainer.style.display = '';
-    } else {
-      // Defensive: hide bar if no valid progress
-      progressBar.style.width = '0%';
-      progressBarLabel.textContent = '';
-      progressBarContainer.style.display = 'none';
-    }
+  // Unified Progress Bar: Only use canonical PipelineStatus events
+  if (data.type === 'PipelineStatus' && typeof data.progress === 'number') {
+    const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
+    progressBar.style.width = pct + '%';
+    progressBarLabel.textContent = pct + '%';
+    progressBarContainer.style.display = '';
+  } else {
+    // Defensive: hide bar if no valid progress
+    progressBar.style.width = '0%';
+    progressBarLabel.textContent = '';
+    progressBarContainer.style.display = 'none';
   }
 }
 
@@ -38,7 +36,7 @@ describe('Unified Progress Bar Contract', () => {
   beforeEach(setupDOM);
 
   it('shows correct width and label for valid progress', () => {
-    handleProgressEvent({ step: 'Progress', progress: 0.42 });
+    handleProgressEvent({ type: 'PipelineStatus', progress: 0.42, phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -48,7 +46,7 @@ describe('Unified Progress Bar Contract', () => {
   });
 
   it('shows 0% and hides bar for progress=0', () => {
-    handleProgressEvent({ step: 'Progress', progress: 0 });
+    handleProgressEvent({ type: 'PipelineStatus', progress: 0, phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -58,7 +56,7 @@ describe('Unified Progress Bar Contract', () => {
   });
 
   it('hides and resets bar for missing progress', () => {
-    handleProgressEvent({ step: 'Progress' });
+    handleProgressEvent({ type: 'PipelineStatus', phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -67,7 +65,7 @@ describe('Unified Progress Bar Contract', () => {
     expect(progressBarContainer.style.display).toBe('none');
   });
 
-  it('ignores step-based progress fields (currentStep/totalSteps)', () => {
+  it('ignores legacy/step-based progress fields', () => {
     handleProgressEvent({ step: 'Progress', currentStep: 2, totalSteps: 5 });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
