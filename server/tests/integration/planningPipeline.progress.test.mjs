@@ -1,5 +1,6 @@
 // Integration test for planningPipeline.mjs progress event emission using ESM mocking
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { PLANNING_PHASE } from '../../config/pipeline.config.mjs';
 
 const makeMockChain = (output) => ({
   invoke: vi.fn().mockResolvedValue(output)
@@ -56,11 +57,11 @@ describe('runPlanningPipeline progress events', () => {
     };
     await runPlanningPipeline(sharedState, onStatusUpdate);
     expect(events).toEqual([
-      { phase: 'planning', progress: 0.2 },
-      { phase: 'planning', progress: 0.4 },
-      { phase: 'planning', progress: 0.6 },
-      { phase: 'planning', progress: 0.8 },
-      { phase: 'planning', progress: 0.9999 }
+      { phase: PLANNING_PHASE, progress: 0.2, tokenCount: 0 },
+      { phase: PLANNING_PHASE, progress: 0.4, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.6, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.8, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.99, tokenCount: 5 }
     ]);
   });
 
@@ -73,11 +74,11 @@ describe('runPlanningPipeline progress events', () => {
     };
     await runPlanningPipeline(sharedState, onStatusUpdate);
     expect(events).toEqual([
-      { phase: 'planning', progress: 0.2 },
-      { phase: 'planning', progress: 0.4 },
-      { phase: 'planning', progress: 0.6 },
-      { phase: 'planning', progress: 0.8 },
-      { phase: 'planning', progress: 0.9999 }
+      { phase: PLANNING_PHASE, progress: 0.2, tokenCount: 0 },
+      { phase: PLANNING_PHASE, progress: 0.4, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.6, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.8, tokenCount: 5 },
+      { phase: PLANNING_PHASE, progress: 0.99, tokenCount: 5 }
     ]);
   });
 });

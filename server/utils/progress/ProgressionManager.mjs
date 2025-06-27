@@ -13,7 +13,7 @@ class ProgressionManager {
   }
 
   setPhase(phase) {
-    this.currentChunk = phase;
+    this.currentChunk = typeof phase === 'object' && phase.name ? phase.name : phase;
     this.localProgress = 0;
   }
 

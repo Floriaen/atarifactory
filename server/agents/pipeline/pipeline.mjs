@@ -33,11 +33,15 @@ async function runModularGameSpecPipeline(sharedState) {
       console.log(`[ORCHESTRATOR] Progress event: phase=${phase}, localProgress=${localProgress}, unified=${unified}`);
       if (frontendOnStatusUpdate) {
         // Canonical PipelineStatus event emission
-        const phaseObj = typeof phase === 'object' ? phase : {
-          name: phase,
-          label: phase === 'planning' ? 'Planning' : 'Coding',
-          description: phase === 'planning' ? 'Designing game' : 'Generating code'
-        };
+        if (
+          typeof phase !== 'object' ||
+          typeof phase.name !== 'string' ||
+          typeof phase.label !== 'string' ||
+          typeof phase.description !== 'string'
+        ) {
+          throw new Error('Progress event phase must be a canonical object with { name, label, description }. Received: ' + JSON.stringify(phase));
+        }
+        const phaseObj = phase;
         frontendOnStatusUpdate('PipelineStatus', {
           type: 'PipelineStatus',
           phase: phaseObj,

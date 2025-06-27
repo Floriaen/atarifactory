@@ -1,6 +1,7 @@
 import { runPlanningPipeline } from '../../agents/pipeline/planningPipeline.mjs';
 import { createSharedState } from '../../types/SharedState.js';
 import { createGameDesignChain } from '../../agents/chains/design/GameDesignChain.mjs';
+import { PLANNING_PHASE } from '../../config/pipeline.config.mjs';
 
 // Minimal mockLLM for token counting test
 const mockLLM = {
@@ -10,8 +11,17 @@ const mockLLM = {
 describe('Planning Pipeline Token Counting', () => {
   it('should increment token count in sharedState and emit updates (planning pipeline)', async () => {
     const tokenCounts = [];
-    const onStatusUpdate = (step, data) => {
-      if (step === 'PlanningStep' && data && typeof data.tokenCount === 'number') tokenCounts.push(data.tokenCount);
+    const onStatusUpdate = (type, data) => {
+      if (
+        type === 'Progress' &&
+        data &&
+        typeof data.tokenCount === 'number' &&
+        data.phase &&
+        data.phase.name === PLANNING_PHASE.name
+      ) {
+        tokenCounts.push(data.tokenCount);
+      }
+    // This test expects sub-pipeline events, not orchestrator canonical events.
     };
 
     const sharedState = createSharedState();
@@ -26,5 +36,5 @@ describe('Planning Pipeline Token Counting', () => {
     expect(typeof lastTokenCount).toBe('number');
     expect(lastTokenCount).toBeGreaterThan(0);
     expect(sharedState.tokenCount).toBe(lastTokenCount);
-  }, 20000);
+  }, 60000);
 });

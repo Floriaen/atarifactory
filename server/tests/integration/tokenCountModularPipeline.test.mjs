@@ -1,11 +1,21 @@
 import { runCodingPipeline } from '../../agents/pipeline/codingPipeline.mjs';
 import { createSharedState } from '../../types/SharedState.js';
+import { CODING_PHASE } from '../../config/pipeline.config.mjs';
 
 describe('Token Count Modular Pipeline Integration', () => {
   it('should increment token count in sharedState and emit updates (modular pipeline)', async () => {
     const tokenCounts = [];
-    const onStatusUpdate = (step, data) => {
-      if (step === 'TokenCount' && data && typeof data.tokenCount === 'number') tokenCounts.push(data.tokenCount);
+    const onStatusUpdate = (type, data) => {
+      if (
+        type === 'Progress' &&
+        data &&
+        typeof data.tokenCount === 'number' &&
+        data.phase &&
+        data.phase.name === CODING_PHASE.name
+      ) {
+        tokenCounts.push(data.tokenCount);
+      }
+    // This test expects sub-pipeline events, not orchestrator canonical events.
     };
     // Minimal sharedState for modular pipeline
     const sharedState = createSharedState();

@@ -308,11 +308,10 @@ document.getElementById('generate-btn').onclick = async function () {
               btn.disabled = false;
               return;
             }
-            if ((data.step === 'TokenCount' || data.step === 'PlanningStep') && typeof data.tokenCount === 'number') {
-              tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
-            }
-            // Unified Progress Bar: Only use canonical PipelineStatus events
-            if (data.type === 'PipelineStatus') {
+            if (data.step === 'TokenCount' && typeof data.tokenCount === 'number') {
+  tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${data.tokenCount}</strong>`;
+}
+if (data.type === 'PipelineStatus') {
               if (typeof data.progress === 'number') {
                 const pct = Math.max(0, Math.min(100, Math.round(100 * data.progress)));
                 progressBar.style.width = pct + '%';
@@ -333,9 +332,6 @@ document.getElementById('generate-btn').onclick = async function () {
                 tokenCountDiv.style.opacity = '1';
               }
             }
-            if (data.step === 'PlanningStep' && data.phase) {
-              setStatusLabel(`Planning: ${data.phase}...`);
-            }
             console.log(data);
             setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
           }
@@ -347,6 +343,8 @@ document.getElementById('generate-btn').onclick = async function () {
     setReady();
     btn.disabled = false;
     clearLog(4000);
+  } finally {
+    reader.cancel();
   }
 };
 

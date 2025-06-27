@@ -29,7 +29,7 @@ async function runDesignPhase({ chain, phase, input, sharedState, logCOT, valida
     output = await chain.invoke(input);
     await logCOT(phase, input, output);
     if (sharedState?.onStatusUpdate) {
-      sharedState.onStatusUpdate('PlanningStep', { phase, status: 'done', output, tokenCount: sharedState.tokenCount });
+       
       sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
     }
     if (!validate(output)) {

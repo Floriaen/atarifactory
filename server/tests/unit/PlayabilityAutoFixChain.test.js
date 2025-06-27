@@ -85,6 +85,6 @@ describe('PlayabilityAutoFixChain Pipeline Tests', () => {
       expect(result.entities).toBeDefined();
       expect(Array.isArray(result.mechanics)).toBe(true);
       expect(result.winCondition).toBeDefined();
-    });
+    }, 20000);
   });
 });

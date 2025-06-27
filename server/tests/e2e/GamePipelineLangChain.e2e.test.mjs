@@ -86,7 +86,7 @@ vi.mock('../../agents/chains/ContextStepBuilderChain', () => ({
 }));
 vi.mock('../../agents/chains/FeedbackChain', () => ({
   createFeedbackChain: vi.fn().mockReturnValue({
-    invoke: vi.fn().mockResolvedValue({ feedback: 'Game is engaging but needs more levels.' })
+    invoke: vi.fn().mockResolvedValue({ retryTarget: 'fixer', suggestion: 'Try adding more levels.' })
   })
 }));
 vi.mock('../../agents/chains/SyntaxSanityChain', () => ({

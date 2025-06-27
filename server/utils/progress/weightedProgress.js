@@ -45,7 +45,7 @@ function computeWeightedProgress(weights, currentChunk, localProgress) {
  */
 function getClampedLocalProgress(step, total) {
   let p = step / total;
-  return p >= 1.0 ? 0.9999 : p;
+  return p >= 1.0 ? 0.99 : p;
 }
 
 module.exports = {

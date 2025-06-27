@@ -34,7 +34,7 @@ describe('runDesignPhase', () => {
 
     expect(result).toEqual(mockOutput);
     expect(logCOT).toHaveBeenCalledWith('TestPhase', { x: 1 }, mockOutput);
-    expect(sharedState.onStatusUpdate).toHaveBeenCalledWith('PlanningStep', expect.objectContaining({ phase: 'TestPhase', status: 'done', output: mockOutput, tokenCount: 42 }));
+    
     expect(sharedState.onStatusUpdate).toHaveBeenCalledWith('TokenCount', { tokenCount: 42 });
   });
 

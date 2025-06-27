@@ -3,14 +3,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { runModularGameSpecPipeline } from '../../agents/pipeline/pipeline.mjs';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.mjs';
+import { PLANNING_PHASE, CODING_PHASE } from '../../config/pipeline.config.mjs';
 
 // Mocks for planning/coding pipelines (simulate progress events)
 vi.mock('../../agents/pipeline/planningPipeline.mjs', () => ({
   runPlanningPipeline: async (sharedState, onStatusUpdate) => {
-    // Simulate 3 progress events for planning
-    onStatusUpdate('Progress', { progress: 0.2, phase: 'planning' });
-    onStatusUpdate('Progress', { progress: 0.5, phase: 'planning' });
-    onStatusUpdate('Progress', { progress: 1.0, phase: 'planning' });
+    // Simulate 5 progress events for planning
+    onStatusUpdate('Progress', { progress: 0.2, phase: PLANNING_PHASE });
+    onStatusUpdate('Progress', { progress: 0.4, phase: PLANNING_PHASE });
+    onStatusUpdate('Progress', { progress: 0.6, phase: PLANNING_PHASE });
+    onStatusUpdate('Progress', { progress: 0.8, phase: PLANNING_PHASE });
+    onStatusUpdate('Progress', { progress: 0.9999, phase: PLANNING_PHASE });
     sharedState.plan = [1, 2, 3];
     return sharedState;
   }
@@ -18,8 +21,8 @@ vi.mock('../../agents/pipeline/planningPipeline.mjs', () => ({
 vi.mock('../../agents/pipeline/codingPipeline.mjs', () => ({
   runCodingPipeline: async (sharedState, onStatusUpdate) => {
     // Simulate 2 progress events for coding
-    onStatusUpdate('Progress', { progress: 0.3, phase: 'coding' });
-    onStatusUpdate('Progress', { progress: 1.0, phase: 'coding' });
+    onStatusUpdate('Progress', { progress: 0.3, phase: CODING_PHASE });
+    onStatusUpdate('Progress', { progress: 1.0, phase: CODING_PHASE });
     return sharedState;
   }
 }));
