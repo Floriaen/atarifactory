@@ -6,12 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const promptPath = path.join(__dirname, '../../prompts/design/entity-list-builder.md');
 
-function createEntityListBuilderChain(llm) {
+function createEntityListBuilderChain(llm, options = {}) {
   return createJsonExtractionChain({
     llm,
     promptFile: promptPath,
     inputVariables: ['mechanics', 'loop', 'winCondition'],
-    schemaName: 'entities array'
+    schemaName: 'entities array',
+    ...(options.sharedState ? { sharedState: options.sharedState } : {})
   });
 }
 

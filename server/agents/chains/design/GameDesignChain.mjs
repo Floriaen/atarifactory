@@ -12,14 +12,40 @@ import { createEntityListBuilderChain } from './EntityListBuilderChain.mjs';
 import { createPlayabilityHeuristicChain } from './PlayabilityHeuristicChain.mjs';
 import { createFinalAssemblerChain } from './FinalAssemblerChain.mjs';
 
+/**
+ * Generic phase runner for a design step.
+ * @param {Object}   opts
+ * @param {Object}   opts.chain - The chain instance with .invoke(input)
+ * @param {string}   opts.phase - Name of the phase (for logging/events)
+ * @param {Object}   opts.input - Input to the chain
+ * @param {Object}   opts.sharedState - Shared state object (for tokenCount, event emission)
+ * @param {Function} opts.logCOT - Async function (phase, input, output)
+ * @param {Function} opts.validate - Function (output) => boolean
+ * @returns {Promise<Object>} - Output of the chain
+ */
+async function runDesignPhase({ chain, phase, input, sharedState, logCOT, validate }) {
+  let output;
+  try {
+    output = await chain.invoke(input);
+    await logCOT(phase, input, output);
+    if (sharedState?.onStatusUpdate) {
+       
+      sharedState.onStatusUpdate('TokenCount', { tokenCount: sharedState.tokenCount });
+    }
+    if (!validate(output)) {
+      await logCOT('Error', input, { error: `Invalid output from ${phase}`, output });
+      throw new Error(`Invalid output from ${phase}`);
+    }
+    return output;
+  } catch (err) {
+    await logCOT('Error', input, { error: err.message, output });
+    throw err;
+  }
+}
+
 function createGameDesignChain({
-  ideaLLM,
-  loopLLM,
-  mechanicLLM,
-  winLLM,
-  entityLLM,
-  playabilityLLM,
-  finalLLM
+  llm,
+  sharedState = undefined
 }) {
 
   return {
@@ -38,122 +64,86 @@ function createGameDesignChain({
           // Append log entry (creates file if missing)
           await fs.promises.appendFile(COT_LOG_PATH, JSON.stringify(logEntry) + '\n');
         } catch (e) {
-          // Fail silently if logging fails
+          throw new Error(`COT logging failed: ${e.message}`);
         }
       }
-      let idea;
-      try {
-        idea = await createIdeaGeneratorChain(ideaLLM).invoke(input);
-        console.debug('[DEBUG] IdeaGeneratorChain LLM output:', idea);
-      } catch (err) {
-        console.error('[IdeaGeneratorChain] JSON parse error:', err, '\nRaw LLM output:', typeof idea !== 'undefined' ? idea : '[no output]');
-        throw err;
-      }
-      await logCOT('IdeaGeneratorChain', input, idea);
-      if (!idea || typeof idea !== 'object' || !idea.title || !idea.pitch) {
-        await logCOT('Error', input, { error: 'Invalid output from IdeaGeneratorChain', idea });
-        throw new Error('Invalid output from IdeaGeneratorChain');
-      }
-      let loop;
-      try {
-        loop = await createLoopClarifierChain(loopLLM).invoke({ ...input, ...idea });
-        console.debug('[DEBUG] LoopClarifierChain LLM output:', loop);
-      } catch (err) {
-        console.error('[LoopClarifierChain] JSON parse error:', err, '\nRaw LLM output:', typeof loop !== 'undefined' ? loop : '[no output]');
-        throw err;
-      }
-      await logCOT('LoopClarifierChain', { ...input, ...idea }, loop);
-      if (!loop || typeof loop !== 'object' || !loop.loop) {
-        await logCOT('Error', { ...input, ...idea }, { error: 'Invalid output from LoopClarifierChain', loop });
-        throw new Error('Invalid output from LoopClarifierChain');
-      }
-      let mechanics;
-      try {
-        mechanics = await createMechanicExtractorChain(mechanicLLM).invoke({ ...input, ...idea, ...loop });
-        console.debug('[DEBUG] MechanicExtractorChain LLM output:', mechanics);
-      } catch (err) {
-        console.error('[MechanicExtractorChain] JSON parse error:', err, '\nRaw LLM output:', typeof mechanics !== 'undefined' ? mechanics : '[no output]');
-        throw err;
-      }
-      await logCOT('MechanicExtractorChain', { ...input, ...idea, ...loop }, mechanics);
-      if (!mechanics || typeof mechanics !== 'object' || !Array.isArray(mechanics.mechanics)) {
-        await logCOT('Error', { ...input, ...idea, ...loop }, { error: 'Invalid output from MechanicExtractorChain', mechanics });
-        throw new Error('Invalid output from MechanicExtractorChain');
-      }
-      let win;
-      try {
-        win = await createWinConditionBuilderChain(winLLM).invoke({ ...input, ...idea, ...loop, ...mechanics });
-        console.debug('[DEBUG] WinConditionBuilderChain LLM output:', win);
-      } catch (err) {
-        console.error('[WinConditionBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof win !== 'undefined' ? win : '[no output]');
-        throw err;
-      }
-      await logCOT('WinConditionBuilderChain', { ...input, ...idea, ...loop, ...mechanics }, win);
-      if (!win || typeof win !== 'object' || !win.winCondition) {
-        await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics }, { error: 'Invalid output from WinConditionBuilderChain', win });
-        throw new Error('Invalid output from WinConditionBuilderChain');
-      }
-      let entities;
-      try {
-        entities = await createEntityListBuilderChain(entityLLM).invoke({ ...input, ...idea, ...loop, ...mechanics, ...win });
-        console.debug('[DEBUG] EntityListBuilderChain LLM output:', entities);
-      } catch (err) {
-        console.error('[EntityListBuilderChain] JSON parse error:', err, '\nRaw LLM output:', typeof entities !== 'undefined' ? entities : '[no output]');
-        throw err;
-      }
-      await logCOT('EntityListBuilderChain', { ...input, ...idea, ...loop, ...mechanics, ...win }, entities);
-      if (!entities || typeof entities !== 'object' || !Array.isArray(entities.entities)) {
-        await logCOT('Error', { ...input, ...idea, ...loop, ...mechanics, ...win }, { error: 'Invalid output from EntityListBuilderChain', entities });
-        throw new Error('Invalid output from EntityListBuilderChain');
-      }
-      let playability;
-      try {
-        playability = await createPlayabilityHeuristicChain(playabilityLLM).invoke({ gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } });
-        console.debug('[DEBUG] PlayabilityHeuristicChain LLM output:', playability);
-      } catch (err) {
-        console.error('[PlayabilityHeuristicChain] JSON parse error:', err, '\nRaw LLM output:', typeof playability !== 'undefined' ? playability : '[no output]');
-        throw err;
-      }
-      await logCOT('PlayabilityHeuristicChain', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, playability);
-      if (!playability || typeof playability !== 'object' || !playability.playabilityAssessment || !playability.strengths || !playability.potentialIssues || !playability.score) {
-        await logCOT('Error', { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } }, { error: 'Invalid output from PlayabilityHeuristicChain', playability });
-        throw new Error('Invalid output from PlayabilityHeuristicChain');
-      }
-      // Assemble final game definition
-      let final;
-      try {
-        final = await createFinalAssemblerChain(finalLLM).invoke({
+
+      // IDEA PHASE
+      const idea = await runDesignPhase({
+        chain: createIdeaGeneratorChain(llm, { sharedState }),
+        phase: 'Idea',
+        input,
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && out.title && out.pitch
+      });
+
+      // LOOP PHASE
+      const loop = await runDesignPhase({
+        chain: createLoopClarifierChain(llm, { sharedState }),
+        phase: 'Loop',
+        input: { ...input, ...idea },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && out.loop
+      });
+
+      // MECHANICS PHASE
+      const mechanics = await runDesignPhase({
+        chain: createMechanicExtractorChain(llm, { sharedState }),
+        phase: 'Mechanics',
+        input: { ...input, ...idea, ...loop },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && Array.isArray(out.mechanics)
+      });
+
+      // WIN CONDITION PHASE
+      const win = await runDesignPhase({
+        chain: createWinConditionBuilderChain(llm, { sharedState }),
+        phase: 'WinCondition',
+        input: { ...input, ...idea, ...loop, ...mechanics },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && out.winCondition
+      });
+
+      // ENTITIES PHASE
+      const entities = await runDesignPhase({
+        chain: createEntityListBuilderChain(llm, { sharedState }),
+        phase: 'Entities',
+        input: { ...input, ...idea, ...loop, ...mechanics, ...win },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && Array.isArray(out.entities)
+      });
+
+      // PLAYABILITY PHASE
+      const playability = await runDesignPhase({
+        chain: createPlayabilityHeuristicChain(llm, { sharedState }),
+        phase: 'Playability',
+        input: { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && out.playabilityAssessment && out.strengths && out.potentialIssues && out.score
+      });
+
+      // FINAL ASSEMBLY PHASE
+      const final = await runDesignPhase({
+        chain: createFinalAssemblerChain(llm),
+        phase: 'FinalAssembly',
+        input: {
           title: idea.title,
           pitch: idea.pitch,
           loop: loop.loop,
           mechanics: mechanics.mechanics,
           winCondition: win.winCondition,
           entities: entities.entities
-        });
-        console.debug('[DEBUG] FinalAssemblerChain LLM output:', final);
-      } catch (err) {
-        console.error('[FinalAssemblerChain] JSON parse error:', err, '\nRaw LLM output:', typeof final !== 'undefined' ? final : '[no output]');
-        throw err;
-      }
-      await logCOT('FinalAssemblerChain', {
-        title: idea.title,
-        pitch: idea.pitch,
-        loop: loop.loop,
-        mechanics: mechanics.mechanics,
-        winCondition: win.winCondition,
-        entities: entities.entities
-      }, final);
-      if (!final || typeof final !== 'object' || !final.gameDef) {
-        await logCOT('Error', {
-          title: idea.title,
-          pitch: idea.pitch,
-          loop: loop.loop,
-          mechanics: mechanics.mechanics,
-          winCondition: win.winCondition,
-          entities: entities.entities
-        }, { error: 'Invalid output from FinalAssemblerChain', final });
-        throw new Error('Invalid output from FinalAssemblerChain');
-      }
+        },
+        sharedState,
+        logCOT,
+        validate: (out) => out && typeof out === 'object' && out.gameDef
+      });
 
       // Optionally attach playability
       if (playability && final && final.gameDef) {
@@ -169,4 +159,4 @@ function createGameDesignChain({
   }
 }
 
-export { createGameDesignChain };
+export { createGameDesignChain, runDesignPhase };

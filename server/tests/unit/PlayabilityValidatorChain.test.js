@@ -54,11 +54,13 @@ describe('PlayabilityValidatorChain Pipeline Tests', () => {
   describe('Integration (real chain, real LLM)', () => {
     const hasKey = !!process.env.OPENAI_API_KEY;
     (hasKey ? it : it.skip)('runs end-to-end with real LLM', async () => {
-      const chain = await createPlayabilityValidatorChain();
+      const { ChatOpenAI } = require('@langchain/openai');
+      const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 });
+      const chain = await createPlayabilityValidatorChain(llm);
       const result = await chain.invoke({ mechanics: ['move left/right'], winCondition: 'Reach the exit.' });
       expect(result).toBeDefined();
       expect(typeof result.winnable).toBe('boolean');
       expect(typeof result.suggestion).toBe('string');
-    });
+    }, 20000);
   });
 });

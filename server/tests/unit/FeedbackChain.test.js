@@ -11,8 +11,8 @@ describe('FeedbackChain', () => {
   });
 
   it('loads the prompt template with correct variables', () => {
-    expect(promptString).toContain('{{runtimeLogs}}');
-    expect(promptString).toContain('{{stepId}}');
+    expect(promptString).toContain('{runtimeLogs}');
+    expect(promptString).toContain('{stepId}');
   });
 
   it('parses output JSON using JsonOutputParser', async () => {

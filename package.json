@@ -13,7 +13,7 @@
     "@types/graceful-fs": "^4.1.9",
     "create-jest": "^29.7.0",
     "diff-sequences": "^29.6.3",
-    "eslint": "^9.28.0",
+    "eslint": "^9.29.0",
     "eslint-plugin-import": "^2.32.0",
     "jest": "^30.0.2",
     "jest-get-type": "^29.6.3",
@@ -25,9 +25,9 @@
   },
   "scripts": {
     "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:unit": "jest --testMatch=\"<rootDir>/server/tests/unit/**/*.test.js\" && vitest run server/tests/unit/**/*.test.mjs", 
-    "test:integration": "vitest run server/tests/integration/**/*.test.mjs server/tests/integration/*.test.mjs", 
-    "test:e2e": "vitest run server/tests/e2e/**/*.test.mjs server/tests/e2e/*.test.mjs", 
+    "test:unit": "jest --testMatch=\"<rootDir>/server/tests/unit/**/*.test.js\" && vitest run server/tests/unit/**/*.test.mjs",
+    "test:integration": "vitest run server/tests/integration/**/*.test.mjs server/tests/integration/*.test.mjs",
+    "test:e2e": "vitest run server/tests/e2e/**/*.test.mjs server/tests/e2e/*.test.mjs",
     "start:server": "node server/start.js",
     "start:frontend": "cd frontend && npm run dev",
     "dev:server": "nodemon server/index.js",
@@ -35,6 +35,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@google/gemini-cli": "^0.1.4",
     "@langchain/openai": "^0.5.13",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
