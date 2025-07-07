@@ -8,8 +8,9 @@ import { createPlayabilityHeuristicChain } from '../chains/design/PlayabilityHeu
 import { createPlannerChain } from '../chains/PlannerChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
+import { estimateTokens } from '../../utils/tokenUtils.js';
 
-async function runPlanningPipeline(sharedState, onStatusUpdate, factories = {}) {
+async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
   let tokenCount = typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0;
   sharedState.tokenCount = tokenCount;
@@ -35,8 +36,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate, factories = {}) 
   const gameInventorChain = await createGameInventorChain(llmIdea);
   const inventorOut = await gameInventorChain.invoke({});
   if (sharedState && typeof sharedState.tokenCount === 'number' && inventorOut) {
-    // Dynamically import to avoid circular deps
-    const { estimateTokens } = await import(new URL('../../utils/tokenUtils.js', import.meta.url));
+    // Estimate tokens for inventor output
     sharedState.tokenCount += estimateTokens(JSON.stringify(inventorOut));
   }
   if (typeof inventorOut !== 'object' || inventorOut === null) {
@@ -121,7 +121,6 @@ async function runPlanningPipeline(sharedState, onStatusUpdate, factories = {}) 
     if (autofixResult && typeof autofixResult === 'object' && Object.keys(autofixResult).length > 0) {
       // Patch: increment token count for PlayabilityAutoFixChain output
       if (sharedState && typeof sharedState.tokenCount === 'number' && autofixResult) {
-        const { estimateTokens } = await import(new URL('../../utils/tokenUtils.js', import.meta.url));
         sharedState.tokenCount += estimateTokens(JSON.stringify(autofixResult));
       }
       fixedGameDef = autofixResult;

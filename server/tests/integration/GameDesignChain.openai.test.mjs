@@ -8,7 +8,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 (OPENAI_API_KEY ? describe : describe.skip)('GameDesignChain (OpenAI integration)', () => {
   it('should run end-to-end with real OpenAI LLMs', async () => {
-    const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1';
+    const openaiModel = process.env.OPENAI_MODEL;
     const llmOpts = { model: openaiModel, temperature: 0, openAIApiKey: OPENAI_API_KEY };
     const llm = new ChatOpenAI(llmOpts);
     const chain = createGameDesignChain({ llm });

@@ -61,7 +61,16 @@ describe('PlannerChain Pipeline Tests', () => {
   describe('Integration (real chain, real LLM)', () => {
     const hasKey = !!process.env.OPENAI_API_KEY;
     (hasKey ? it : it.skip)('runs end-to-end with real LLM', async () => {
-      const chain = await createPlannerChain();
+      const { ChatOpenAI } = require('@langchain/openai');
+      if (!process.env.OPENAI_MODEL) {
+        throw new Error('OPENAI_MODEL environment variable must be set for this test.');
+      }
+      const llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: process.env.OPENAI_MODEL,
+        temperature: 0,
+      });
+      const chain = await createPlannerChain(llm);
       const gameDefinition = {
         name: 'Coin Collector',
         description: 'Collect all coins while avoiding obstacles.',

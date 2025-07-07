@@ -2,7 +2,7 @@ const { createContextStepBuilderChain } = require('../../agents/chains/ContextSt
 const { ChatOpenAI } = require('@langchain/openai');
 
 test('StepBuilder generates only canvas-relative code', async () => {
-  const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 });
+  const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 });
   const chain = await createContextStepBuilderChain(llm);
 
   const minimalPlan = [{ id: 1, description: 'Draw a player and an exit on the canvas' }];

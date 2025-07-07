@@ -5,7 +5,7 @@ const { JsonOutputParser } = require('@langchain/core/output_parsers');
 const { ChatOpenAI } = require('@langchain/openai');
 
 // Async factory for PlayabilityAutoFixChain
-async function createPlayabilityAutoFixChain(llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 })) {
+async function createPlayabilityAutoFixChain(llm) {
   const promptPath = path.join(__dirname, '../prompts/PlayabilityAutoFixChain.prompt.md');
   const promptString = await fs.readFile(promptPath, 'utf8');
   const autoFixPrompt = new PromptTemplate({
