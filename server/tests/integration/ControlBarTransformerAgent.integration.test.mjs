@@ -3,7 +3,7 @@ import { transformGameCodeWithLLM } from '../../../server/agents/chains/ControlB
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 
-const GAME_SOURCE_PATH = '../../../server/tests/unit/game.js';
+const GAME_SOURCE_PATH = '../fixtures/generated-game.js';
 
 // Only run if OPENAI_API_KEY is set
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY;

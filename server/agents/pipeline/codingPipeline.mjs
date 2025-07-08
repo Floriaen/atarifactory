@@ -11,14 +11,20 @@ import fs from 'fs';
 
 const GAME_TEMPLATE = fs.readFileSync(new URL('../../gameBoilerplate/game.js', import.meta.url), 'utf-8');
 
-async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
+async function runCodingPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
 
-  const openaiModel = process.env.OPENAI_MODEL;
-  if (!openaiModel) {
-    throw new Error('OPENAI_MODEL environment variable must be set');
+  let llm;
+  if (process.env.MOCK_PIPELINE === '1') {
+    // Use a dummy LLM and dummy chains for mock pipeline
+    llm = { invoke: async () => ({ code: sharedState.gameSource || '', contextSteps: [] }) };
+  } else {
+    const openaiModel = process.env.OPENAI_MODEL;
+    if (!openaiModel) {
+      throw new Error('OPENAI_MODEL environment variable must be set');
+    }
+    llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   }
-  const llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   
   let tokenCount = typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0;
   sharedState.tokenCount = tokenCount;
@@ -35,9 +41,14 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
 
   // 1. Context Step Builder (iterate over all steps)
   // Emit Progress for each plan step
-  const contextStepBuilderChain = factories.createContextStepBuilderChain
-    ? await factories.createContextStepBuilderChain(llm)
-    : await createContextStepBuilderChain(llm);
+  let contextStepBuilderChain;
+  if (process.env.MOCK_PIPELINE === '1') {
+    contextStepBuilderChain = {
+      invoke: async () => ({ code: sharedState.gameSource || '', contextSteps: [] })
+    };
+  } else {
+    contextStepBuilderChain = await createContextStepBuilderChain(llm);
+  }
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
@@ -90,9 +101,14 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
 
   localStep++;
-  const feedbackChain = factories.createFeedbackChain
-    ? await factories.createFeedbackChain(llm)
-    : await createFeedbackChain(llm);
+  let feedbackChain;
+  if (process.env.MOCK_PIPELINE === '1') {
+    feedbackChain = {
+      invoke: async () => ({ suggestion: 'No feedback needed.' })
+    };
+  } else {
+    feedbackChain = await createFeedbackChain(llm);
+  }
   const runtimeLogs = `Player reached the goal area after switching forms. No errors detected.`;
   const stepId = sharedState.plan && sharedState.plan[0] && sharedState.plan[0].id ? sharedState.plan[0].id : 'step-1';
 

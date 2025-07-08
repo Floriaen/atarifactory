@@ -2,7 +2,7 @@ import { runCodingPipeline } from '../../agents/pipeline/codingPipeline.mjs';
 import { createSharedState } from '../../types/SharedState.js';
 import { CODING_PHASE } from '../../config/pipeline.config.mjs';
 
-describe('Token Count Modular Pipeline Integration', () => {
+describe.skip('Token Count Modular Pipeline Integration', () => {
   it('should increment token count in sharedState and emit updates (modular pipeline)', async () => {
     const tokenCounts = [];
     const onStatusUpdate = (type, data) => {

@@ -92,25 +92,30 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
   const { runCodingPipeline } = (await import('./agents/pipeline/codingPipeline.mjs'));
 
 
-  // MOCK_PIPELINE: Serve static debug/game.js and mock gameDef
+  // MOCK_PIPELINE: Serve static tests/fixtures/bouncing-square-game.js and mock gameDef
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
   if (process.env.MOCK_PIPELINE === '1') {
-    logger && logger.info && logger.info('MOCK_PIPELINE is active: using debug/game.js');
+    logger && logger.info && logger.info('MOCK_PIPELINE is active: using tests/fixtures/bouncing-square-game.js');
+    console.log('[MOCK_PIPELINE] Creating sharedState');
     const sharedState = createSharedState();
     sharedState.title = title;
+    sharedState.onStatusUpdate = onStatusUpdate;
+    console.log('[MOCK_PIPELINE] Loading gameSource from tests/fixtures/bouncing-square-game.js');
+    sharedState.gameSource = await fs.promises.readFile(path.join(__dirname, 'tests/fixtures/bouncing-square-game.js'), 'utf8');
     sharedState.gameDef = {
-      title: title,
-      description: 'A mock game for testing purposes',
-      mechanics: ['move', 'jump'],
-      winCondition: 'Collect all coins',
-      entities: ['player', 'coin']
+      title: 'Bouncing Square',
+      mechanics: ['move', 'bounce'],
+      winCondition: 'none',
+      entities: ['square'],
     };
-    sharedState.code = fs.readFileSync(path.join(__dirname, 'debug', 'game.js'), 'utf8');
     sharedState.plan = [
       { id: 1, description: 'Set up the HTML canvas and main game loop' },
       { id: 2, description: 'Create the player entity and implement left/right movement' },
       { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
+    console.log('[MOCK_PIPELINE] Running runCodingPipeline');
+    await runCodingPipeline(sharedState, onStatusUpdate);
+    console.log('[MOCK_PIPELINE] Finished runCodingPipeline, returning sharedState');
     return sharedState;
   } else if (process.env.MINIMAL_GAME === '1') {
     // MINIMAL_GAME: only run coding pipeline with minimal gameDef/plan/code
