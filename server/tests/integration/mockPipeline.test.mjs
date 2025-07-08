@@ -19,7 +19,7 @@ describe('Mock Pipeline Integration', () => {
     expect(fs.existsSync(path.join(gameFolder, 'controlBar.css'))).toBe(true);
 
     // Check game.js content matches mock
-    const mockCode = fs.readFileSync(path.join(__dirname, '../mocks/game.js'), 'utf8');
+    const mockCode = fs.readFileSync(path.join(__dirname, '../fixtures/bouncing-square-game.js'), 'utf8');
     const generatedCode = fs.readFileSync(path.join(gameFolder, 'game.js'), 'utf8');
     expect(generatedCode.trim()).toBe(mockCode.trim());
   });
