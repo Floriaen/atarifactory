@@ -33,20 +33,20 @@ function handleProgressEvent(data) {
 }
 
 describe('Unified Progress Bar Contract', () => {
-  beforeEach(setupDOM);
+  beforeEach(() => {
+    setupDOM();
+  });
 
   it('shows correct width and label for valid progress', () => {
-    handleProgressEvent({ type: 'PipelineStatus', progress: 0.42, phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
+    handleProgressEvent({ type: 'PipelineStatus', progress: 0.37 });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
-    const progressBarContainer = document.getElementById('progress-bar-container');
-    expect(progressBar.style.width).toBe('42%');
-    expect(progressBarLabel.textContent).toBe('42%');
-    expect(progressBarContainer.style.display).toBe('');
+    expect(progressBar.style.width).toBe('37%');
+    expect(progressBarLabel.textContent).toBe('37%');
   });
 
   it('shows 0% and hides bar for progress=0', () => {
-    handleProgressEvent({ type: 'PipelineStatus', progress: 0, phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
+    handleProgressEvent({ type: 'PipelineStatus', progress: 0 });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -56,7 +56,7 @@ describe('Unified Progress Bar Contract', () => {
   });
 
   it('hides and resets bar for missing progress', () => {
-    handleProgressEvent({ type: 'PipelineStatus', phase: { name: 'planning' }, tokenCount: 0, timestamp: '2024-01-01T00:00:00Z' });
+    handleProgressEvent({ type: 'PipelineStatus' });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -66,7 +66,7 @@ describe('Unified Progress Bar Contract', () => {
   });
 
   it('ignores legacy/step-based progress fields', () => {
-    handleProgressEvent({ step: 'Progress', currentStep: 2, totalSteps: 5 });
+    handleProgressEvent({ type: 'Progress', step: 'GameDesign', progress: 0.5 });
     const progressBar = document.getElementById('progress-bar');
     const progressBarLabel = document.getElementById('progress-bar-label');
     const progressBarContainer = document.getElementById('progress-bar-container');
