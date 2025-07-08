@@ -25,3 +25,38 @@ Array.from(document.querySelectorAll('.dpad-btn, .game-btn')).forEach(btn => {
   btn.addEventListener('touchend', handlePadRelease);
   btn.addEventListener('touchcancel', handlePadRelease);
 });
+
+// Keyboard support for controlBar
+const keyMap = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  a: 'btn1',
+  z: 'btn2',
+  A: 'btn1',
+  Z: 'btn2',
+};
+const pressedKeys = {};
+window.addEventListener('keydown', (e) => {
+  const key = keyMap[e.key];
+  if (!key || pressedKeys[key]) return;
+  pressedKeys[key] = true;
+  const btn = document.querySelector(`[data-key="${key}"]`);
+  if (btn) {
+    btn.classList.add('active');
+  }
+  window.gamepadState[key] = true;
+  emitGamepadEvent('press', key);
+});
+window.addEventListener('keyup', (e) => {
+  const key = keyMap[e.key];
+  if (!key || !pressedKeys[key]) return;
+  pressedKeys[key] = false;
+  const btn = document.querySelector(`[data-key="${key}"]`);
+  if (btn) {
+    btn.classList.remove('active');
+  }
+  window.gamepadState[key] = false;
+  emitGamepadEvent('release', key);
+});
