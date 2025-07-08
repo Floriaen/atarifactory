@@ -18,6 +18,7 @@ export async function transformGameCodeWithLLM(sharedState, llm) {
   const promptTemplate = fs.readFileSync(promptPath, 'utf8');
   const prompt = promptTemplate.replace('{{gameSource}}', sharedState.gameSource);
   const result = await llm.invoke(prompt);
+  console.log('ControlBarTransformerAgent result', result);
   // Try to extract code block if present, else return raw
   const match = result.content.match(/```(?:js|javascript)?\n([\s\S]*?)```/i);
   return match ? match[1].trim() : result.content.trim();

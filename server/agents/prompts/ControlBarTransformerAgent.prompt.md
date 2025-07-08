@@ -5,6 +5,7 @@ Rewrite the following game code so that:
 - All keyboard, mouse, and touch event listeners and handlers are removed.
 - All gameplay logic that was triggered by keyboard, mouse, or touch input is now triggered by the appropriate control bar event.
 - Use window.addEventListener('gamepad-press', ...) and window.addEventListener('gamepad-release', ...).
+- In all control bar/gamepad event handlers, always access the direction or button via e.detail.key (not e.detail or e.key).
 - Map keyboard keys to control bar keys as follows:
   - ArrowLeft → 'left'
   - ArrowRight → 'right'
@@ -17,6 +18,36 @@ Rewrite the following game code so that:
 - If no control bar event listeners exist after conversion, inject minimal handlers for both 'gamepad-press' and 'gamepad-release'.
 
 Output ONLY the complete, transformed JavaScript code.
+
+---
+```javascript
+Example mapping (use e.detail.key):
+Old:
+  window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft') moveLeft = true;
+  });
+
+New:
+  window.addEventListener('gamepad-press', e => {
+    if (e.detail.key === 'left') moveLeft = true;
+  });
+
+Old:
+  window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowLeft') moveLeft = false;
+  });
+
+New:
+  window.addEventListener('gamepad-release', e => {
+    if (e.detail.key === 'left') moveLeft = false;
+  });
+
+// INCORRECT (do NOT do this):
+window.addEventListener('gamepad-press', e => {
+  if (e.detail === 'left') moveLeft = true; // WRONG
+  if (e.key === 'left') moveLeft = true;    // WRONG
+});
+```
 
 ---
 

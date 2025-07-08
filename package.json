@@ -10,6 +10,7 @@
     "@babel/parser": "^7.27.5",
     "@babel/preset-env": "^7.27.2",
     "@babel/traverse": "^7.27.4",
+    "@playwright/test": "^1.53.2",
     "@types/graceful-fs": "^4.1.9",
     "create-jest": "^29.7.0",
     "diff-sequences": "^29.6.3",

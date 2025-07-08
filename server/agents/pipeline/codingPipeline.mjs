@@ -84,8 +84,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
     localStep++;
   }
   sharedState.contextSteps = allStepContexts;
-  sharedState.code = accumulatedCode.trim();
-
+  sharedState.gameSource = accumulatedCode.trim();
 
   // 2. Feedback
   statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
@@ -150,8 +149,9 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
 
   // 4. Enforce control bar only input (LLM-based transformation)
   try {
-    sharedState.code = await transformGameCodeWithLLM(sharedState, llm);
-    console.log('Successfully transformed code to use control bar only input');
+    console.log('Transforming code to use control bar only input', sharedState.gameSource);
+    sharedState.gameSource = await transformGameCodeWithLLM(sharedState, llm);
+    console.log('Successfully transformed code to use control bar only input', sharedState.gameSource);
     sharedState.logs = ['Pipeline executed', 'Control bar input transformation applied'];
   } catch (error) {
     console.error('Error transforming control bar input:', error);

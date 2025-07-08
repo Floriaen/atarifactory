@@ -39,7 +39,7 @@ async function runPipeline(title, onStatusUpdate) {
 
     // Get code and game design info (with env var fallback logic)
     const sharedState = await generateGameSourceCode(title, logger, onStatusUpdate);
-    const code = sharedState.code;
+    const code = sharedState.gameSource;
     const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || title;
 
@@ -87,8 +87,8 @@ async function runPipeline(title, onStatusUpdate) {
 }
 
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
-  const planningPipelineModule = await import('./agents/pipeline/planningPipeline.mjs');
-  const { runPlanningPipeline } = planningPipelineModule;
+  //const planningPipelineModule = await import('./agents/pipeline/planningPipeline.mjs');
+  //const { runPlanningPipeline } = planningPipelineModule;
   const { runCodingPipeline } = (await import('./agents/pipeline/codingPipeline.mjs'));
 
 
