@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Chicken Escape</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: monospace;
+        }
+        canvas {
+            border: 2px solid #fff;
+            background: #87CEEB;
+        }
+        .game-info {
+            color: #fff;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="game-info">
+            <p>Use ARROW KEYS to move the chicken! Avoid the anvils!</p>
+            <p>Press SPACE to restart when game over</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameState = 'playing'; // 'playing', 'gameOver'
+        let score = 0;
+        let gameSpeed = 2;
+
+        // Player (Chicken)
+        const player = {
+            x: 400,
+            y: 500,
+            width: 40,
+            height: 40,
+            speed: 5,
+            color: '#FFD700'
+        };
+
+        // Anvils array
+        let anvils = [];
+        let anvilSpawnTimer = 0;
+        let anvilSpawnRate = 60; // frames between spawns
+
+        // Clouds for background
+        let clouds = [];
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Initialize clouds
+        function initClouds() {
+            clouds = [];
+            for (let i = 0; i < 5; i++) {
+                clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * 200 + 50,
+                    width: Math.random() * 80 + 60,
+                    height: Math.random() * 40 + 30,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        // Draw pixel art chicken
+        function drawChicken(x, y) {
+            const pixelSize = 4;
+            
+            // Chicken body (white)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(x + 8, y + 12, 24, 20);
+            
+            // Chicken head (white)
+            ctx.fillRect(x + 4, y + 4, 20, 16);
+            
+            // Beak (orange)
+            ctx.fillStyle = '#FF8C00';
+            ctx.fillRect(x, y + 8, 8, 4);
+            
+            // Eye (black)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x + 8, y + 8, 4, 4);
+            
+            // Comb (red)
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(x + 12, y, 8, 8);
+            ctx.fillRect(x + 8, y + 2, 4, 4);
+            ctx.fillRect(x + 16, y + 2, 4, 4);
+            
+            // Legs (orange)
+            ctx.fillStyle = '#FF8C00';
+            ctx.fillRect(x + 12, y + 32, 4, 8);
+            ctx.fillRect(x + 20, y + 32, 4, 8);
+            
+            // Tail feathers (yellow)
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x + 28, y + 8, 8, 4);
+            ctx.fillRect(x + 32, y + 12, 4, 8);
+        }
+
+        // Draw pixel art anvil
+        function drawAnvil(x, y) {
+            // Anvil base (dark gray)
+            ctx.fillStyle = '#404040';
+            ctx.fillRect(x + 4, y + 20, 32, 12);
+            
+            // Anvil top (gray)
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(x + 8, y + 8, 24, 16);
+            
+            // Anvil horn (light gray)
+            ctx.fillStyle = '#A0A0A0';
+            ctx.fillRect(x + 28, y + 12, 8, 8);
+            
+            // Anvil highlight
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(x + 8, y + 8, 4, 4);
+            ctx.fillRect(x + 28, y + 12, 4, 4);
+        }
+
+        // Draw fluffy cloud
+        function drawCloud(x, y, width, height) {
+            ctx.fillStyle = '#FFFFFF';
+            const circles = 6;
+            for (let i = 0; i < circles; i++) {
+                const circleX = x + (width / circles) * i;
+                const circleY = y + Math.sin(i) * 5;
+                const radius = height / 2 + Math.sin(i * 2) * 5;
+                
+                ctx.beginPath();
+                ctx.arc(circleX, circleY, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Collision detection
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // Update game logic
+        function update() {
+            if (gameState === 'gameOver') {
+                if (keys[' ']) {
+                    resetGame();
+                }
+                return;
+            }
+
+            // Move player
+            if (keys['ArrowLeft'] && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+            if (keys['ArrowUp'] && player.y > 0) {
+                player.y -= player.speed;
+            }
+            if (keys['ArrowDown'] && player.y < canvas.height - player.height) {
+                player.y += player.speed;
+            }
+
+            // Spawn anvils
+            anvilSpawnTimer++;
+            if (anvilSpawnTimer >= anvilSpawnRate) {
+                anvils.push({
+                    x: Math.random() * (canvas.width - 40),
+                    y: -40,
+                    width: 40,
+                    height: 32,
+                    speed: gameSpeed + Math.random() * 2
+                });
+                anvilSpawnTimer = 0;
+                
+                // Increase difficulty
+                if (anvilSpawnRate > 20) {
+                    anvilSpawnRate -= 0.5;
+                }
+                if (gameSpeed < 8) {
+                    gameSpeed += 0.01;
+                }
+            }
+
+            // Update anvils
+            for (let i = anvils.length - 1; i >= 0; i--) {
+                const anvil = anvils[i];
+                anvil.y += anvil.speed;
+
+                // Check collision with player
+                if (checkCollision(player, anvil)) {
+                    gameState = 'gameOver';
+                    return;
+                }
+
+                // Remove anvils that are off screen
+                if (anvil.y > canvas.height) {
+                    anvils.splice(i, 1);
+                    score += 10;
+                }
+            }
+
+            // Update clouds
+            clouds.forEach(cloud => {
+                cloud.x += cloud.speed;
+                if (cloud.x > canvas.width) {
+                    cloud.x = -cloud.width;
+                }
+            });
+        }
+
+        // Draw everything
+        function draw() {
+            // Clear canvas with sky blue
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw clouds
+            clouds.forEach(cloud => {
+                drawCloud(cloud.x, cloud.y, cloud.width, cloud.height);
+            });
+
+            // Draw ground
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Draw grass details
+            ctx.fillStyle = '#228B22';
+            for (let i = 0; i < canvas.width; i += 10) {
+                ctx.fillRect(i, canvas.height - 50, 2, 10);
+                ctx.fillRect(i + 5, canvas.height - 45, 2, 5);
+            }
+
+            // Draw player
+            drawChicken(player.x, player.y);
+
+            // Draw anvils
+            anvils.forEach(anvil => {
+                drawAnvil(anvil.x, anvil.y);
+            });
+
+            // Draw UI
+            ctx.fillStyle = '#000';
+            ctx.font = '24px monospace';
+            ctx.fillText(`Score: ${score}`, 20, 40);
+            ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}`, 20, 70);
+
+            // Draw game over screen
+            if (gameState === 'gameOver') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#FF0000';
+                ctx.font = '48px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2 - 60);
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '24px monospace';
+                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillText('Press SPACE to restart', canvas.width / 2, canvas.height / 2 + 30);
+                
+                // Draw sad chicken
+                ctx.fillStyle = '#FFD700';
+                ctx.fillText('🐔💀', canvas.width / 2, canvas.height / 2 + 80);
+                
+                ctx.textAlign = 'left';
+            }
+        }
+
+        // Reset game
+        function resetGame() {
+            gameState = 'playing';
+            score = 0;
+            gameSpeed = 2;
+            player.x = 400;
+            player.y = 500;
+            anvils = [];
+            anvilSpawnTimer = 0;
+            anvilSpawnRate = 60;
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize and start game
+        initClouds();
+        gameLoop();
+    </script>
+</body>
+</html>

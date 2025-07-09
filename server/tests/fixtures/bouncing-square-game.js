@@ -1,4 +1,4 @@
-// Simple mock game: Bouncing square
+// Simple fixture game: Bouncing square
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 640;
@@ -28,4 +28,3 @@ function gameLoop() {
 }
 
 gameLoop();
-

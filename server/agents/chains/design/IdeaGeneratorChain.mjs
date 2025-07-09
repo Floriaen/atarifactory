@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename);
 const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
 
 function createIdeaGeneratorChain(llm, options = {}) {
+  // Only accept sharedState as an option (for logging/debugging), do not mutate LLM or set temperature here.
   return createJsonExtractionChain({
     llm,
     promptFile: promptPath,

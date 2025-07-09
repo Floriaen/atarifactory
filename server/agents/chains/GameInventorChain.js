@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs').promises;
 
 // Async factory that loads the prompt template from a file and constructs a PromptTemplate
-async function createGameInventorChain(llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL || 'gpt-4.1', temperature: 0 })) {
+async function createGameInventorChain(llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 })) {
   const promptPath = path.join(__dirname, '../prompts/GameInventorChain.prompt.md');
   const promptString = await fs.readFile(promptPath, 'utf8');
   const gameInventorPrompt = new PromptTemplate({ template: promptString, inputVariables: [] });

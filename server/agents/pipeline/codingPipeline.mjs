@@ -2,6 +2,7 @@
 import { createContextStepBuilderChain } from '../chains/ContextStepBuilderChain.js';
 import { createFeedbackChain } from '../chains/FeedbackChain.js';
 import { run as staticCheckerRun } from '../chains/StaticCheckerChain.mjs';
+import { transformGameCodeWithLLM } from '../chains/ControlBarTransformerAgent.mjs';
 import { estimateTokens } from '../../utils/tokenUtils.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
@@ -10,15 +11,20 @@ import fs from 'fs';
 
 const GAME_TEMPLATE = fs.readFileSync(new URL('../../gameBoilerplate/game.js', import.meta.url), 'utf-8');
 
-async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
+async function runCodingPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
 
-  const openaiModel = process.env.OPENAI_MODEL;
-  if (!openaiModel) {
-    throw new Error('OPENAI_MODEL environment variable must be set');
+  let llm;
+  if (process.env.MOCK_PIPELINE === '1') {
+    // Use a dummy LLM and dummy chains for mock pipeline
+    llm = { invoke: async () => ({ code: sharedState.gameSource || '', contextSteps: [] }) };
+  } else {
+    const openaiModel = process.env.OPENAI_MODEL;
+    if (!openaiModel) {
+      throw new Error('OPENAI_MODEL environment variable must be set');
+    }
+    llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   }
-  const contextStepLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
-  const feedbackLLM = new ChatOpenAI({ model: openaiModel, temperature: 0 });
   
   let tokenCount = typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0;
   sharedState.tokenCount = tokenCount;
@@ -35,9 +41,14 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
 
   // 1. Context Step Builder (iterate over all steps)
   // Emit Progress for each plan step
-  const contextStepBuilderChain = factories.createContextStepBuilderChain
-    ? await factories.createContextStepBuilderChain(contextStepLLM)
-    : await createContextStepBuilderChain(contextStepLLM);
+  let contextStepBuilderChain;
+  if (process.env.MOCK_PIPELINE === '1') {
+    contextStepBuilderChain = {
+      invoke: async () => ({ code: sharedState.gameSource || '', contextSteps: [] })
+    };
+  } else {
+    contextStepBuilderChain = await createContextStepBuilderChain(llm);
+  }
   // Seed with minimal scaffold for first step
   let accumulatedCode = '';
   let allStepContexts = [];
@@ -84,16 +95,20 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
     localStep++;
   }
   sharedState.contextSteps = allStepContexts;
-  sharedState.code = accumulatedCode.trim();
-
+  sharedState.gameSource = accumulatedCode.trim();
 
   // 2. Feedback
   statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
 
   localStep++;
-  const feedbackChain = factories.createFeedbackChain
-    ? await factories.createFeedbackChain(feedbackLLM)
-    : await createFeedbackChain(feedbackLLM);
+  let feedbackChain;
+  if (process.env.MOCK_PIPELINE === '1') {
+    feedbackChain = {
+      invoke: async () => ({ suggestion: 'No feedback needed.' })
+    };
+  } else {
+    feedbackChain = await createFeedbackChain(llm);
+  }
   const runtimeLogs = `Player reached the goal area after switching forms. No errors detected.`;
   const stepId = sharedState.plan && sharedState.plan[0] && sharedState.plan[0].id ? sharedState.plan[0].id : 'step-1';
 
@@ -148,14 +163,23 @@ async function runCodingPipeline(sharedState, onStatusUpdate, factories = {}) {
   sharedState.staticCheckPassed = staticCheckerOut.staticCheckPassed;
   sharedState.staticCheckErrors = staticCheckerOut.errors;
 
-  // 4. SyntaxSanity and RuntimePlayability (optional, add as needed)
+  // 4. Enforce control bar only input (LLM-based transformation)
+  try {
+    console.log('Transforming code to use control bar only input', sharedState.gameSource);
+    sharedState.gameSource = await transformGameCodeWithLLM(sharedState, llm);
+    console.log('Successfully transformed code to use control bar only input', sharedState.gameSource);
+    sharedState.logs = ['Pipeline executed', 'Control bar input transformation applied'];
+  } catch (error) {
+    console.error('Error transforming control bar input:', error);
+    sharedState.logs = ['Pipeline executed', 'Warning: Could not transform control bar input'];
+  }
+
+  // 5. SyntaxSanity and RuntimePlayability (optional, add as needed)
   localStep++;
-  // Do NOT emit progress=1.0 here; emit only the last intermediate progress (<1.0){
   statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
 
   sharedState.syntaxOk = true;
   sharedState.runtimePlayable = true;
-  sharedState.logs = ['Pipeline executed'];
 
 
   sharedState.tokenCount = tokenCount;

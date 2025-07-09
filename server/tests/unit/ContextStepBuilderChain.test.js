@@ -5,16 +5,24 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 jest.setTimeout(20000);
 describe('ContextStepBuilderChain', () => {
-  let promptString;
+  let systemPromptString, humanPromptString;
   beforeAll(async () => {
-    const promptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.prompt.md');
-    promptString = await fs.readFile(promptPath, 'utf8');
+    const systemPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.system.prompt.md');
+    const humanPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.human.prompt.md');
+    systemPromptString = await fs.readFile(systemPromptPath, 'utf8');
+    humanPromptString = await fs.readFile(humanPromptPath, 'utf8');
   });
 
-  it('loads the prompt template with correct variables', () => {
-    expect(promptString).toContain('{{gameSource}}');
-    expect(promptString).toContain('{{plan}}');
-    expect(promptString).toContain('{{step}}');
+  it('loads the system prompt template (rules) as a non-empty string', () => {
+    expect(typeof systemPromptString).toBe('string');
+    expect(systemPromptString.length).toBeGreaterThan(0);
+    expect(systemPromptString).toContain('STRICT RULES');
+  });
+
+  it('loads the human prompt template with correct variables', () => {
+    expect(humanPromptString).toContain('{gameSource}');
+    expect(humanPromptString).toContain('{plan}');
+    expect(humanPromptString).toContain('{step}');
   });
 
   it('parses output string using StringOutputParser', async () => {
@@ -30,7 +38,7 @@ describe('ContextStepBuilderChain', () => {
       return;
     }
     const { ChatOpenAI } = require('@langchain/openai');
-    const modelName = process.env.OPENAI_MODEL || 'gpt-4.1';
+    const modelName = process.env.OPENAI_MODEL;
     const chain = await createContextStepBuilderChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
     const result = await chain.invoke({
       gameSource: '// Minimal HTML5 Canvas Game Scaffold\nconst canvas = document.getElementById(\'game-canvas\');\nconst ctx = canvas.getContext(\'2d\');\nfunction gameLoop() { ctx.clearRect(0,0,canvas.width,canvas.height); }\ngameLoop();',
