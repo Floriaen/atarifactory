@@ -56,6 +56,7 @@ describe('GameInventorChain Pipeline Tests', () => {
     const apiKey = process.env.OPENAI_API_KEY;
     const shouldRun = !!(apiKey && ChatOpenAI);
     (shouldRun ? it : it.skip)('runs end-to-end with real LLM', async () => {
+      jest.setTimeout(30000);
       const chain = await createGameInventorChain(new ChatOpenAI({ temperature: 0, openAIApiKey: apiKey }));
       const result = await chain.invoke({});
       expect(result).toBeDefined();
