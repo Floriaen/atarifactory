@@ -1,7 +1,19 @@
-const { createFeedbackChain } = require('../../agents/chains/FeedbackChain');
-const fs = require('fs').promises;
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+import { describe, it, expect } from 'vitest';
+import { createFeedbackChain } from '../../agents/chains/FeedbackChain.js';
+import { promises as fs } from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { ChatOpenAI } from '@langchain/openai';
+import { extractJsonCodeBlock } from '../../utils/formatter.js';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 describe('FeedbackChain', () => {
   let promptString;
@@ -16,7 +28,7 @@ describe('FeedbackChain', () => {
   });
 
   it('parses output JSON using JsonOutputParser', async () => {
-    const { JsonOutputParser } = require('@langchain/core/output_parsers');
+    // JsonOutputParser is now imported at the top
     const parser = new JsonOutputParser();
     const output = await parser.invoke({ content: '{ "retryTarget": "fixer", "suggestion": "Try fixing the code." }' });
     expect(output).toEqual({ retryTarget: 'fixer', suggestion: 'Try fixing the code.' });
@@ -27,8 +39,7 @@ describe('FeedbackChain', () => {
       console.warn('Skipping integration test: no OPENAI_API_KEY');
       return;
     }
-    const { ChatOpenAI } = require('@langchain/openai');
-    const { extractJsonCodeBlock } = require('../../utils/formatter');
+    // ChatOpenAI and extractJsonCodeBlock are now imported at the top
     const chain = await createFeedbackChain(new ChatOpenAI({ temperature: 0 }));
     const rawResult = await chain.invoke({
       runtimeLogs: JSON.stringify({

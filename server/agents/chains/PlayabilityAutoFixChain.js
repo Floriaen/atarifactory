@@ -1,8 +1,14 @@
-const fs = require('fs/promises');
-const path = require('path');
-const { PromptTemplate } = require('@langchain/core/prompts');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
-const { ChatOpenAI } = require('@langchain/openai');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { ChatOpenAI } from '@langchain/openai';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Async factory for PlayabilityAutoFixChain
 async function createPlayabilityAutoFixChain(llm) {
@@ -16,4 +22,4 @@ async function createPlayabilityAutoFixChain(llm) {
   return autoFixPrompt.pipe(llm).pipe(parser);
 }
 
-module.exports = { createPlayabilityAutoFixChain };
+export { createPlayabilityAutoFixChain };

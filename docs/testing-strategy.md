@@ -264,7 +264,7 @@ Our CI pipeline:
 1. Use `TEST_LOGS=1` for verbose output
 2. Check mock responses
 3. Verify test data
-4. Use Jest's `--verbose` flag
+4. Use Vitest's `--reporter=verbose` flag
 5. Check coverage reports
 
 ## Common Issues and Solutions
@@ -286,6 +286,6 @@ Our CI pipeline:
 
 ## Resources
 
-- [Jest Documentation](https://jestjs.io/docs/getting-started)
-- [Testing Best Practices](https://jestjs.io/docs/best-practices)
-- [Mocking Guide](https://jestjs.io/docs/mock-functions) 
+- [Vitest Documentation](https://vitest.dev/guide/)
+- [Testing Best Practices](https://vitest.dev/guide/features.html)
+- [Mocking Guide](https://vitest.dev/guide/mocking.html) 

@@ -1,6 +1,6 @@
-const importPlugin = require('eslint-plugin-import');
+import importPlugin from 'eslint-plugin-import';
 
-module.exports = [
+export default [
   {
     ignores: [
       'node_modules',
@@ -29,9 +29,9 @@ module.exports = [
         navigator: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        __dirname: 'readonly',
+        // require: 'readonly', // Not available in ESM
+        // module: 'readonly', // Not available in ESM 
+        // __dirname: 'readonly', // Not available in ESM
         process: 'readonly',
         exports: 'readonly',
       },
@@ -50,7 +50,7 @@ module.exports = [
         afterAll: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
-        jest: 'readonly',
+        // Using Vitest globals instead of Jest
       },
     },
     rules: {},
@@ -95,7 +95,7 @@ module.exports = [
         afterAll: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
-        jest: 'readonly',
+        // Using Vitest globals instead of Jest
       },
     },
     rules: {},

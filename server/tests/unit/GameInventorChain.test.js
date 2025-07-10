@@ -1,9 +1,18 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const { createGameInventorChain } = require('../../agents/chains/GameInventorChain');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
-const fs = require('fs/promises');
-const { ChatOpenAI } = (() => { try { return require('@langchain/openai'); } catch { return {}; } })();
+import { describe, it, expect } from 'vitest';
+import path from 'path';
+import dotenv from 'dotenv';
+import { createGameInventorChain } from '../../agents/chains/GameInventorChain.js';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { promises as fs } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { ChatOpenAI } from '@langchain/openai';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 describe('GameInventorChain Pipeline Tests', () => {
   // 1. Unit test: Output parser
@@ -56,7 +65,7 @@ describe('GameInventorChain Pipeline Tests', () => {
     const apiKey = process.env.OPENAI_API_KEY;
     const shouldRun = !!(apiKey && ChatOpenAI);
     (shouldRun ? it : it.skip)('runs end-to-end with real LLM', async () => {
-      jest.setTimeout(30000);
+      // Timeout handled by Vitest config
       const chain = await createGameInventorChain(new ChatOpenAI({ temperature: 0, openAIApiKey: apiKey }));
       const result = await chain.invoke({});
       expect(result).toBeDefined();

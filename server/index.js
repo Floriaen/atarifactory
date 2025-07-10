@@ -1,12 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-// ensure env is loaded even when index.js is executed directly (tests) 
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 // Legacy imports removed after refactor. Core pipeline lives in controller.js
-const { runPipeline } = require('./controller');
+import { runPipeline } from './controller.js';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// ensure env is loaded even when index.js is executed directly (tests) 
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -106,10 +114,10 @@ app.get('/cors-test', (req, res) => {
 });
 
 // Export app for testing and server startup
-module.exports = app;
+export default app;
 
-// Start the server if this file is run directly
-if (require.main === module) {
+// Start the server if this file is run directly (ESM equivalent)
+if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });

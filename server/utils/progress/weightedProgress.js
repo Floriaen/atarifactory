@@ -48,7 +48,7 @@ function getClampedLocalProgress(step, total) {
   return p >= 1.0 ? 0.99 : p;
 }
 
-module.exports = {
+export {
   computeWeightedProgress,
   getClampedLocalProgress
 };

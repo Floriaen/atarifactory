@@ -153,7 +153,7 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
   npm run test:server
   ```
 
-- The Jest configuration is located in the `server` directory and loads environment variables from `server/.env`.
+- The Vitest configuration is located in the root directory and loads environment variables from `server/.env`.
 
 - End-to-end tests (`e2e`) are currently excluded from the default test runs.
 
@@ -197,7 +197,7 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 | Type                         | Where to Declare?                | Examples                                               | Notes                                      |
 |------------------------------|-----------------------------------|--------------------------------------------------------|---------------------------------------------|
 | **Backend dependencies**     | root `package.json`               | `express`, `langchain`, `@langchain/openai`, `cors`    | Only used by backend/server code            |
-| **Backend devDependencies**  | root `package.json`               | `jest`, `eslint`, `nodemon`                            | Backend test/lint/dev tools                 |
+| **Backend devDependencies**  | root `package.json`               | `vitest`, `eslint`, `nodemon`                          | Backend test/lint/dev tools                 |
 | **Backend scripts**          | root `package.json`               | `start`, `dev:server`, `test:unit`                     | All backend scripts run from root           |
 | **Frontend dependencies**    | `frontend/package.json`           | `react`, `react-dom`, `vue`, `svelte`, `axios`         | Only used by frontend code                  |
 | **Frontend devDependencies** | `frontend/package.json`           | `vite`, `tailwindcss`, `@vitejs/plugin-react`          | Frontend build/test/dev tools               |
@@ -220,7 +220,7 @@ A token counter feature is planned for the UI to estimate the cost of current ge
 
 By default, all agent tests suppress logs for clean test output. To enable logs (for debugging, LLM prompt inspection, etc.), run your tests with:
 
-    TEST_LOGS=1 npx jest
+    TEST_LOGS=1 npx vitest
 
 This will print all agent logs to the terminal. This mechanism is implemented in every agent test file.
 
@@ -233,23 +233,23 @@ By default, all tests use fast, deterministic mocks for LLM calls.
 
 Example commands:
 
-- Mock only: `npx jest`
-- Mock + logs: `TEST_LOGS=1 npx jest`
-- Real LLM + logs: `TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx jest`
-- Real LLM only: `TEST_LLM=1 OPENAI_API_KEY=sk-... npx jest`
+- Mock only: `npx vitest`
+- Mock + logs: `TEST_LOGS=1 npx vitest`
+- Real LLM + logs: `TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx vitest`
+- Real LLM only: `TEST_LLM=1 OPENAI_API_KEY=sk-... npx vitest`
 
-| Mode         | Env Vars Needed         | LLM Used         | Logs      | Command Example                                      |
-|--------------|------------------------|------------------|-----------|------------------------------------------------------|
-| Mock only    | (none)                 | MockSmartOpenAI  | Off       | npx jest                                             |
-| Mock + logs  | TEST_LOGS=1            | MockSmartOpenAI  | Console   | TEST_LOGS=1 npx jest                                 |
-| Real LLM     | TEST_LLM=1 + OPENAI_API_KEY | SmartOpenAI      | Off       | TEST_LLM=1 OPENAI_API_KEY=sk-... npx jest            |
-| Real LLM+Log | TEST_LLM=1 + OPENAI_API_KEY + TEST_LOGS=1 | SmartOpenAI | Console   | TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx jest | 
+| Mode         | Env Vars Needed         | LLM Used         | Logs      | Command Example                                        |
+|--------------|------------------------|------------------|-----------|--------------------------------------------------------|
+| Mock only    | (none)                 | MockSmartOpenAI  | Off       | npx vitest                                             |
+| Mock + logs  | TEST_LOGS=1            | MockSmartOpenAI  | Console   | TEST_LOGS=1 npx vitest                                 |
+| Real LLM     | TEST_LLM=1 + OPENAI_API_KEY | SmartOpenAI      | Off       | TEST_LLM=1 OPENAI_API_KEY=sk-... npx vitest            |
+| Real LLM+Log | TEST_LLM=1 + OPENAI_API_KEY + TEST_LOGS=1 | SmartOpenAI | Console   | TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx vitest | 
 
 ## Summary
 
 - Server and tests are isolated in the `server` directory.
 - Frontend is isolated in the `frontend` directory.
 - Root directory scripts provide convenient commands to run server, tests, and frontend.
-- Jest configuration and environment loading are handled within the `server` directory.
+- Vitest configuration and environment loading are handled at the root directory.
 
 This setup ensures clear separation of concerns and consistent workflows.

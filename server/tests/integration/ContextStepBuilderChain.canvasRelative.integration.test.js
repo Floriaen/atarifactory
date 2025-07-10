@@ -1,5 +1,5 @@
-const { createContextStepBuilderChain } = require('../../agents/chains/ContextStepBuilderChain.js');
-const { ChatOpenAI } = require('@langchain/openai');
+import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
+import { ChatOpenAI } from '@langchain/openai';
 
 test('StepBuilder generates only canvas-relative code', async () => {
   const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 });

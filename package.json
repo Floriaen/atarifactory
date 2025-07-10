@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "private": true,
   "workspaces": [
     "server",
@@ -12,12 +13,9 @@
     "@babel/traverse": "^7.27.4",
     "@playwright/test": "^1.53.2",
     "@types/graceful-fs": "^4.1.9",
-    "create-jest": "^29.7.0",
     "diff-sequences": "^29.6.3",
     "eslint": "^9.29.0",
     "eslint-plugin-import": "^2.32.0",
-    "jest": "^30.0.2",
-    "jest-get-type": "^29.6.3",
     "resolve.exports": "^2.0.3",
     "rimraf": "^3.0.2",
     "supertest": "^7.1.1",
@@ -27,9 +25,9 @@
   "scripts": {
     "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:playwright": "npx playwright test",
-    "test:unit": "jest --testMatch=\"<rootDir>/server/tests/unit/**/*.test.js\" && vitest run --exclude=**/*.playwright.test.mjs server/tests/unit/**/*.test.mjs",
-    "test:integration": "vitest run --exclude=**/*.playwright.test.mjs server/tests/integration/**/*.test.mjs server/tests/integration/*.test.mjs",
-    "test:e2e": "vitest run --exclude=**/*.playwright.test.mjs server/tests/e2e/**/*.test.mjs server/tests/e2e/*.test.mjs",
+    "test:unit": "vitest run --exclude=**/*.playwright.test.js server/tests/unit/**/*.test.js",
+    "test:integration": "vitest run --exclude=**/*.playwright.test.js server/tests/integration/**/*.test.js server/tests/integration/*.test.js",
+    "test:e2e": "vitest run --exclude=**/*.playwright.test.js server/tests/e2e/**/*.test.js server/tests/e2e/*.test.js",
     "start:server": "node server/start.js",
     "start:frontend": "cd frontend && npm run dev",
     "dev:server": "nodemon server/index.js",

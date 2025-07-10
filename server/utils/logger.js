@@ -2,8 +2,14 @@
  * logger utility
  * Provides log, info, and error logging functions.
  */
-const { createLogger, format, transports } = require('winston');
-const path = require('path');
+import { createLogger, format, transports } from 'winston';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const logger = createLogger({
   level: 'info',
@@ -21,4 +27,4 @@ const logger = createLogger({
   ]
 });
 
-module.exports = logger; 
+export default logger; 

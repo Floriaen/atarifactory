@@ -1,7 +1,8 @@
-const { createSharedState } = require('../../types/SharedState');
+import { describe, it, expect } from 'vitest';
+import { createSharedState } from '../../types/SharedState.js';
 
 describe('SharedState', () => {
-  test('createSharedState returns an object with all required fields', () => {
+  it('createSharedState returns an object with all required fields', () => {
     const state = createSharedState();
     
     expect(state).toHaveProperty('gameDef', null);
