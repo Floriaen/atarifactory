@@ -1,10 +1,20 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const { createPlannerChain } = require('../../agents/chains/PlannerChain');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
-const fs = require('fs/promises');
+import path from 'path';
+import dotenv from 'dotenv';
+import { describe, it, expect } from 'vitest';
+import { createPlannerChain } from '../../agents/chains/PlannerChain.js';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { promises as fs } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { ChatOpenAI } from '@langchain/openai';
 
-jest.setTimeout(20000);
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+// Timeout handled by Vitest config
 describe('PlannerChain Pipeline Tests', () => {
   // 1. Unit test: Output parser
   describe('JsonOutputParser', () => {
@@ -61,7 +71,7 @@ describe('PlannerChain Pipeline Tests', () => {
   describe('Integration (real chain, real LLM)', () => {
     const hasKey = !!process.env.OPENAI_API_KEY;
     (hasKey ? it : it.skip)('runs end-to-end with real LLM', async () => {
-      const { ChatOpenAI } = require('@langchain/openai');
+      // ChatOpenAI is now imported at the top
       if (!process.env.OPENAI_MODEL) {
         throw new Error('OPENAI_MODEL environment variable must be set for this test.');
       }

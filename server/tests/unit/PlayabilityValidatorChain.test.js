@@ -1,8 +1,18 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const { createPlayabilityValidatorChain } = require('../../agents/chains/PlayabilityValidatorChain');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
-const fs = require('fs/promises');
+import path from 'path';
+import dotenv from 'dotenv';
+import { describe, it, expect } from 'vitest';
+import { createPlayabilityValidatorChain } from '../../agents/chains/PlayabilityValidatorChain.js';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { promises as fs } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { ChatOpenAI } from '@langchain/openai';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 describe('PlayabilityValidatorChain Pipeline Tests', () => {
   // 1. Unit test: Output parser
@@ -54,7 +64,7 @@ describe('PlayabilityValidatorChain Pipeline Tests', () => {
   describe('Integration (real chain, real LLM)', () => {
     const hasKey = !!process.env.OPENAI_API_KEY;
     (hasKey ? it : it.skip)('runs end-to-end with real LLM', async () => {
-      const { ChatOpenAI } = require('@langchain/openai');
+      // ChatOpenAI is now imported at the top
       const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 });
       const chain = await createPlayabilityValidatorChain(llm);
       const result = await chain.invoke({ mechanics: ['move left/right'], winCondition: 'Reach the exit.' });

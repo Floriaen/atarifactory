@@ -1,4 +1,4 @@
-const { marked } = require('marked');
+import { marked } from 'marked';
 
 // This utility extracts JavaScript code blocks from markdown text, using the marked library to parse and identify code blocks.
 
@@ -43,4 +43,4 @@ function extractJsonCodeBlock(text) {
   throw new Error('No valid JSON object found in LLM output');
 }
 
-module.exports = { extractJsCodeBlocks, extractJsonCodeBlock }; 
+export { extractJsCodeBlocks, extractJsonCodeBlock }; 

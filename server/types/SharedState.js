@@ -32,7 +32,7 @@
  */
 
 // SharedState schema and factory using Zod for strict consistency
-const { z } = require('zod');
+import { z } from 'zod';
 
 const MetadataSchema = z.object({
   startTime: z.date(),
@@ -90,7 +90,7 @@ function parseSharedState(update) {
   return SharedStateSchema.parse(update);
 }
 
-module.exports = {
+export {
   SharedStateSchema,
   createSharedState,
   parseSharedState

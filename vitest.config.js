@@ -1,6 +1,6 @@
-const { defineConfig } = require('vitest/config');
+import { defineConfig } from 'vitest/config';
 
-module.exports = defineConfig({
+export default defineConfig({
   resolve: {
 
   },
@@ -13,8 +13,8 @@ module.exports = defineConfig({
   test: {
     globals: true,
     include: [
-      'server/**/*.test.mjs',
-      'server/**/*.spec.mjs'
+      'server/**/*.test.js',
+      'server/**/*.spec.js'
     ],
     server: {
       deps: {

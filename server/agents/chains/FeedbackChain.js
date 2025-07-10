@@ -2,10 +2,16 @@
 // Receives: { runtimeLogs, stepId }
 // Returns: { retryTarget: 'fixer' | 'planner', suggestion: string }
 
-const fs = require('fs').promises;
-const path = require('path');
-const { PromptTemplate } = require('@langchain/core/prompts');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Async factory for the chain
 async function createFeedbackChain(llm) {
@@ -23,4 +29,4 @@ async function createFeedbackChain(llm) {
 
 }
 
-module.exports = { createFeedbackChain };
+export { createFeedbackChain };

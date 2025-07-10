@@ -10,4 +10,4 @@
  * @property {string} [note] - Optional note from auto-fix phase
  */
 
-module.exports = {}; // This file is for type documentation only
+export {}; // This file is for type documentation only

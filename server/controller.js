@@ -1,8 +1,16 @@
-const logger = require('./utils/logger');
-const { v4: uuidv4 } = require('uuid');
-const { createSharedState } = require('./types/SharedState');
-const fs = require('fs');
-const path = require('path');
+import logger from './utils/logger.js';
+import { v4 as uuidv4 } from 'uuid';
+import { createSharedState } from './types/SharedState.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { runCodingPipeline } from './agents/pipeline/codingPipeline.js';
+import { runModularGameSpecPipeline } from './agents/pipeline/pipeline.js';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Orchestrates the agent pipeline for game generation.
@@ -87,9 +95,8 @@ async function runPipeline(title, onStatusUpdate) {
 }
 
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
-  //const planningPipelineModule = await import('./agents/pipeline/planningPipeline.mjs');
+  //const planningPipelineModule = await import('./agents/pipeline/planningPipeline.js');
   //const { runPlanningPipeline } = planningPipelineModule;
-  const { runCodingPipeline } = (await import('./agents/pipeline/codingPipeline.mjs'));
 
 
   // MOCK_PIPELINE: Serve static tests/fixtures/bouncing-square-game.js and mock gameDef
@@ -142,9 +149,9 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     const sharedState = createSharedState();
     sharedState.title = title;
     sharedState.onStatusUpdate = onStatusUpdate;
-    const { runModularGameSpecPipeline } = await import('./agents/pipeline/pipeline.mjs');
+    // runModularGameSpecPipeline is now imported at the top
     await runModularGameSpecPipeline(sharedState, {});
     return sharedState;
   }
 }
-module.exports = { runPipeline, generateGameSourceCode }; 
+export { runPipeline, generateGameSourceCode }; 

@@ -1,9 +1,20 @@
-const { createContextStepBuilderChain } = require('../../agents/chains/ContextStepBuilderChain');
-const fs = require('fs').promises;
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+import { describe, it, expect } from 'vitest';
+import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
+import { promises as fs } from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { ChatOpenAI } from '@langchain/openai';
 
-jest.setTimeout(20000);
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+// Timeout handled by Vitest config
 describe('ContextStepBuilderChain', () => {
   let systemPromptString, humanPromptString;
   beforeAll(async () => {
@@ -26,7 +37,7 @@ describe('ContextStepBuilderChain', () => {
   });
 
   it('parses output string using StringOutputParser', async () => {
-    const { StringOutputParser } = require('@langchain/core/output_parsers');
+    // StringOutputParser is now imported at the top
     const parser = new StringOutputParser();
     const output = await parser.invoke({ content: 'function foo() { return 1; }' });
     expect(output).toBe('function foo() { return 1; }');
@@ -37,7 +48,7 @@ describe('ContextStepBuilderChain', () => {
       console.warn('Skipping integration test: no OPENAI_API_KEY');
       return;
     }
-    const { ChatOpenAI } = require('@langchain/openai');
+    // ChatOpenAI is now imported at the top
     const modelName = process.env.OPENAI_MODEL;
     const chain = await createContextStepBuilderChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
     const result = await chain.invoke({

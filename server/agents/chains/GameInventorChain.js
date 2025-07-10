@@ -1,9 +1,15 @@
 // Modular GameInventorChain (Runnable API)
-const { ChatOpenAI } = require('@langchain/openai');
-const { PromptTemplate } = require('@langchain/core/prompts');
-const { JsonOutputParser } = require('@langchain/core/output_parsers');
-const path = require('path');
-const fs = require('fs').promises;
+import { ChatOpenAI } from '@langchain/openai';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+import path from 'path';
+import { promises as fs } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Async factory that loads the prompt template from a file and constructs a PromptTemplate
 async function createGameInventorChain(llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 })) {
@@ -23,4 +29,4 @@ async function createGameInventorChain(llm = new ChatOpenAI({ model: process.env
 })();
 */
 
-module.exports = { createGameInventorChain };
+export { createGameInventorChain };

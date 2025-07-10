@@ -2,10 +2,16 @@
 // Receives: { gameSource, plan, step }
 // Returns: revised JavaScript source as a string
 
-const fs = require('fs');
-const path = require('path');
-const { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } = require('@langchain/core/prompts');
-const { StringOutputParser } = require('@langchain/core/output_parsers');
+import fs from 'fs';
+import path from 'path';
+import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load system and human prompt templates from .md files
 function loadPromptTemplate(filename) {
@@ -29,4 +35,4 @@ async function createContextStepBuilderChain(llm) {
   return prompt.pipe(llm).pipe(parser);
 }
 
-module.exports = { createContextStepBuilderChain };
+export { createContextStepBuilderChain };
