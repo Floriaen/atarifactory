@@ -46,11 +46,6 @@ export function createJsonExtractionChain({ llm, promptFile, inputVariables, sch
       }
       const effectiveSharedState = sharedState;
 
-      if (!input || typeof input !== 'object' || inputVariables.some(v => !(v in input))) {
-        throw new Error(
-          `Input must be an object with required fields: ${inputVariables.join(', ')}`
-        );
-      }
       const result = await chain.invoke(input);
       // Token counting logic
       if (effectiveSharedState && typeof effectiveSharedState.tokenCount === 'number') {
