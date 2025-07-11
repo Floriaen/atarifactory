@@ -1,27 +1,39 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { ChatOpenAI } from '@langchain/openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { playabilityValidatorSchema } from '../../schemas/langchain-schemas.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Async factory for PlayabilityValidatorChain
+// Async factory for PlayabilityValidatorChain with structured output
 async function createPlayabilityValidatorChain(llm) {
-  if (!llm) throw new Error('LLM instance must be provided to createFeedbackChain');
+  if (!llm) throw new Error('LLM instance must be provided to createPlayabilityValidatorChain');
   const promptPath = path.join(__dirname, '../prompts/PlayabilityValidatorChain.prompt.md');
   const promptString = await fs.readFile(promptPath, 'utf8');
-  const parser = new JsonOutputParser();
-  const formatInstructions = parser.getFormatInstructions();
+  
   const playabilityPrompt = new PromptTemplate({
-    template: promptString + '\n' + formatInstructions,
+    template: promptString,
     inputVariables: ['mechanics', 'winCondition']
   });
-  return playabilityPrompt.pipe(llm).pipe(parser);
+
+  // Use structured output instead of manual JSON parsing
+  const structuredLLM = llm.withStructuredOutput(playabilityValidatorSchema);
+  
+  return playabilityPrompt
+    .pipe(structuredLLM)
+    .withConfig({
+      runName: 'PlayabilityValidatorChain',
+      callbacks: [{
+        handleLLMEnd: (output) => {
+          console.debug('[PlayabilityValidatorChain] LLM response:', output);
+        }
+      }]
+    });
 }
 
 export { createPlayabilityValidatorChain };
