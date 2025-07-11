@@ -41,11 +41,11 @@ export const playabilityValidatorSchema = z.object({
 
 /**
  * FeedbackChain output schema
- * Expected: { feedback: string, suggestions: string[] }
+ * Expected: { retryTarget: 'fixer' | 'planner', suggestion: string }
  */
 export const feedbackSchema = z.object({
-  feedback: z.string().min(1, 'Feedback is required'),
-  suggestions: z.array(z.string()).default([])
+  retryTarget: z.enum(['fixer', 'planner']).describe('Which component should retry the failed operation'),
+  suggestion: z.string().min(1, 'Suggestion for improvement is required')
 });
 
 /**

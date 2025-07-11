@@ -2,18 +2,24 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { RunnableLambda } from '@langchain/core/runnables';
 import { ensureContentPresent } from './ensureContentPresent.js';
+import { estimateTokens } from './tokenUtils.js';
+import { createJSONChain } from './chainFactory.js';
 import fs from 'fs';
 
 /**
  * Generic factory for LCEL JSON extraction chains.
+ * 
+ * DEPRECATED: Use createJSONChain from chainFactory.js for new chains.
+ * This function is maintained for backward compatibility.
+ * 
  * @param {Object} opts
  * @param {object} opts.llm - The LLM instance (must have .invoke).
  * @param {string} opts.promptFile - Absolute path to the prompt file.
  * @param {string[]} opts.inputVariables - Variables for the prompt template.
  * @param {string} [opts.schemaName] - Optional, for error messages.
+ * @param {object} [opts.sharedState] - Shared state for token counting.
  * @returns {{ invoke: (input: object) => Promise<object> }}
  */
-import { estimateTokens } from '../utils/tokenUtils.js';
 
 export function createJsonExtractionChain({ llm, promptFile, inputVariables, schemaName = 'output', sharedState } = {}) {
   if (!llm || typeof llm.invoke !== 'function') {
