@@ -1,4 +1,7 @@
 {
+  "name": "atarifactory",
+  "version": "1.0.0",
+  "description": "AI-powered game development platform that generates playable mobile Atari-like games",
   "type": "module",
   "private": true,
   "workspaces": [

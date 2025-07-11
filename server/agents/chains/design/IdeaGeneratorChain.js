@@ -1,19 +1,15 @@
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import { createCreativeChain } from '../../../utils/chainFactory.js';
+import { ideaGeneratorSchema } from '../../../schemas/langchain-schemas.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const promptPath = path.join(__dirname, '../../prompts/design/idea-generator.md');
-
-function createIdeaGeneratorChain(llm, options = {}) {
-  // Only accept sharedState as an option (for logging/debugging), do not mutate LLM or set temperature here.
-  return createJsonExtractionChain({
-    llm,
-    promptFile: promptPath,
+async function createIdeaGeneratorChain(llm, options = {}) {
+  return createCreativeChain({
+    chainName: 'IdeaGeneratorChain',
+    promptFile: 'design/idea-generator.md',
     inputVariables: ['constraints'],
-    schemaName: 'idea (title, pitch)',
-    ...(options.sharedState ? { sharedState: options.sharedState } : {})
+    schema: ideaGeneratorSchema,
+    llm: llm,
+    sharedState: options.sharedState,
+    enableLogging: options.enableLogging !== false
   });
 }
 

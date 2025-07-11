@@ -2,7 +2,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { JsonOutputParser } from '@langchain/core/output_parsers';
-import { ChatOpenAI } from '@langchain/openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 

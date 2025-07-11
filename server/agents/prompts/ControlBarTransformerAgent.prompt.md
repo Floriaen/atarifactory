@@ -23,37 +23,37 @@ Output ONLY the complete, transformed JavaScript code.
 ```javascript
 Example mapping (use e.detail.key):
 Old:
-  window.addEventListener('keydown', e => {
+  window.addEventListener('keydown', e => {{
     if (e.code === 'ArrowLeft') moveLeft = true;
-  });
+  }});
 
 New:
-  window.addEventListener('gamepad-press', e => {
+  window.addEventListener('gamepad-press', e => {{
     if (e.detail.key === 'left') moveLeft = true;
-  });
+  }});
 
 Old:
-  window.addEventListener('keyup', e => {
+  window.addEventListener('keyup', e => {{
     if (e.code === 'ArrowLeft') moveLeft = false;
-  });
+  }});
 
 New:
-  window.addEventListener('gamepad-release', e => {
+  window.addEventListener('gamepad-release', e => {{
     if (e.detail.key === 'left') moveLeft = false;
-  });
+  }});
 
 // INCORRECT (do NOT do this):
-window.addEventListener('gamepad-press', e => {
+window.addEventListener('gamepad-press', e => {{
   if (e.detail === 'left') moveLeft = true; // WRONG
   if (e.key === 'left') moveLeft = true;    // WRONG
-});
+}});
 ```
 
 ---
 
 Original code:
 
-{{gameSource}}
+{gameSource}
 
 ---
 

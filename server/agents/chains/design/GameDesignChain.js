@@ -43,10 +43,18 @@ async function runDesignPhase({ chain, phase, input, sharedState, logCOT, valida
   }
 }
 
-function createGameDesignChain({
+async function createGameDesignChain({
   llm,
   sharedState = undefined
 }) {
+  // Pre-create all chains since they are now async
+  const ideaChain = await createIdeaGeneratorChain(llm, { sharedState });
+  const loopChain = await createLoopClarifierChain(llm, { sharedState });
+  const mechanicsChain = await createMechanicExtractorChain(llm, { sharedState });
+  const winChain = await createWinConditionBuilderChain(llm, { sharedState });
+  const entitiesChain = await createEntityListBuilderChain(llm, { sharedState });
+  const playabilityChain = await createPlayabilityHeuristicChain(llm, { sharedState });
+  const finalChain = await createFinalAssemblerChain(llm);
 
   return {
     async invoke(input = {}) {
@@ -70,7 +78,7 @@ function createGameDesignChain({
 
       // IDEA PHASE
       const idea = await runDesignPhase({
-        chain: createIdeaGeneratorChain(llm, { sharedState }),
+        chain: ideaChain,
         phase: 'Idea',
         input,
         sharedState,
@@ -80,7 +88,7 @@ function createGameDesignChain({
 
       // LOOP PHASE
       const loop = await runDesignPhase({
-        chain: createLoopClarifierChain(llm, { sharedState }),
+        chain: loopChain,
         phase: 'Loop',
         input: { ...input, ...idea },
         sharedState,
@@ -90,7 +98,7 @@ function createGameDesignChain({
 
       // MECHANICS PHASE
       const mechanics = await runDesignPhase({
-        chain: createMechanicExtractorChain(llm, { sharedState }),
+        chain: mechanicsChain,
         phase: 'Mechanics',
         input: { ...input, ...idea, ...loop },
         sharedState,
@@ -100,7 +108,7 @@ function createGameDesignChain({
 
       // WIN CONDITION PHASE
       const win = await runDesignPhase({
-        chain: createWinConditionBuilderChain(llm, { sharedState }),
+        chain: winChain,
         phase: 'WinCondition',
         input: { ...input, ...idea, ...loop, ...mechanics },
         sharedState,
@@ -110,7 +118,7 @@ function createGameDesignChain({
 
       // ENTITIES PHASE
       const entities = await runDesignPhase({
-        chain: createEntityListBuilderChain(llm, { sharedState }),
+        chain: entitiesChain,
         phase: 'Entities',
         input: { ...input, ...idea, ...loop, ...mechanics, ...win },
         sharedState,
@@ -120,7 +128,7 @@ function createGameDesignChain({
 
       // PLAYABILITY PHASE
       const playability = await runDesignPhase({
-        chain: createPlayabilityHeuristicChain(llm, { sharedState }),
+        chain: playabilityChain,
         phase: 'Playability',
         input: { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } },
         sharedState,
@@ -130,7 +138,7 @@ function createGameDesignChain({
 
       // FINAL ASSEMBLY PHASE
       const final = await runDesignPhase({
-        chain: createFinalAssemblerChain(llm),
+        chain: finalChain,
         phase: 'FinalAssembly',
         input: {
           title: idea.title,

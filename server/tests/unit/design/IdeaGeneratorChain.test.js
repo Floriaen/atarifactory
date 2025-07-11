@@ -8,7 +8,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
   it('should be defined', async () => {
     expect(createIdeaGeneratorChain).toBeDefined();
     const mockLLM = new MockLLM(JSON.stringify({ title: 'Test Game', pitch: 'A fun test.' }));
-    const chain = createIdeaGeneratorChain(mockLLM);
+    const chain = await createIdeaGeneratorChain(mockLLM);
     expect(chain).toBeDefined();
     expect(typeof chain.invoke).toBe('function');
     // Test invoke actually works
@@ -19,7 +19,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
 
   it('throws if output is malformed', async () => {
     const mockLLM = new FlexibleMalformedLLM('missingContent');
-    const chain = createIdeaGeneratorChain(mockLLM);
+    const chain = await createIdeaGeneratorChain(mockLLM);
     await expect(chain.invoke({ constraints: 'test' })).rejects.toThrow('LLM output missing content');
   });
     it('should increment sharedState.tokenCount when provided', async () => {
@@ -29,7 +29,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
     // Simulate sharedState
     const sharedState = { tokenCount: 0 };
     // Patch the chain to accept sharedState (future implementation)
-    const chain = createIdeaGeneratorChain(mockLLM, { sharedState });
+    const chain = await createIdeaGeneratorChain(mockLLM, { sharedState });
     // Act
     await chain.invoke({ constraints: 'test' });
     // The mockContent is 47 characters, so estimateTokens = 12

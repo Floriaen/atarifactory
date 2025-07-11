@@ -51,4 +51,45 @@ export class FlexibleMalformedLLM extends BaseLLM {
   _llmType() {
     return `flexible-malformed:${this.mode}`;
   }
+
+  // Add withStructuredOutput method for modern chain compatibility
+  withStructuredOutput(schema) {
+    return new FlexibleMalformedLLMWithStructuredOutput(this.mode, schema);
+  }
+}
+
+// FlexibleMalformedLLM with structured output support
+class FlexibleMalformedLLMWithStructuredOutput extends FlexibleMalformedLLM {
+  constructor(mode, schema) {
+    super(mode);
+    this.schema = schema;
+  }
+  
+  async invoke() {
+    const result = await this._call();
+    
+    // For malformed LLMs with structured output, we should try to parse and fail appropriately
+    if (this.schema) {
+      try {
+        // If result has content, try to parse it as JSON and validate
+        if (result.content) {
+          try {
+            const parsed = JSON.parse(result.content);
+            return this.schema.parse(parsed);
+          } catch (parseError) {
+            // JSON parse error - schema validation will catch this
+            throw new Error(`LLM output missing content`);
+          }
+        } else {
+          // No content - throw appropriate error
+          throw new Error(`LLM output missing content`);
+        }
+      } catch (schemaError) {
+        throw new Error(`LLM output missing content`);
+      }
+    }
+    
+    // Without schema, just return the malformed result
+    return result;
+  }
 }

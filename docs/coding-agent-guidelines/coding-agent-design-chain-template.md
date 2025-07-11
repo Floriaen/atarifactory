@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide standardizes the implementation of all *design chain agents* in the codebase. All new and refactored chains should use the `createJsonExtractionChain` utility for robust, maintainable, and testable LCEL pipelines.
+This guide standardizes the implementation of all *design chain agents* in the codebase. All new and refactored chains should use the modern **chainFactory** utilities for robust, maintainable, and testable LCEL pipelines with structured output support.
 
 ---
 
@@ -10,37 +10,42 @@ This guide standardizes the implementation of all *design chain agents* in the c
 
 ### 1.1. File Structure
 
-- Chain file: `server/agents/chains/design/<chain-name>.mjs`
+- Chain file: `server/agents/chains/design/<chain-name>.js`
 - Prompt file: `server/agents/prompts/design/<chain-name>.md`
-- Unit test: `server/tests/unit/design/<chain-name>.test.mjs`
-- Integration test: `server/tests/integration/design/<chain-name>.openai.test.mjs` (if needed)
+- Unit test: `server/tests/unit/design/<chain-name>.test.js`
+- Integration test: `server/tests/integration/design/<chain-name>.openai.test.js` (if needed)
 
 ### 1.2. Chain Construction
 
-**Always use the utility:**
+**Always use the modern chainFactory utilities:**
 
 ```js
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.mjs';
-import { fileURLToPath } from 'url';
-import path from 'path';
+import { createStandardChain } from '../../../utils/chainFactory.js';
+import { <chainName>Schema } from '../../../schemas/langchain-schemas.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const promptPath = path.join(__dirname, '../../prompts/design/<chain-name>.md');
-
-function create<ChainName>(llm) {
-  return createJsonExtractionChain({
-    llm,
-    promptFile: promptPath,
+async function create<ChainName>(llm, options = {}) {
+  const { sharedState } = options;
+  
+  return await createStandardChain({
+    chainName: '<ChainName>',
+    promptFile: 'design/<chain-name>.md',
     inputVariables: ['input1', 'input2'], // e.g., ['loop']
-    schemaName: '<output description>' // e.g., 'mechanics array'
+    schema: <chainName>Schema, // Zod schema for structured output
+    preset: 'structured', // or 'creative', 'planning', 'validation'
+    llm,
+    sharedState // for token counting and callbacks
   });
 }
 
 export { create<ChainName> };
 ```
 
-**Prompt file** must instruct the LLM to respond with a strict JSON object matching the required schema.
+**Alternative specialized factories:**
+- `createJSONChain()` - For JSON extraction chains
+- `createCreativeChain()` - For creative/generative chains  
+- `createValidationChain()` - For validation chains
+
+**Prompt file** should provide clear instructions for the expected output format. When using structured output, the LLM will automatically follow the Zod schema.
 
 ---
 
@@ -48,7 +53,7 @@ export { create<ChainName> };
 
 ### 2.1. Unit Tests
 
-- Use `MockLLM` to simulate LLM responses.
+- Use `MockLLM` to simulate LLM responses with structured output support.
 - Use `FlexibleMalformedLLM` to simulate error cases.
 - Always test:
   - Happy path (valid input/output)
@@ -57,14 +62,14 @@ export { create<ChainName> };
 
 **Example:**
 ```js
-import { create<ChainName> } from '../../../agents/chains/design/<chain-name>.mjs';
+import { create<ChainName> } from '../../../agents/chains/design/<chain-name>.js';
 import { MockLLM } from '../../helpers/MockLLM.js';
 import { FlexibleMalformedLLM } from '../../helpers/MalformedLLM.js';
 
 // Happy path
 it('extracts ... (happy path)', async () => {
-  const mockLLM = new MockLLM(JSON.stringify({ ... }));
-  const chain = create<ChainName>(mockLLM);
+  const mockLLM = new MockLLM({ ... }); // Direct object, not JSON string
+  const chain = await create<ChainName>(mockLLM); // Note: await for async chain creation
   const input = { ... };
   const result = await chain.invoke(input);
   // assertions...
@@ -72,8 +77,16 @@ it('extracts ... (happy path)', async () => {
 
 // Input validation
 it('throws if input is missing', async () => {
-  const chain = create<ChainName>(new MockLLM(JSON.stringify({ ... })));
+  const chain = await create<ChainName>(new MockLLM({ ... })); // Note: await
   await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: ...');
+});
+
+// Token counting
+it('should increment sharedState.tokenCount when provided', async () => {
+  const sharedState = { tokenCount: 0 };
+  const chain = await create<ChainName>(new MockLLM({ ... }), { sharedState });
+  await chain.invoke({ ... });
+  expect(sharedState.tokenCount).toBeGreaterThan(0);
 });
 ```
 
@@ -81,41 +94,82 @@ it('throws if input is missing', async () => {
 
 - Use a real LLM (e.g., `ChatOpenAI`) and check for API key/model in `.env`.
 - Only run if credentials are present.
-- Assert that the contract holds for real LLM output.
+- Assert that the contract holds for real LLM output and structured output works correctly.
 
 ---
 
-## 3. Utility: `createJsonExtractionChain`
+## 3. Modern Chain Architecture
 
-- Handles prompt loading, format instructions, mapping, parsing, and error handling.
-- Enforces explicit LLM injection and strict input/output contracts.
-- See `server/utils/createJsonExtractionChain.mjs` for API.
+### 3.1. chainFactory Utilities
+
+- **`createStandardChain()`**: Core factory with full configuration options
+- **`createJSONChain()`**: Specialized for JSON extraction with structured output
+- **`createCreativeChain()`**: Optimized for creative/generative tasks
+- **`createValidationChain()`**: Specialized for validation tasks
+
+### 3.2. Key Features
+
+- **Structured Output**: Automatic schema validation using Zod
+- **Token Counting**: Built-in token tracking with callbacks
+- **Error Handling**: Comprehensive error handling and logging
+- **Presets**: Pre-configured LLM settings (creative, structured, planning, validation)
+- **Async Support**: Modern async/await patterns throughout
+
+### 3.3. Schema Definition
+
+Define schemas in `server/schemas/langchain-schemas.js`:
+
+```js
+export const <chainName>Schema = z.object({
+  field1: z.string().min(1, 'Field1 is required'),
+  field2: z.array(z.string()).min(1, 'At least one item required')
+});
+```
 
 ---
 
-## 4. Prompt & Parser Contract
+## 4. Configuration & Presets
 
-- Prompt must include a JSON schema and example.
-- Parser expects output to match the schema exactly.
-- Tests must use the same contract as the prompt and parser.
+### 4.1. Available Presets
+
+- **`structured`**: Precise, deterministic output (temperature: 0.1)
+- **`creative`**: Balanced creativity and control (temperature: 0.7)  
+- **`planning`**: Logical, step-by-step reasoning (temperature: 0.3)
+- **`validation`**: Conservative, accurate validation (temperature: 0.1)
+
+### 4.2. Custom Configuration
+
+```js
+import { createStandardLLM } from '../../../config/langchain.config.js';
+
+const customLLM = createStandardLLM({
+  model: 'gpt-4',
+  temperature: 0.5,
+  maxTokens: 1024
+});
+```
 
 ---
 
 ## 5. Checklist for New Chains
 
-- [ ] Prompt file created with strict JSON schema and example.
-- [ ] Chain implemented using `createJsonExtractionChain`.
-- [ ] Unit tests for happy path and all error cases.
-- [ ] Integration test (if needed) using real LLM.
-- [ ] All tests pass with `vitest`.
+- [ ] Zod schema defined in `langchain-schemas.js`
+- [ ] Prompt file created with clear instructions
+- [ ] Chain implemented using appropriate chainFactory function
+- [ ] Unit tests for happy path, input validation, and error cases
+- [ ] Token counting test included
+- [ ] Integration test (if needed) using real LLM
+- [ ] All tests pass with `vitest`
+- [ ] Chain creation is async and properly awaited
 
 ---
 
-## 6. Example
+## 6. Examples
 
-**See**  
-- `MechanicExtractorChain.mjs`  
-- `MechanicExtractorChain.test.mjs`  
-- `MechanicExtractorChain.openai.test.mjs`
+**See these reference implementations:**
+- `IdeaGeneratorChain.js` - Creative chain with structured output
+- `MechanicExtractorChain.js` - JSON extraction chain  
+- `PlayabilityHeuristicChain.js` - Validation chain
+- `PlannerChain.js` - Planning chain with array output
 
-for a complete, up-to-date reference implementation.
+**For complete examples of modern patterns and testing approaches.**

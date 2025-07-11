@@ -1,19 +1,16 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createJSONChain } from '../../../utils/chainFactory.js';
+import { winConditionBuilderSchema } from '../../../schemas/langchain-schemas.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
-
-function createWinConditionBuilderChain(llm, options = {}) {
-  const promptPath = path.join(__dirname, '../../prompts/design/win-condition-builder.md');
-  return createJsonExtractionChain({
-    llm,
-    promptFile: promptPath,
+async function createWinConditionBuilderChain(llm, options = {}) {
+  return createJSONChain({
+    chainName: 'WinConditionBuilderChain',
+    promptFile: 'design/win-condition-builder.md',
     inputVariables: ['mechanics'],
-    schemaName: 'winCondition string',
-    ...(options.sharedState ? { sharedState: options.sharedState } : {})
+    schema: winConditionBuilderSchema,
+    preset: 'structured',
+    llm: llm,
+    sharedState: options.sharedState,
+    enableLogging: options.enableLogging !== false
   });
 }
 
