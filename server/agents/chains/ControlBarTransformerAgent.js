@@ -1,11 +1,51 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { createStandardChain } from '../../utils/chainFactory.js';
+import { createStandardLLM } from '../../config/langchain.config.js';
 
-// ESM equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/**
+ * Create a ControlBarTransformerAgent chain that converts game code to use control bar input
+ * 
+ * @param {object} llm - LLM instance (optional, will create default if not provided)
+ * @param {object} options - Chain options
+ * @param {object} options.sharedState - Shared state for token counting
+ * @returns {Promise<Object>} - A chain that transforms game code
+ */
+async function createControlBarTransformerChain(llm, options = {}) {
+  const { sharedState } = options;
+  
+  return await createStandardChain({
+    chainName: 'ControlBarTransformerAgent',
+    promptFile: 'ControlBarTransformerAgent.prompt.md',
+    inputVariables: ['gameSource'],
+    preset: 'creative', // Use creative preset for code transformation
+    llm: llm || createStandardLLM(),
+    sharedState,
+    // No schema - we want raw text output for code transformation
+    customInvoke: async (input, baseChain, { chainName, enableLogging }) => {
+      // Input validation
+      if (!input || typeof input.gameSource !== 'string') {
+        throw new Error('Input must have gameSource as string');
+      }
+      
+      if (enableLogging) {
+        console.debug(`[${chainName}] Invoking with input:`, input);
+      }
+      
+      // Call the base chain
+      const result = await baseChain.invoke(input);
+      
+      // Transform output: Extract code block if present, else return raw content
+      const content = result.content || result;
+      const match = content.match(/```(?:js|javascript)?\n([\s\S]*?)```/i);
+      const transformedResult = match ? match[1].trim() : content.trim();
+      
+      if (enableLogging) {
+        console.debug(`[${chainName}] Successfully completed`);
+      }
+      
+      return transformedResult;
+    }
+  });
+}
 
 /**
  * LLM-based transformer for game.js input code. Loads its prompt from
@@ -21,13 +61,14 @@ export async function transformGameCodeWithLLM(sharedState, llm) {
   if (!sharedState || typeof sharedState.gameSource !== 'string') {
     throw new Error('sharedState must be an object with a gameSource string');
   }
-  const promptPath = path.join(__dirname, '../prompts/ControlBarTransformerAgent.prompt.md');
-  const promptTemplate = fs.readFileSync(promptPath, 'utf8');
-  const prompt = promptTemplate.replace('{{gameSource}}', sharedState.gameSource);
-  const result = await llm.invoke(prompt);
+  
+  // Create the chain and invoke it
+  const chain = await createControlBarTransformerChain(llm, { sharedState });
+  const result = await chain.invoke({ gameSource: sharedState.gameSource });
+  
   console.log('ControlBarTransformerAgent result', result);
-  // Try to extract code block if present, else return raw
-  const match = result.content.match(/```(?:js|javascript)?\n([\s\S]*?)```/i);
-  return match ? match[1].trim() : result.content.trim();
+  return result;
 }
+
+export { createControlBarTransformerChain };
 
