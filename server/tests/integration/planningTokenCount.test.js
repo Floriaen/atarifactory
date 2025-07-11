@@ -5,7 +5,70 @@ import { PLANNING_PHASE } from '../../config/pipeline.config.js';
 
 // Minimal mockLLM for token counting test
 const mockLLM = {
-  invoke: async () => ({ idea: 'Test Game', gameDef: { name: 'Test Game', mechanics: ['move'], winCondition: 'Do something', entities: ['player'] } })
+  invoke: async () => ({ idea: 'Test Game', gameDef: { name: 'Test Game', mechanics: ['move'], winCondition: 'Do something', entities: ['player'] } }),
+  withStructuredOutput(schema) {
+    const self = this;
+    return {
+      invoke: async (input) => {
+        const result = await self.invoke(input);
+        return schema ? schema.parse(result) : result;
+      },
+      withConfig(config) {
+        return {
+          invoke: async (input) => {
+            const result = await self.invoke(input);
+            
+            // Trigger handleLLMEnd callback manually for token counting
+            if (config.callbacks) {
+              config.callbacks.forEach(callback => {
+                if (callback.handleLLMEnd) {
+                  callback.handleLLMEnd({
+                    llmOutput: {
+                      tokenUsage: {
+                        totalTokens: 100,
+                        promptTokens: 50, 
+                        completionTokens: 50
+                      }
+                    }
+                  });
+                }
+              });
+            }
+            
+            return schema ? schema.parse(result) : result;
+          }
+        };
+      }
+    };
+  },
+  withConfig(config) {
+    const self = this;
+    return {
+      ...self,
+      invoke: async (input) => {
+        const result = await self.invoke(input);
+        
+        // Trigger handleLLMEnd callback manually for token counting
+        if (config.callbacks) {
+          config.callbacks.forEach(callback => {
+            if (callback.handleLLMEnd) {
+              callback.handleLLMEnd({
+                llmOutput: {
+                  tokenUsage: {
+                    totalTokens: 100,
+                    promptTokens: 50, 
+                    completionTokens: 50
+                  }
+                }
+              });
+            }
+          });
+        }
+        
+        return result;
+      }
+    };
+  }
 };
 
 describe('Planning Pipeline Token Counting', () => {
@@ -25,7 +88,7 @@ describe('Planning Pipeline Token Counting', () => {
     };
 
     const sharedState = createSharedState();
-    createGameDesignChain({
+    const chain = await createGameDesignChain({
       llm: mockLLM,
       sharedState
     });

@@ -88,8 +88,8 @@ export async function createStandardChain(options) {
     
     // Add callbacks after structured output configuration
     let finalLLM = configuredLLM;
-    if (!customLLM && sharedState) {
-      // Only add callbacks if we created the LLM ourselves
+    if (sharedState) {
+      // Add token counting callback when sharedState is provided
       const tokenCallback = createTokenCountingCallback(sharedState, chainName);
       finalLLM = configuredLLM.withConfig({ 
         callbacks: [tokenCallback] 
@@ -114,6 +114,10 @@ export async function createStandardChain(options) {
       return {
         async invoke(input) {
           try {
+            // Add input validation to maintain compatibility with legacy tests
+            if (!input || typeof input !== 'object' || inputVariables.some(v => !(v in input))) {
+              throw new Error(`Input must be an object with required fields: ${inputVariables.join(', ')}`);
+            }
             return await customInvoke(input, baseChain, { chainName, enableLogging });
           } catch (error) {
             handleChainError(error, chainName, { input });
@@ -126,6 +130,11 @@ export async function createStandardChain(options) {
     return {
       async invoke(input) {
         try {
+          // Add input validation to maintain compatibility with legacy tests
+          if (!input || typeof input !== 'object' || inputVariables.some(v => !(v in input))) {
+            throw new Error(`Input must be an object with required fields: ${inputVariables.join(', ')}`);
+          }
+          
           if (enableLogging) {
             console.debug(`[${chainName}] Invoking with input:`, input);
           }

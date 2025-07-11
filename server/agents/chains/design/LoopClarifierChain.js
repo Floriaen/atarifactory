@@ -1,4 +1,5 @@
-import { createJsonExtractionChain } from '../../../utils/createJsonExtractionChain.js';
+import { createJSONChain } from '../../../utils/chainFactory.js';
+import { loopClarifierSchema } from '../../../schemas/langchain-schemas.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -6,13 +7,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const promptPath = path.join(__dirname, '../../prompts/design/loop-clarifier.md');
 
-function createLoopClarifierChain(llm, options = {}) {
-  return createJsonExtractionChain({
-    llm,
-    promptFile: promptPath,
+async function createLoopClarifierChain(llm, options = {}) {
+  return createJSONChain({
+    chainName: 'LoopClarifierChain',
+    promptFile: 'design/loop-clarifier.md',
     inputVariables: ['title', 'pitch'],
-    schemaName: 'loop string',
-    ...(options.sharedState ? { sharedState: options.sharedState } : {})
+    schema: loopClarifierSchema,
+    preset: 'structured',
+    llm: llm,
+    sharedState: options.sharedState,
+    enableLogging: options.enableLogging !== false
   });
 }
 

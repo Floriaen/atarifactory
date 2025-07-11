@@ -12,9 +12,9 @@ import { ChatOpenAI } from '@langchain/openai';
  */
 export const LANGCHAIN_CONFIG = {
   models: {
-    default: process.env.OPENAI_MODEL || 'gpt-4-1106-preview',
-    creative: process.env.OPENAI_MODEL || 'gpt-4-1106-preview',
-    precise: process.env.OPENAI_MODEL || 'gpt-4-1106-preview'
+    default: process.env.OPENAI_MODEL,
+    creative: process.env.OPENAI_MODEL,
+    precise: process.env.OPENAI_MODEL
   },
   temperature: {
     creative: 0.7,    // For creative tasks like game invention

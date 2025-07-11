@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { ChatOpenAI } from '@langchain/openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { plannerSchema } from '../../schemas/langchain-schemas.js';

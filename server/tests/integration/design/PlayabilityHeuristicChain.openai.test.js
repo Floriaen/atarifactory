@@ -18,7 +18,7 @@ describe('PlayabilityHeuristicChain integration (ChatOpenAI)', () => {
       modelName: OPENAI_MODEL,
       maxTokens: 512
     });
-    const chain = createPlayabilityHeuristicChain(llm);
+    const chain = await createPlayabilityHeuristicChain(llm);
     const input = {
       gameDef: {
         title: 'Memory Lane',

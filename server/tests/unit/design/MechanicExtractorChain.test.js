@@ -12,7 +12,7 @@ import { createMechanicExtractorChain } from '../../../agents/chains/design/Mech
 describe('MechanicExtractorChain (ESM)', () => {
   it('extracts mechanics (happy path)', async () => {
     const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
-    const chain = createMechanicExtractorChain(mockLLM);
+    const chain = await createMechanicExtractorChain(mockLLM);
     const input = { loop: 'Player jumps between platforms and dodges lasers.' };
     const result = await chain.invoke(input);
     expect(result).toHaveProperty('mechanics');
@@ -23,31 +23,31 @@ describe('MechanicExtractorChain (ESM)', () => {
 
   it('throws if input is missing', async () => {
     const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
-    const chain = createMechanicExtractorChain(mockLLM);
+    const chain = await createMechanicExtractorChain(mockLLM);
     await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: loop');
   });
 
   it('throws if LLM output missing content', async () => {
     const llm = new FlexibleMalformedLLM('missingContent');
-    const chain = createMechanicExtractorChain(llm);
+    const chain = await createMechanicExtractorChain(llm);
     await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if LLM output is not JSON', async () => {
     const llm = new FlexibleMalformedLLM('notJson');
-    const chain = createMechanicExtractorChain(llm);
+    const chain = await createMechanicExtractorChain(llm);
     await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if LLM output missing mechanics array', async () => {
     const llm = new FlexibleMalformedLLM('missingMechanics');
-    const chain = createMechanicExtractorChain(llm);
+    const chain = await createMechanicExtractorChain(llm);
     await expect(chain.invoke({ loop: 'foo' })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if loop is missing in input', async () => {
     const mockLLM = new MockLLM(JSON.stringify({ mechanics: ['jump', 'dodge'] }));
-    const chain = createMechanicExtractorChain(mockLLM);
+    const chain = await createMechanicExtractorChain(mockLLM);
     await expect(chain.invoke({})).rejects.toThrow('Input must be an object with required fields: loop');
   });
 });

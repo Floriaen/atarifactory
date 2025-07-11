@@ -15,10 +15,25 @@ function makePhaseAwareMockLLM() {
         case 'Mechanics': return { content: JSON.stringify({ mechanics: ['jump'] }) };
         case 'WinCondition': return { content: JSON.stringify({ winCondition: 'Win!' }) };
         case 'Entities': return { content: JSON.stringify({ entities: ['player'] }) };
-        case 'Playability': return { content: JSON.stringify({ playabilityScore: 7, rationale: 'Good' }) };
+        case 'Playability': return { content: JSON.stringify({ playabilityAssessment: 'Good', strengths: [], potentialIssues: [], score: 7 }) };
         case 'FinalAssembly': return { content: JSON.stringify({ gameDef: { title: 'Test', description: '', mechanics: [], winCondition: '', entities: [] } }) };
         default: return { content: '{}' };
       }
+    },
+    withStructuredOutput(schema) {
+      const self = this;
+      return {
+        setPhase: self.setPhase.bind(self),
+        invoke: async () => {
+          const result = await self.invoke();
+          try {
+            const parsed = JSON.parse(result.content);
+            return schema ? schema.parse(parsed) : parsed;
+          } catch {
+            return result;
+          }
+        }
+      };
     }
   };
 }
@@ -32,7 +47,7 @@ describe('GameDesignChain (ESM)', () => {
       llm.setPhase(opts.phase);
       return origRunDesignPhase(opts);
     };
-    const chain = createGameDesignChain({ llm });
+    const chain = await createGameDesignChain({ llm });
     expect(chain).toBeDefined();
     expect(typeof chain.invoke).toBe('function');
   });
@@ -45,7 +60,7 @@ describe('GameDesignChain (ESM)', () => {
       llm.setPhase(opts.phase);
       return origRunDesignPhase(opts);
     };
-    const chain = createGameDesignChain({ llm });
+    const chain = await createGameDesignChain({ llm });
     expect(chain).toBeDefined();
     expect(typeof chain.invoke).toBe('function');
   });

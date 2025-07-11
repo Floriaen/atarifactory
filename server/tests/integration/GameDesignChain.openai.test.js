@@ -11,7 +11,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     const openaiModel = process.env.OPENAI_MODEL;
     const llmOpts = { model: openaiModel, temperature: 0, openAIApiKey: OPENAI_API_KEY };
     const llm = new ChatOpenAI(llmOpts);
-    const chain = createGameDesignChain({ llm });
+    const chain = await createGameDesignChain({ llm });
     const input = {
       title: 'Test Game',
       pitch: 'A puzzle platformer where you control gravity.',

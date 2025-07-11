@@ -18,7 +18,7 @@ describe('EntityListBuilderChain integration (ChatOpenAI)', () => {
       modelName: OPENAI_MODEL,
       maxTokens: 256
     });
-    const chain = createEntityListBuilderChain(llm);
+    const chain = await createEntityListBuilderChain(llm);
     const input = {
       mechanics: ['jump', 'dodge', 'score'],
       loop: 'Player jumps between platforms, dodges obstacles, and scores points.',
