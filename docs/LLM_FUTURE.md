@@ -16,24 +16,34 @@ You could automate prompt updates by scraping the latest docs and feeding them t
 
 # LLM Future Improvements
 
-- **Refactor all LLM prompts out of code:**
-  - Move every LLM prompt string from code files into separate `.txt` files in `server/agents/prompts/`.
-  - Read and fill these prompt templates at runtime, as done for `PlannerAgent`.
-  - This keeps code clean, makes prompt engineering easier, and allows for prompt versioning.
+## ✅ Completed Improvements
 
-## Future Improvements
+- **✅ ESM Migration:** Codebase successfully migrated to ESM with "type": "module" in package.json
+- **✅ Prompt Externalization:** All LLM prompts moved to `server/agents/prompts/` as `.md` files
+- **✅ Modern Langchain Integration:** All chains use `chainFactory.js` with structured output and Zod schemas
+- **✅ Type Safety:** Zod schemas provide runtime validation and type safety
+- **✅ SharedState Improvements:** Proper SharedState type with validation in `server/types/SharedState.js`
 
-- Consider switching the codebase to ESM (add "type": "module" to package.json) for better compatibility with modern JS tools and libraries, and to simplify usage of ESM-only dependencies. 
+## 🚧 Current Architecture Status
 
-- Refactor SharedState to use proper class-based approach:
-  - Convert `createSharedState()` function to a proper `SharedState` class
-  - Add methods for state management and validation
-  - Improve type safety and encapsulation
-  - Make the state structure more explicit and maintainable
+- **chainFactory Pattern:** All chains use standardized `createStandardChain()`, `createJSONChain()`, etc.
+- **Structured Output:** Automatic schema validation with `.withStructuredOutput()` and Zod
+- **Token Counting:** Built-in token tracking via callback system
+- **Testing:** Comprehensive unit/integration tests with `MockLLM` supporting structured output
 
-- Create dedicated type for RuntimePlayability:
-  - Create `server/types/RuntimePlayability.js` with proper class definition
-  - Add validation methods and type safety
-  - Update RuntimePlayabilityAgent and FeedbackAgent to use the new type
-  - Update all related tests and mocks
-  - This will improve type safety and make the runtime playability results more maintainable 
+## 🔮 Future Improvements
+
+- **Advanced LLM Features:**
+  - Explore function calling and tool usage for more complex agent interactions
+  - Implement streaming responses for real-time progress updates
+  - Add support for multiple LLM providers (Anthropic, Google, etc.)
+
+- **Enhanced Pipeline:**
+  - Add caching layer for expensive chain operations
+  - Implement pipeline branching for alternative generation paths
+  - Add A/B testing framework for prompt optimization
+
+- **Developer Experience:**
+  - Add TypeScript for better IDE support and type checking
+  - Create visual pipeline debugger for chain execution tracing
+  - Implement hot-reload for prompt files during development 
