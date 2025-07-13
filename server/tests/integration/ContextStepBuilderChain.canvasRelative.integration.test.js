@@ -1,8 +1,14 @@
 import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 
-test('StepBuilder generates only canvas-relative code', async () => {
-  const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 });
+// Only run if OPENAI_API_KEY is set
+const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+
+(hasOpenAIKey ? test : test.skip)('StepBuilder generates only canvas-relative code', async () => {
+  const llm = new ChatOpenAI({ 
+    model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    temperature: 0.1
+  });
   const chain = await createContextStepBuilderChain(llm);
 
   const minimalPlan = [{ id: 1, description: 'Draw a player and an exit on the canvas' }];
@@ -32,4 +38,4 @@ test('StepBuilder generates only canvas-relative code', async () => {
       }
     }
   }
-});
+}, 30000); // 30 second timeout for real LLM calls
