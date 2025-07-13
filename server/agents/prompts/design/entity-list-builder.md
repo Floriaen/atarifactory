@@ -5,6 +5,8 @@ Do not include abstract or logic-only entities.
 
 Limit to a maximum of 3.
 
+**Spatial consideration**: Entities should be designed to naturally spread across the full canvas through movement patterns, spawning locations, or interaction zones.
+
 Mechanics: {mechanics}
 
 Return your answer as a JSON object matching this schema:

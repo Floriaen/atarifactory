@@ -5,10 +5,11 @@ Generate a simple 2D arcade-style game idea. The game must be extremely simple, 
 Before generating the idea, invent a random constraint or theme (for example: a required mechanic, a setting, a type of entity, or a win condition style). Use this invented constraint or theme to make the game idea more unique and creative.
 
 Constraints:
-- Single-screen gameplay
+- Single-screen gameplay (portrait canvas)
 - No menus, upgrades, or multi-phase logic
 - No simulation, memory, or creativity-based goals
 - Only 1 win condition, no scoring systems
+- **Spatial requirement**: Game must naturally encourage full-screen utilization through entity movement, player navigation, or spatial objectives
 
 Respond ONLY with a JSON object in the following format:
 {{
