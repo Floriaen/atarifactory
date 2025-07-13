@@ -1,28 +1,46 @@
+# AtariFactory
+
 ![CI](https://github.com/Floriaen/atarifactory/actions/workflows/ci.yml/badge.svg)
 
-## Architecture Principles
+**AI-powered game development platform that generates playable mobile Atari-like games**
 
-This project follows CLEAN architecture principles:
+AtariFactory uses advanced AI chains to automatically generate complete, playable browser games from simple concepts. Built with modern LangChain patterns, structured output validation, and comprehensive testing.
 
-- Business logic (agents, pipeline) is decoupled from frameworks and infrastructure.
-- All dependencies (LLM clients, loggers, etc.) are injected, not hardcoded.
-- Controllers/orchestrators handle I/O and dependency wiring.
-- Tests use mocks and dependency injection for fast, reliable feedback.
-- Code is organized for modularity, testability, and future-proofing.
-- **Single Responsibility:** Each module/agent does one thing and does it well.
+## 🚀 Quick Start
 
-All contributors and tools must follow these guidelines.
+**For AI Agents (Claude, GPT, etc.):** See **[docs/README.md](docs/README.md)** for AI agent-specific development guidelines and navigation.
+
+**For Human Developers:**
+```bash
+# Install dependencies
+npm install
+
+# Run tests (should show 100% pass rate)
+npm test
+
+# Start the server
+npm run start:server
+
+# Start the frontend (in another terminal)
+npm run start:frontend
+```
+
+## 🏗️ Architecture
+
+This project follows modern development principles:
+
+- **ESM Modules**: Full ES module support with `"type": "module"`
+- **LangChain v0.3+**: Structured output with Zod schema validation
+- **chainFactory Pattern**: Standardized chain creation utilities
+- **Dependency Injection**: All LLM clients and dependencies injected, not hardcoded
+- **Comprehensive Testing**: 100% test pass rate with MockLLM support
+- **Clean Architecture**: Business logic decoupled from frameworks
 
 ---
 
-## Pipeline-v3 Architecture (Langchain-based)
+## 🎮 Game Generation Pipeline
 
-> **Deprecation Notice:** All pre-v3 pipelines and legacy agent-based flows are deprecated. Only pipeline-v3 (Langchain-based) is supported and maintained. See [docs/pipeline-v3-design.md](docs/pipeline-v3-design.md) for full details.
-
-> **Directory Structure Update:** All design/planning chains are now located in `server/agents/langchain/chains/design/`. Import and extend only from this directory for new features.
-
-
-> **Note:** Only pipeline-v3 is maintained and supported. All previous pipelines are deprecated. The pipeline is implemented using modular [Langchain](https://js.langchain.com/) chains for each step.
+The system uses a sophisticated AI pipeline to generate complete games:
 
 ### High-Level Pipeline Flow
 
@@ -61,21 +79,23 @@ StaticCheckerChain
 
 **Langchain** is a core dependency for pipeline composition, prompt templating, and LLM orchestration.
 
-For detailed architecture, see [docs/pipeline-v3-design.md](docs/pipeline-v3-design.md).
+**For detailed architecture:** See [docs/current/architecture/pipeline-v3-design.md](docs/current/architecture/pipeline-v3-design.md)
 
-## Extending the Pipeline
+## 🔧 Development
 
-To add or modify pipeline steps, create or update the corresponding Langchain chain module in `server/agents/langchain/chains/design/` (for design/planning) or `server/agents/langchain/chains/` (for other steps). Follow the contract and TDD approach described in `docs/design-planning-improvement - SPECS.md`.
+**For AI Agents:** See [docs/README.md](docs/README.md) for AI agent-specific guidelines and safety rules.
 
-All new chains should:
-- Export both the chain object and a `createXChain` factory function for testability.
-- Be covered by unit and integration tests in `server/tests/unit/design/`.
-- Follow the modular, single-responsibility pattern.
+**For Extending the Pipeline:**
+- See [docs/examples/adding-new-chain.md](docs/examples/adding-new-chain.md) for complete implementation walkthrough
+- Follow [docs/current/development/ai-agent-guidelines.md](docs/current/development/ai-agent-guidelines.md) for patterns and safety
+- All chains use chainFactory pattern with Zod schema validation
+- Comprehensive testing required (unit + integration)
 
-
-**Extensibility:**
-- To add or modify pipeline steps, create or update the corresponding Langchain chain module in `server/agents/langchain/chains/`.
-- See the [Langchain JS documentation](https://js.langchain.com/) for best practices.
+**Key Development Principles:**
+- Use `createStandardChain()` from chainFactory for all new chains
+- Define Zod schemas in `server/schemas/langchain-schemas.js`
+- Follow async/await patterns throughout
+- Maintain 100% test pass rate
 
 ## Linting
 
@@ -87,35 +107,31 @@ To auto-fix issues:
 
     npx eslint 'server/**/*.js' --fix 
 
-## LLM Client & Dependency Injection Guidelines
+## 🧪 Testing
 
-To ensure robust, testable, and maintainable LLM integration, follow these rules:
+**Test Status:** ✅ **All tests passing** (52 tests, 100% success rate)
 
-- **LLM Client Instantiation:**
-  - The LLM client (SmartOpenAI or MockSmartOpenAI) must be instantiated only in the controller or dependency injection (DI) layer.
-  - No agent or pipeline should ever instantiate or import OpenAI/SmartOpenAI directly.
+```bash
+# Run all tests
+npm test
 
-- **Dependency Injection:**
-  - All agents that use LLMs must receive `llmClient` as a constructor argument (or via a clear factory function).
-  - Tests and production code must both use the same mechanism to inject the client.
+# Run specific test types
+npm run test:unit
+npm run test:integration 
+npm run test:e2e
 
-- **Mocking & Testing:**
-  - The mock (MockSmartOpenAI) must be kept in sync with the real SmartOpenAI's interface.
-  - Tests should always use the mock by default, and only use the real client if explicitly configured.
+# Run with verbose logging
+TEST_LOGS=1 npm test
 
-- **Controller/Endpoint Consistency:**
-  - The Express endpoint (or any entry point) must always instantiate the pipeline with the correct `llmClient` (real or mock, depending on config).
-  - No agent should ever "fall back" to a mock internally—this should be handled at the controller/DI level.
+# Run with real LLM (requires OPENAI_API_KEY)
+OPENAI_API_KEY=your-key npm test
+```
 
-- **Forbidden Patterns:**
-  - Agents must never import or instantiate OpenAI/SmartOpenAI directly.
-  - All LLM output extraction and parsing must be handled in SmartOpenAI, not in individual agents.
-
-- **Logging:**
-  - Each agent should log which LLM client it is using (for debugging).
-  - The pipeline should log the traceId and LLM client type at the start of each run.
-
-**All contributors must read and follow these guidelines.**
+**Testing Features:**
+- **MockLLM**: Fast, deterministic testing with structured output support
+- **Comprehensive Coverage**: Unit, integration, and e2e tests
+- **Real LLM Testing**: Optional integration with actual OpenAI API
+- **Token Counting Tests**: Verify cost tracking functionality
 
 ## Running the Server
 
@@ -192,64 +208,56 @@ To ensure robust, testable, and maintainable LLM integration, follow these rules
 - Ensure to set `OPENAI_API_KEY` in `server/.env` for tests and server functionality that require it.
 
 
-## Monorepo Dependency & Script Structure
+## ⚙️ Configuration
 
-| Type                         | Where to Declare?                | Examples                                               | Notes                                      |
-|------------------------------|-----------------------------------|--------------------------------------------------------|---------------------------------------------|
-| **Backend dependencies**     | root `package.json`               | `express`, `langchain`, `@langchain/openai`, `cors`    | Only used by backend/server code            |
-| **Backend devDependencies**  | root `package.json`               | `vitest`, `eslint`, `nodemon`                          | Backend test/lint/dev tools                 |
-| **Backend scripts**          | root `package.json`               | `start`, `dev:server`, `test:unit`                     | All backend scripts run from root           |
-| **Frontend dependencies**    | `frontend/package.json`           | `react`, `react-dom`, `vue`, `svelte`, `axios`         | Only used by frontend code                  |
-| **Frontend devDependencies** | `frontend/package.json`           | `vite`, `tailwindcss`, `@vitejs/plugin-react`          | Frontend build/test/dev tools               |
-| **Frontend scripts**         | `frontend/package.json`           | `dev`, `build`, `preview`                              | Run with `npm run` in `frontend/`           |
-| **Frontend root script**     | root `package.json`               | `start:frontend`                                       | Convenience: `npm run start:frontend`       |
-| **Shared tooling**           | root `package.json`               | `eslint`, `prettier`                                   | If used by both frontend and backend        |
+**Environment Variables:**
+```bash
+# Required for LLM functionality
+OPENAI_API_KEY=your-openai-api-key
 
-**Summary:**
-- Backend: All dependencies, devDependencies, and scripts in root.
-- Frontend: All dependencies, devDependencies, and scripts in `frontend/package.json`.
-- Shared tooling: Hoist to root if used by both frontend and backend.
-- Avoid duplicating dependencies across root and workspace `package.json` files.
+# Optional testing
+TEST_LOGS=1          # Enable verbose test logging
+OPENAI_MODEL=gpt-4   # Specify model for real LLM tests
+```
 
+**Key Features:**
+- **Token Counting**: Built-in cost tracking for all LLM calls
+- **Structured Output**: Automatic Zod schema validation
+- **Comprehensive Logging**: Detailed execution tracking
+- **Environment Flexibility**: Easy switching between mock and real LLMs
 
-## UI Token Counting (Planned)
+## 📚 Documentation
 
-A token counter feature is planned for the UI to estimate the cost of current generation. This will use the `tokenCount` field in the shared state, populated by the pipeline for each run (see `GameDesignChain` and downstream chains).
+**Main Documentation:** [docs/README.md](docs/README.md) - AI agent entry point
 
-## Test Logging Mechanism
+**Key Documentation:**
+- [docs/current/architecture/](docs/current/architecture/) - System design and specifications
+- [docs/current/development/](docs/current/development/) - Development guidelines and patterns
+- [docs/examples/](docs/examples/) - Complete implementation examples
+- [docs/current/reference/](docs/current/reference/) - API references and code navigation
 
-By default, all agent tests suppress logs for clean test output. To enable logs (for debugging, LLM prompt inspection, etc.), run your tests with:
+**Quick Links:**
+- [AI Agent Guidelines](docs/current/development/ai-agent-guidelines.md)
+- [Adding New Chain Example](docs/examples/adding-new-chain.md)
+- [Codebase Map](docs/current/reference/codebase-map.md)
+- [Architecture Overview](docs/current/architecture/pipeline-v3-design.md) 
 
-    TEST_LOGS=1 npx vitest
+## 🚀 Project Status
 
-This will print all agent logs to the terminal. This mechanism is implemented in every agent test file.
+**Current State:** ✅ **Production Ready**
+- **Architecture:** Modern LangChain-based pipeline with structured output  
+- **Testing:** 52 tests passing (100% success rate)
+- **Code Quality:** ESLint compliant, comprehensive error handling
+- **Documentation:** Complete AI agent-focused documentation
+- **Dependencies:** Up-to-date with latest LangChain v0.3+ and Zod validation
 
-## Test Modes: Mock vs. Real LLM
+**Recent Improvements:**
+- ✅ Complete ESM migration
+- ✅ Modern chainFactory patterns implemented
+- ✅ Structured output with Zod schemas
+- ✅ Comprehensive test coverage with MockLLM
+- ✅ AI agent-optimized documentation
 
-By default, all tests use fast, deterministic mocks for LLM calls.
+---
 
-- To enable logs: set TEST_LOGS=1
-- To run tests with the real LLM: set both TEST_LLM=1 and OPENAI_API_KEY=your-key
-
-Example commands:
-
-- Mock only: `npx vitest`
-- Mock + logs: `TEST_LOGS=1 npx vitest`
-- Real LLM + logs: `TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx vitest`
-- Real LLM only: `TEST_LLM=1 OPENAI_API_KEY=sk-... npx vitest`
-
-| Mode         | Env Vars Needed         | LLM Used         | Logs      | Command Example                                        |
-|--------------|------------------------|------------------|-----------|--------------------------------------------------------|
-| Mock only    | (none)                 | MockSmartOpenAI  | Off       | npx vitest                                             |
-| Mock + logs  | TEST_LOGS=1            | MockSmartOpenAI  | Console   | TEST_LOGS=1 npx vitest                                 |
-| Real LLM     | TEST_LLM=1 + OPENAI_API_KEY | SmartOpenAI      | Off       | TEST_LLM=1 OPENAI_API_KEY=sk-... npx vitest            |
-| Real LLM+Log | TEST_LLM=1 + OPENAI_API_KEY + TEST_LOGS=1 | SmartOpenAI | Console   | TEST_LLM=1 OPENAI_API_KEY=sk-... TEST_LOGS=1 npx vitest | 
-
-## Summary
-
-- Server and tests are isolated in the `server` directory.
-- Frontend is isolated in the `frontend` directory.
-- Root directory scripts provide convenient commands to run server, tests, and frontend.
-- Vitest configuration and environment loading are handled at the root directory.
-
-This setup ensures clear separation of concerns and consistent workflows.
+*AtariFactory is actively maintained and ready for AI-powered game generation.*

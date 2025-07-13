@@ -1,4 +1,8 @@
-> **Deprecation Notice:** This document is for historical reference only. For the current and only supported pipeline, see [pipeline-v3-design.md](./pipeline-v3-design.md) and the [root README](../README.md).
+> **DEPRECATED:** This document is completely outdated and for historical reference only. The described architecture is no longer used.
+> 
+> **For Current Architecture:** See [pipeline-v3-design.md](./pipeline-v3-design.md) and the [root README](../README.md) for the current Langchain-based pipeline with modern chainFactory patterns, structured output, and Zod schemas.
+> 
+> **Modern Implementation:** All chains now use `createStandardChain()` from `chainFactory.js` with `.withStructuredOutput()` and automatic schema validation. The AST-based manipulation and manual parsing described below has been completely replaced.
 
 ## Game Generation : Strategy – Technical Specification
 

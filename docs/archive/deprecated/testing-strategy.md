@@ -19,14 +19,15 @@ Unit tests focus on testing individual components in isolation. Each test should
 
 Example:
 ```javascript
-// GameDesignAgent.test.js
-describe('GameDesignAgent', () => {
+// GameInventorChain.test.js
+describe('GameInventorChain', () => {
   it('should generate valid game definition', async () => {
-    const mockLlmClient = new MockSmartOpenAI();
-    const result = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient });
-    expect(result).toHaveProperty('title');
+    const mockResponse = { name: 'Test Game', description: 'A test game' };
+    const mockLLM = new MockLLM(mockResponse);
+    const chain = await createGameInventorChain(mockLLM); // Note: await for async chains
+    const result = await chain.invoke({ input: 'create a space game' });
+    expect(result).toHaveProperty('name');
     expect(result).toHaveProperty('description');
-    expect(result).toHaveProperty('mechanics');
   });
 });
 ```
@@ -42,13 +43,17 @@ Integration tests verify that multiple components work together correctly. They:
 
 Example:
 ```javascript
-// pipeline-integration.test.js
-describe('Pipeline Integration', () => {
-  it('should process game design through to code generation', async () => {
-    const gameDef = await GameDesignAgent({ title: 'Test Game' }, { llmClient: mockLlmClient });
-    const plan = await PlannerAgent({ gameDef }, { llmClient: mockLlmClient });
-    const code = await StepBuilderAgent({ plan }, { llmClient: mockLlmClient });
-    expect(code).toBeValidJavaScript();
+// gameDesignPipeline.integration.test.js
+describe('Game Design Pipeline Integration', () => {
+  it('should process game idea through to final assembly', async () => {
+    const sharedState = { tokenCount: 0 };
+    const mockLLM = new MockLLM(mockGameDesignResponse);
+    
+    const gameDesignChain = await createGameDesignChain({ llm: mockLLM, sharedState });
+    const result = await gameDesignChain.invoke({ input: 'space adventure' });
+    
+    expect(result).toHaveProperty('finalDesign');
+    expect(sharedState.tokenCount).toBeGreaterThan(0);
   });
 });
 ```
@@ -65,14 +70,14 @@ E2E tests verify the entire system works as expected. They:
 Example:
 ```javascript
 // pipeline-endpoint.test.js
-describe('POST /api/pipeline-v2/generate', () => {
+describe('POST /api/pipeline-v3/generate', () => {
   it('should generate complete game from title', async () => {
     const response = await request(app)
-      .post('/api/pipeline-v2/generate')
+      .post('/api/pipeline-v3/generate')
       .send({ title: 'Test Game' });
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('gameDef');
-    expect(response.body).toHaveProperty('code');
+    expect(response.body).toHaveProperty('gameId');
+    expect(response.body).toHaveProperty('status');
   });
 });
 ```
@@ -116,67 +121,86 @@ TEST_LOGS=1 npm test
 ### Test Modes
 
 1. **Mock Mode (Default)**
-   - Uses `MockSmartOpenAI` for all LLM calls
+   - Uses `MockLLM` for all LLM calls with structured output support
    - Fast and deterministic
    - Good for CI and development
 
 2. **Real LLM Mode**
-   - Uses actual OpenAI API
+   - Uses actual OpenAI API with structured output
    - Requires `OPENAI_API_KEY`
    - Good for smoke tests and verification
 
 3. **Logging Mode**
    - Set `TEST_LOGS=1` for verbose output
-   - Shows detailed pipeline progress
+   - Shows detailed chain execution and token counting
    - Helpful for debugging
 
 ## Writing Tests
 
 ### LLM Mocking Guidelines
 
-- **Use `MockLLM`** for all tests where you want to simulate valid, well-formed LLM output.
-- **Use `FlexibleMalformedLLM`** for negative-path tests where you want to simulate malformed, missing, or otherwise invalid LLM output. This class allows you to parameterize the type of malformed output via a `mode` argument (see below for details).
-- **Use a simple throwing stub** (e.g., `{ invoke: async () => { throw new Error('Should not be called'); } }`) for tests where the LLM should never be called (such as input validation or short-circuit logic). This makes the test's intent explicit and guarantees the LLM is not invoked.
+- **Use `MockLLM`** for all tests where you want to simulate valid, well-formed LLM output with structured output support.
+- **Use `FlexibleMalformedLLM`** for negative-path tests where you want to simulate malformed, missing, or otherwise invalid LLM output.
+- **Use a simple throwing stub** (e.g., `{ invoke: async () => { throw new Error('Should not be called'); } }`) for tests where the LLM should never be called (such as input validation or short-circuit logic).
+
+#### Modern MockLLM with Structured Output
+
+`MockLLM` now supports the modern `.withStructuredOutput()` pattern and automatically validates against Zod schemas:
+
+```js
+import { MockLLM } from '../../helpers/MockLLM.js';
+
+// Direct object response (automatically validated against schema)
+const mockResponse = { name: 'Test Game', description: 'A test description' };
+const mockLLM = new MockLLM(mockResponse);
+const chain = await createGameInventorChain(mockLLM); // Note: await for async chain creation
+```
 
 #### FlexibleMalformedLLM Usage
 
-`FlexibleMalformedLLM` is a test helper for negative-path scenarios. It simulates various malformed LLM outputs via its `mode` constructor argument:
+`FlexibleMalformedLLM` simulates various malformed outputs for negative testing:
 
-- `'missingContent'`: returns an object with no `.content` property
-- `'notJson'`: returns `{ content: 'not json' }`
-- `'missingLoop'`: returns `{ content: JSON.stringify({ notLoop: 'foo' }) }`
-- *(add more modes as needed for your test cases)*
+- `'missingContent'`: returns an object with no `.content` property (legacy chains only)
+- `'invalidSchema'`: returns data that violates the Zod schema
+- `'throwError'`: throws an error during invocation
 
 **Example:**
 ```js
 import { FlexibleMalformedLLM } from '../tests/helpers/MalformedLLM.js';
 
-// Simulate LLM output missing the required .content property
-const llm = new FlexibleMalformedLLM('missingContent');
-const chain = createLoopClarifierChain(llm);
-await expect(chain.invoke({ title: 'foo', pitch: 'bar' })).rejects.toThrow('LLM output missing content');
+// Test schema validation failure
+const llm = new FlexibleMalformedLLM('invalidSchema');
+const chain = await createGameInventorChain(llm);
+await expect(chain.invoke({ input: 'test' })).rejects.toThrow();
 ```
 
-This pattern is now used throughout the design chain unit tests (see `LoopClarifierChain.test.mjs` and `FinalAssemblerChain.test.mjs` for examples).
+### Modern Chain Composition with chainFactory
 
-### LCEL Chain Composition: Content Validation with ensureContentPresent
-
-To ensure your parser always receives `{ content: ... }` (regardless of whether the LLM or mock returns a string or object), use a mapping step with `ensureContentPresent` (via `RunnableLambda.from`) when composing LCEL pipelines:
+**IMPORTANT:** Manual LCEL composition is deprecated. Use the chainFactory utilities instead:
 
 ```javascript
-import { RunnableLambda } from '@langchain/core/runnables';
-import { ensureContentPresent } from '../utils/ensureContentPresent.mjs';
+import { createStandardChain } from '../utils/chainFactory.js';
 
-const chain = prompt
-  .pipe(llm)
-  .pipe(RunnableLambda.from(ensureContentPresent))
-  .pipe(parser);
+// DEPRECATED: Manual LCEL composition
+const chain = prompt.pipe(llm).pipe(parser);
+
+// CURRENT: Use chainFactory with structured output
+const chain = await createStandardChain({
+  chainName: 'MyChain',
+  promptFile: 'MyChain.prompt.md',
+  inputVariables: ['input'],
+  schema: mySchema, // Zod schema for validation
+  preset: 'structured',
+  llm,
+  sharedState
+});
 ```
 
-This pattern:
-- Ensures robust, DRY composition for both real and mock LLMs
-- Prevents subtle bugs from inconsistent LLM output shapes
-- Should be used for all chains where the parser expects `{ content: ... }`
+Benefits of the chainFactory approach:
+- Automatic structured output with Zod validation
+- Built-in token counting and logging
+- Consistent error handling across all chains
+- No manual content parsing needed
 
 ### Best Practices
 
