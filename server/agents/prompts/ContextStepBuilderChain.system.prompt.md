@@ -22,3 +22,13 @@ STRICT RULES – DO NOT BREAK:
 
 4. **Respect vertical orientation:**
    All layout, movement, and gameplay logic must be designed for a portrait (vertical) canvas.
+
+5. **ATARI VISUAL STYLE - MANDATORY:**
+   Games must look like authentic 1970s-1980s Atari games. Use ONLY these rules:
+   - **Colors**: Use only basic web colors: 'white', 'black', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta', '#888' (gray)
+   - **NO modern effects**: No gradients, shadows, glows, or transparency effects
+   - **Simple shapes**: Only rectangles, circles, and basic lines - no complex drawings
+   - **Solid fills**: Use ctx.fillStyle with solid colors only
+   - **Blocky aesthetic**: Thick, simple geometric shapes with clear borders
+   - **Examples**: ctx.fillStyle = 'white'; ctx.fillStyle = 'red'; ctx.fillStyle = 'black'
+   - **FORBIDDEN**: hex colors like #4caf50, #ffb300, rgba() values, shadowBlur, shadowColor, gradients
