@@ -9,6 +9,7 @@ import { createPlannerChain } from '../chains/PlannerChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
 import { estimateTokens } from '../../utils/tokenUtils.js';
+import logger from '../../utils/logger.js';
 
 async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
@@ -40,7 +41,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
     sharedState.tokenCount += estimateTokens(JSON.stringify(inventorOut));
   }
   if (typeof inventorOut !== 'object' || inventorOut === null) {
-    console.error('GameInventorChain returned non-object:', inventorOut);
+    logger.error('GameInventorChain returned non-object', { inventorOut });
     throw new Error('GameInventorChain did not return a valid object. Output: ' + String(inventorOut));
   }
   sharedState.idea = inventorOut.idea || inventorOut.name || inventorOut.title || inventorOut;

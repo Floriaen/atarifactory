@@ -18,6 +18,9 @@ npm install
 # Run tests (should show 100% pass rate)
 npm test
 
+# Set up environment (optional)
+echo "LOG_LEVEL=info" > server/.env  # Controls logging verbosity
+
 # Start the server
 npm run start:server
 
@@ -33,6 +36,7 @@ This project follows modern development principles:
 - **LangChain v0.3+**: Structured output with Zod schema validation
 - **chainFactory Pattern**: Standardized chain creation utilities
 - **Dependency Injection**: All LLM clients and dependencies injected, not hardcoded
+- **Winston Logging**: Structured logging with environment-based verbosity control
 - **Comprehensive Testing**: 100% test pass rate with MockLLM support
 - **Clean Architecture**: Business logic decoupled from frameworks
 
@@ -82,6 +86,31 @@ StaticCheckerChain
 **For detailed architecture:** See [docs/current/architecture/pipeline-v3-design.md](docs/current/architecture/pipeline-v3-design.md)
 
 ## 🔧 Development
+
+### Environment Configuration
+
+Create `server/.env` with your configuration:
+
+```bash
+# Required
+OPENAI_API_KEY=your-openai-api-key
+
+# Optional  
+OPENAI_MODEL=gpt-4                    # Defaults to gpt-3.5-turbo
+LOG_LEVEL=info                        # debug|info|warn|error (default: info)
+TEST_LOGS=1                           # Enable verbose test logging
+```
+
+### Logging Levels
+
+- `LOG_LEVEL=debug` - Full debugging (chain execution, token usage, LLM operations)
+- `LOG_LEVEL=info` - Essential information (default - pipeline progress, errors)
+- `LOG_LEVEL=warn` - Warnings only
+- `LOG_LEVEL=error` - Errors only
+
+Logs are output to console (colorized) and `server/logs/pipeline-v2.log` (structured JSON).
+
+### Development Commands
 
 **For AI Agents:** See [docs/README.md](docs/README.md) for AI agent-specific guidelines and safety rules.
 

@@ -130,7 +130,35 @@ Required in `server/.env`:
 OPENAI_API_KEY=your-openai-api-key    # Required for LLM functionality
 OPENAI_MODEL=gpt-4                    # Optional, defaults to gpt-3.5-turbo
 TEST_LOGS=1                           # Optional, enables verbose test logging
+LOG_LEVEL=info                        # Optional, controls Winston logging verbosity
 ```
+
+### Logging System
+
+The project uses **Winston** for structured logging with environment-based verbosity control:
+
+**Log Levels** (most to least verbose):
+- `debug` - Shows all logs (chain execution, token usage, LLM operations)
+- `info` - Shows essential information (default - pipeline progress, errors)
+- `warn` - Shows warnings only
+- `error` - Shows errors only
+
+**Usage:**
+```bash
+# Development with full debugging
+LOG_LEVEL=debug npm run start:server
+
+# Production with minimal logging
+LOG_LEVEL=error npm run start:server
+
+# Default (recommended for normal development)
+npm run start:server  # Uses 'info' level
+```
+
+**Log Output:**
+- **Console**: Colorized, human-readable format
+- **File**: Structured JSON in `server/logs/pipeline-v2.log`
+- **Structured metadata**: Includes timestamps, trace IDs, service tags, and context
 
 ### Game Generation Details
 

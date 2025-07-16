@@ -29,19 +29,17 @@ async function runPipeline(title, onStatusUpdate) {
     const GAMES_DIR = path.join(__dirname, 'games');
     const gameFolder = path.join(GAMES_DIR, gameId);
     logger.info('About to write game files', { gameId, gameFolder });
-    console.log('[DEBUG] About to write game files to:', gameFolder);
+    logger.debug('About to write game files to', { gameFolder });
     try {
       if (!fs.existsSync(GAMES_DIR)) fs.mkdirSync(GAMES_DIR);
     } catch (err) {
-      logger.error('Failed to create GAMES_DIR', { gameId, GAMES_DIR, error: err });
-      console.error('Failed to create GAMES_DIR', GAMES_DIR, err);
+      logger.error('Failed to create GAMES_DIR', { gameId, GAMES_DIR, error: err.message });
       throw err;
     }
     try {
       if (!fs.existsSync(gameFolder)) fs.mkdirSync(gameFolder);
     } catch (err) {
-      logger.error('Failed to create gameFolder', { gameId, gameFolder, error: err });
-      console.error('Failed to create gameFolder', gameFolder, err);
+      logger.error('Failed to create gameFolder', { gameId, gameFolder, error: err.message });
       throw err;
     }
 
@@ -73,8 +71,7 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
     } catch (err) {
-      logger.error('Failed to write game files', { gameId, gameFolder, error: err });
-      console.error('Failed to write game files', err);
+      logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });
       throw err;
     }
 
@@ -103,11 +100,11 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
   if (process.env.MOCK_PIPELINE === '1') {
     logger && logger.info && logger.info('MOCK_PIPELINE is active: using tests/fixtures/bouncing-square-game.js');
-    console.log('[MOCK_PIPELINE] Creating sharedState');
+    logger.info('Mock pipeline step', { step: 'creating_shared_state' });
     const sharedState = createSharedState();
     sharedState.title = title;
     sharedState.onStatusUpdate = onStatusUpdate;
-    console.log('[MOCK_PIPELINE] Loading gameSource from tests/fixtures/bouncing-square-game.js');
+    logger.info('Mock pipeline step', { step: 'loading_game_source' });
     sharedState.gameSource = await fs.promises.readFile(path.join(__dirname, 'tests/fixtures/bouncing-square-game.js'), 'utf8');
     sharedState.gameDef = {
       title: 'Bouncing Square',
@@ -120,9 +117,9 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
       { id: 2, description: 'Create the player entity and implement left/right movement' },
       { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
-    console.log('[MOCK_PIPELINE] Running runCodingPipeline');
+    logger.info('Mock pipeline step', { step: 'running_coding_pipeline' });
     await runCodingPipeline(sharedState, onStatusUpdate);
-    console.log('[MOCK_PIPELINE] Finished runCodingPipeline, returning sharedState');
+    logger.info('Mock pipeline step', { step: 'finished_coding_pipeline' });
     return sharedState;
   } else if (process.env.MINIMAL_GAME === '1') {
     // MINIMAL_GAME: only run coding pipeline with minimal gameDef/plan/code

@@ -4,6 +4,7 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { playabilityValidatorSchema } from '../../schemas/langchain-schemas.js';
+import logger from '../../utils/logger.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +30,7 @@ async function createPlayabilityValidatorChain(llm) {
       runName: 'PlayabilityValidatorChain',
       callbacks: [{
         handleLLMEnd: (output) => {
-          console.debug('[PlayabilityValidatorChain] LLM response:', output);
+          logger.debug('PlayabilityValidatorChain LLM response', { output });
         }
       }]
     });

@@ -5,6 +5,7 @@
 import { runPlanningPipeline } from './planningPipeline.js';
 import { runCodingPipeline } from './codingPipeline.js';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.js';
+import logger from '../../utils/logger.js';
 
 // Accepts a fully-formed sharedState object. Always runs both planning and coding pipelines.
 // Sub-pipelines emit only local progress (0–1); orchestrator maps to unified progress for frontend.
@@ -31,7 +32,7 @@ async function runModularGameSpecPipeline(sharedState) {
       progressionManager.setPhase(phase);
       progressionManager.updateLocalProgress(localProgress);
       const unified = progressionManager.getUnifiedProgress();
-      console.log(`[ORCHESTRATOR] Progress event: phase=${phase}, localProgress=${localProgress}, unified=${unified}`);
+      logger.debug('Orchestrator progress event', { phase, localProgress, unified });
       if (frontendOnStatusUpdate) {
         // Canonical PipelineStatus event emission
         if (
@@ -59,11 +60,11 @@ async function runModularGameSpecPipeline(sharedState) {
 
   // Run planning pipeline (local progress events intercepted)
   await runPlanningPipeline(sharedState, orchestratorOnStatusUpdate);
-  console.debug('[pipeline] sharedState after planning:', JSON.stringify(sharedState, null, 2));
+  logger.debug('SharedState after planning', { sharedState });
 
   // Run coding pipeline (runCodingPipeline is now imported at the top)
   await runCodingPipeline(sharedState, orchestratorOnStatusUpdate);
-  console.debug('[pipeline] sharedState after coding:', JSON.stringify(sharedState, null, 2));
+  logger.debug('SharedState after coding', { sharedState });
 
   // Ensure a final PipelineStatus event with progress=1.0 is always emitted
   if (frontendOnStatusUpdate) {
