@@ -196,6 +196,7 @@ async function handlePipelineEvent(data, btn) {
   }
   if (data.step === 'TokenCount' && typeof data.tokenCount === 'number') {
     setTokenCount(data.tokenCount);
+    return false; // Don't update status label for TokenCount events
   }
   if (data.type === 'PipelineStatus') {
     if (typeof data.progress === 'number') {
@@ -206,8 +207,18 @@ async function handlePipelineEvent(data, btn) {
     if (typeof data.tokenCount === 'number') {
       setTokenCount(data.tokenCount);
     }
+    // Use phase.label for PipelineStatus events
+    if (data.phase) {
+      // Parse phase if it's a JSON string
+      const phase = typeof data.phase === 'string' ? JSON.parse(data.phase) : data.phase;
+      if (phase && phase.label) {
+        setStatusLabel(phase.label + (phase.description ? ': ' + phase.description : ''));
+      }
+    }
+  } else {
+    // Use step for other event types (excluding TokenCount which returns early)
+    setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
   }
-  setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
   return false;
 }
 
