@@ -13,6 +13,7 @@ import path from 'path';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import logger from './logger.js';
 import { 
   createStandardLLM,
   createTokenCountingCallback,
@@ -67,7 +68,7 @@ export async function createStandardChain(options) {
     const promptString = await fs.readFile(promptPath, 'utf8');
     
     if (enableLogging) {
-      console.debug(`[${chainName}] Loaded prompt from ${promptFile}`);
+      logger.debug('Loaded prompt from file', { chainName, promptFile });
     }
 
     // Create prompt template
@@ -101,7 +102,7 @@ export async function createStandardChain(options) {
       callbacks: [{
         handleLLMEnd: (output) => {
           if (enableLogging) {
-            console.debug(`[${chainName}] LLM response received`);
+            logger.debug('LLM response received', { chainName });
           }
         }
       }]
@@ -136,11 +137,11 @@ export async function createStandardChain(options) {
           }
           
           if (enableLogging) {
-            console.debug(`[${chainName}] Invoking with input:`, input);
+            logger.debug('Chain invoking with input', { chainName, input });
           }
           const result = await baseChain.invoke(input);
           if (enableLogging) {
-            console.debug(`[${chainName}] Successfully completed`);
+            logger.debug('Chain successfully completed', { chainName });
           }
           return result;
         } catch (error) {
@@ -214,7 +215,7 @@ export async function createValidationChain(options) {
  */
 export function migrateChain(legacyChainFactory, migrationConfig) {
   return async function migratedChainFactory(llm, ...args) {
-    console.warn(`[Migration] Using legacy chain factory for ${migrationConfig.chainName}. Consider updating to standardized factory.`);
+    logger.warn('Using legacy chain factory', { chainName: migrationConfig.chainName, message: 'Consider updating to standardized factory' });
     
     try {
       return await legacyChainFactory(llm, ...args);

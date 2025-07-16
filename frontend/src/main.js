@@ -207,7 +207,6 @@ async function handlePipelineEvent(data, btn) {
       setTokenCount(data.tokenCount);
     }
   }
-  console.log(data);
   setStatusLabel(data.step + (data.description ? ': ' + data.description : '...'));
   return false;
 }

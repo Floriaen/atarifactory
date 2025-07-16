@@ -8,6 +8,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { getClampedLocalProgress } from '../../utils/progress/weightedProgress.js';
 import { CODING_PHASE } from '../../config/pipeline.config.js';
 import fs from 'fs';
+import logger from '../../utils/logger.js';
 
 const GAME_TEMPLATE = fs.readFileSync(new URL('../../gameBoilerplate/game.js', import.meta.url), 'utf-8');
 
@@ -55,11 +56,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   for (const [i, step] of sharedState.plan.entries()) {
     statusUpdate('Progress', { progress: getClampedLocalProgress(localStep, totalSteps), phase: CODING_PHASE, tokenCount });
-    if (sharedState.logger && typeof sharedState.logger.info === 'function') {
-      sharedState.logger.info('CodingPipeline: Processing plan step', { step });
-    } else {
-      console.log('[CodingPipeline] Processing plan step:', step);
-    }
+    logger.info('CodingPipeline processing plan step', { step });
     // For first step, seed with minimal scaffold if no code yet
     let gameSourceForStep = i === 0 && !accumulatedCode.trim()
       ? GAME_TEMPLATE
@@ -77,11 +74,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
     const contextStepsOut = await contextStepBuilderChain.invoke(contextStepInput);
 
     // Log the raw LLM output for diagnosis
-    if (sharedState.logger && typeof sharedState.logger.info === 'function') {
-      sharedState.logger.info('[DEBUG] ContextStepBuilderChain.invoke output', { contextStepsOut });
-    } else {
-      console.log('[DEBUG] ContextStepBuilderChain.invoke output:', contextStepsOut);
-    }
+    logger.debug('ContextStepBuilderChain invoke output', { contextStepsOut });
     // If contextStepsOut is a string, treat as code; else look for .code property
     if (typeof contextStepsOut === 'string') {
       accumulatedCode = contextStepsOut;
@@ -165,12 +158,12 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   // 4. Enforce control bar only input (LLM-based transformation)
   try {
-    console.log('Transforming code to use control bar only input', sharedState.gameSource);
+    logger.info('Transforming code to use control bar only input');
     sharedState.gameSource = await transformGameCodeWithLLM(sharedState, llm);
-    console.log('Successfully transformed code to use control bar only input', sharedState.gameSource);
+    logger.info('Successfully transformed code to use control bar only input');
     sharedState.logs = ['Pipeline executed', 'Control bar input transformation applied'];
   } catch (error) {
-    console.error('Error transforming control bar input:', error);
+    logger.error('Error transforming control bar input', { error: error.message });
     sharedState.logs = ['Pipeline executed', 'Warning: Could not transform control bar input'];
   }
 

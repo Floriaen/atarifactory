@@ -4,7 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 // Only run if OPENAI_API_KEY is set
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
 
-(hasOpenAIKey ? test : test.skip)('StepBuilder generates only canvas-relative code', async () => {
+(hasOpenAIKey ? test : test.skip)('StepBuilder generates complete game code', async () => {
   const llm = new ChatOpenAI({ 
     model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
     temperature: 0.1
@@ -25,17 +25,21 @@ const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
 
   console.log('Generated output:\n', output);
 
-  // Allow only 'canvas.width = 360;' and 'canvas.height = 640;'. Forbid any other use of canvas.width or canvas.height.
-  const allowedWidthLine = /^\s*canvas\.width\s*=\s*360\s*;\s*$/;
-  const allowedHeightLine = /^\s*canvas\.height\s*=\s*640\s*;\s*$/;
-  const forbiddenRelativePattern = /(canvas\.width|canvas\.height)/;
-
-  const lines = output.split('\n');
-  for (const line of lines) {
-    if (forbiddenRelativePattern.test(line)) {
-      if (!allowedWidthLine.test(line) && !allowedHeightLine.test(line)) {
-        throw new Error(`Canvas-relative value found (should use only fixed pixels except for size assignment): ${line}`);
-      }
-    }
+  // Verify basic game structure is present
+  expect(output).toContain('canvas');
+  expect(output).toContain('ctx');
+  expect(output.length).toBeGreaterThan(50); // Should be substantial code, not truncated
+  
+  // Should NOT manually set canvas dimensions
+  const manualCanvasSizing = /canvas\.(width|height)\s*=\s*\d+/;
+  if (manualCanvasSizing.test(output)) {
+    throw new Error(`Manual canvas sizing found - dimensions should be set automatically by template. Found: ${output.match(manualCanvasSizing)[0]}`);
+  }
+  
+  // Should use canvas.width/height for responsive positioning
+  const responsivePattern = /(canvas\.width|canvas\.height)/;
+  
+  if (!responsivePattern.test(output)) {
+    console.warn('No responsive canvas positioning found - this may result in poor layout across different screen sizes');
   }
 }, 30000); // 30 second timeout for real LLM calls

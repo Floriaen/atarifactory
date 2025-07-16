@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 // Legacy imports removed after refactor. Core pipeline lives in controller.js
 import { runPipeline } from './controller.js';
+import logger from './utils/logger.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -77,7 +78,7 @@ app.post('/generate-stream', async (req, res) => {
     await runPipeline(title, (step, data) => sendStep(step, data));
     res.end();
   } catch (err) {
-    console.error('Error in /generate-stream:', err);
+    logger.error('Error in /generate-stream', { error: err.message, stack: err.stack });
     sendStep('Error', { error: err.message });
     res.end();
   }
@@ -90,7 +91,7 @@ app.get('/games', (req, res) => {
 
 // Log all /games/* requests for debugging
 app.use('/games', (req, res, next) => {
-  console.log(`[DEBUG] Incoming /games request: ${req.method} ${req.originalUrl}`);
+  logger.debug('Incoming /games request', { method: req.method, url: req.originalUrl });
   next();
 });
 
@@ -101,10 +102,10 @@ app.get('/games/:id/assets/:filename', (req, res) => {
   const gameFolder = path.join(GAMES_DIR, gameId, 'assets');
   const filePath = path.join(gameFolder, filename);
   if (fs.existsSync(filePath)) {
-    console.log(`[ASSET] Serving /games/${gameId}/assets/${filename}`);
+    logger.info('Serving game asset', { gameId, filename });
     res.sendFile(filePath);
   } else {
-    console.log(`[ASSET] NOT FOUND: /games/${gameId}/assets/${filename}`);
+    logger.warn('Game asset not found', { gameId, filename });
     res.status(404).send('File not found');
   }
 });
@@ -119,6 +120,6 @@ export default app;
 // Start the server if this file is run directly (ESM equivalent)
 if (import.meta.url === `file://${process.argv[1]}`) {
   app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    logger.info('Server listening on port', { port: PORT });
   });
 }

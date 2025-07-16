@@ -4,6 +4,7 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { plannerSchema } from '../../schemas/langchain-schemas.js';
+import logger from '../../utils/logger.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +14,7 @@ const __dirname = dirname(__filename);
 async function createPlannerChain(llm) {
   const promptPath = path.join(__dirname, '../prompts/PlannerChain.prompt.md');
   const promptString = await fs.readFile(promptPath, 'utf8');
-  console.debug('[PlannerChain] prompt template:', promptString);
+  logger.debug('PlannerChain prompt template', { promptString });
   const plannerPrompt = new PromptTemplate({
     template: promptString,
     inputVariables: ['gameDefinition']
@@ -30,17 +31,17 @@ async function createPlannerChain(llm) {
         ...input,
         gameDefinition: typeof input.gameDefinition === 'string' ? input.gameDefinition : JSON.stringify(input.gameDefinition, null, 2)
       };
-      console.debug('[PlannerChain] input to prompt:', formattedInput);
+      logger.debug('PlannerChain input to prompt', { formattedInput });
       const hydratedPrompt = await plannerPrompt.format(formattedInput);
-      // console.debug('[PlannerChain] hydrated prompt:', hydratedPrompt);
+      // logger.debug('PlannerChain hydrated prompt', { hydratedPrompt });
       
       try {
         const result = await structuredLLM.invoke(hydratedPrompt);
-        console.debug('[PlannerChain] structured output:', result);
+        logger.debug('PlannerChain structured output', { result });
         // Extract the plan array from the wrapped object
         return result.plan || result;
       } catch (err) {
-        console.error('[PlannerChain] Failed to get structured output:', err);
+        logger.error('PlannerChain failed to get structured output', { error: err.message, stack: err.stack });
         throw err;
       }
     }

@@ -2,6 +2,8 @@
 
 IMPORTANT: The game must be as simple as possible and fit in 7 implementation steps or fewer. The entire game source code must not exceed 400 lines. Use no more than 2 mechanics and 3 entities. Do NOT use random or procedural generation. Do NOT include advanced rendering, effects, or extra UI. Only essential logic for a minimal playable game.
 
+VISUAL STYLE: Design games that look like classic 1970s-1980s Atari games with simple geometric shapes, basic colors (white, black, red, green, blue, yellow), and blocky retro aesthetics. NO modern glowing, flashing, or gradient effects.
+
 STRICT RULES:
 - You MUST use exactly 1 or 2 mechanics.
 - You MUST use 1 to 3 entities.

@@ -6,6 +6,7 @@
  */
 
 import { ChatOpenAI } from '@langchain/openai';
+import { llmLogger } from '../utils/logger.js';
 
 /**
  * Centralized configuration constants
@@ -56,19 +57,20 @@ export function createStandardLLM(options = {}) {
  * Creates a token counting callback for shared state
  * @param {Object} sharedState - Shared state object with tokenCount property
  * @param {string} chainName - Name of the chain for logging
+ * @param {string} traceId - Optional trace ID for request correlation
  * @returns {Object} Langchain callback for token counting
  */
-export function createTokenCountingCallback(sharedState, chainName = 'Unknown') {
+export function createTokenCountingCallback(sharedState, chainName = 'Unknown', traceId = null) {
   return {
     handleLLMEnd: (output) => {
       if (output.llmOutput?.tokenUsage && sharedState && typeof sharedState.tokenCount === 'number') {
         const tokens = output.llmOutput.tokenUsage.totalTokens;
         sharedState.tokenCount += tokens;
-        console.debug(`[${chainName}] Token count - Added: ${tokens}, Total: ${sharedState.tokenCount}`);
+        llmLogger.logTokenUsage(chainName, tokens, sharedState.tokenCount, traceId);
       }
     },
     handleLLMError: (error) => {
-      console.error(`[${chainName}] LLM Error:`, error);
+      llmLogger.logLLMError(chainName, error, traceId);
     }
   };
 }
@@ -96,6 +98,7 @@ export function createChainConfig(chainName, options = {}) {
  * @param {Object} options - Configuration options
  * @param {Object} options.sharedState - Shared state for token counting
  * @param {string} options.chainName - Chain name for logging
+ * @param {string} options.traceId - Trace ID for request correlation
  * @returns {ChatOpenAI} Enhanced LLM instance with callbacks
  */
 export function createEnhancedLLM(options = {}) {
@@ -103,16 +106,16 @@ export function createEnhancedLLM(options = {}) {
   
   // Add token counting if sharedState is provided
   if (options.sharedState) {
-    callbacks.push(createTokenCountingCallback(options.sharedState, options.chainName));
+    callbacks.push(createTokenCountingCallback(options.sharedState, options.chainName, options.traceId));
   }
 
   // Add standard error logging
   callbacks.push({
     handleLLMStart: (llm, prompts) => {
-      console.debug(`[${options.chainName || 'LLM'}] Starting with ${prompts.length} prompt(s)`);
+      llmLogger.logLLMStart(options.chainName || 'LLM', prompts.length, options.traceId);
     },
     handleLLMEnd: (output) => {
-      console.debug(`[${options.chainName || 'LLM'}] Completed successfully`);
+      llmLogger.logLLMEnd(options.chainName || 'LLM', options.traceId);
     }
   });
 
@@ -166,13 +169,10 @@ export function getPresetConfig(presetName) {
  * @param {Error} error - The error that occurred
  * @param {string} chainName - Name of the chain where error occurred
  * @param {Object} context - Additional context for debugging
+ * @param {string} traceId - Optional trace ID for request correlation
  */
-export function handleChainError(error, chainName, context = {}) {
-  console.error(`[${chainName}] Chain execution failed:`, {
-    error: error.message,
-    stack: error.stack,
-    context
-  });
+export function handleChainError(error, chainName, context = {}, traceId = null) {
+  llmLogger.logLLMError(chainName, error, traceId);
   
   // Rethrow with enhanced error message
   throw new Error(`${chainName} failed: ${error.message}`);

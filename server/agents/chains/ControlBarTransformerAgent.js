@@ -1,5 +1,6 @@
 import { createStandardChain } from '../../utils/chainFactory.js';
 import { createStandardLLM } from '../../config/langchain.config.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Create a ControlBarTransformerAgent chain that converts game code to use control bar input
@@ -27,7 +28,7 @@ async function createControlBarTransformerChain(llm, options = {}) {
       }
       
       if (enableLogging) {
-        console.debug(`[${chainName}] Invoking with input:`, input);
+        logger.debug('Chain invoking with input', { chainName, input });
       }
       
       // Call the base chain
@@ -39,7 +40,7 @@ async function createControlBarTransformerChain(llm, options = {}) {
       const transformedResult = match ? match[1].trim() : content.trim();
       
       if (enableLogging) {
-        console.debug(`[${chainName}] Successfully completed`);
+        logger.debug('Chain successfully completed', { chainName });
       }
       
       return transformedResult;
@@ -66,7 +67,7 @@ export async function transformGameCodeWithLLM(sharedState, llm) {
   const chain = await createControlBarTransformerChain(llm, { sharedState });
   const result = await chain.invoke({ gameSource: sharedState.gameSource });
   
-  console.log('ControlBarTransformerAgent result', result);
+  logger.debug('ControlBarTransformerAgent result', { result });
   return result;
 }
 
