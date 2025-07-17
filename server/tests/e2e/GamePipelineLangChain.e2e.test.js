@@ -13,12 +13,24 @@ import { runModularGameSpecPipeline } from '../../agents/pipeline/pipeline.js';
 vi.mock('../../agents/chains/GameInventorChain', () => ({
   createGameInventorChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ idea: 'A platformer where you control gravity.' })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'GameInventorChain',
+    label: 'Game Inventor',
+    description: 'Generating initial game idea',
+    category: 'planning'
+  }
 }));
 vi.mock('../../agents/chains/design/GameDesignChain', () => ({
   createGameDesignChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ gameDef: { name: 'Gravity Jumper', genre: 'Platformer', rules: '...' } })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'GameDesignChain',
+    label: 'Game Design',
+    description: 'Creating game mechanics and entities',
+    category: 'planning'
+  }
 }));
 vi.mock('../../agents/chains/design/IdeaGeneratorChain.js', () => ({
   createIdeaGeneratorChain: vi.fn().mockReturnValue({
@@ -48,7 +60,13 @@ vi.mock('../../agents/chains/design/EntityListBuilderChain.js', () => ({
 vi.mock('../../agents/chains/design/PlayabilityHeuristicChain.js', () => ({
   createPlayabilityHeuristicChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue('Playable. Fun mechanics.')
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'PlayabilityHeuristicChain',
+    label: 'Playability Heuristic',
+    description: 'Scoring game playability',
+    category: 'planning'
+  }
 }));
 vi.mock('../../agents/chains/design/FinalAssemblerChain.js', () => ({
   FinalAssemblerChain: { invoke: vi.fn().mockResolvedValue({ gameDef: { name: 'Gravity Jumper', pitch: 'A platformer where you control gravity.', loop: 'Players can invert gravity to avoid obstacles.', mechanics: ['gravity switch', 'platforming', 'collision'], winCondition: 'Reach the exit platform.', entities: ['player', 'platform', 'goal'] } }) }
@@ -63,7 +81,13 @@ vi.mock('@langchain/openai', () => ({
 vi.mock('../../agents/chains/PlayabilityValidatorChain', () => ({
   createPlayabilityValidatorChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ isPlayable: false, suggestion: 'Add a win condition.' })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'PlayabilityValidatorChain',
+    label: 'Playability Validator',
+    description: 'Checking if game design is playable',
+    category: 'planning'
+  }
 }));
 vi.mock('../../agents/chains/PlayabilityAutoFixChain', () => ({
   createPlayabilityAutoFixChain: vi.fn().mockReturnValue({
@@ -77,17 +101,35 @@ vi.mock('../../agents/chains/PlannerChain', () => ({
       { description: 'Implement gravity switch' },
       { description: 'Test win condition' }
     ] })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'PlannerChain',
+    label: 'Planner',
+    description: 'Breaking down game into implementation steps',
+    category: 'planning'
+  }
 }));
 vi.mock('../../agents/chains/ContextStepBuilderChain', () => ({
   createContextStepBuilderChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ contextSteps: ['Set up environment', 'Initialize player state'] })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'ContextStepBuilderChain',
+    label: 'Context Step Builder',
+    description: 'Building implementation steps',
+    category: 'coding'
+  }
 }));
 vi.mock('../../agents/chains/FeedbackChain', () => ({
   createFeedbackChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ retryTarget: 'fixer', suggestion: 'Try adding more levels.' })
-  })
+  }),
+  CHAIN_STATUS: {
+    name: 'FeedbackChain',
+    label: 'Feedback',
+    description: 'Analyzing code feedback',
+    category: 'coding'
+  }
 }));
 vi.mock('../../agents/chains/SyntaxSanityChain', () => ({
   createSyntaxSanityChain: vi.fn().mockReturnValue({

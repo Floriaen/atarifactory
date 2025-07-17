@@ -1,6 +1,13 @@
 import { ESLint } from 'eslint';
 import pipelineConfig from '../../config/staticchecker.eslint.config.js';
 
+export const CHAIN_STATUS = {
+  name: 'StaticCheckerChain',
+  label: 'Static Checker',
+  description: 'Checking code syntax and style',
+  category: 'coding'
+};
+
 async function run({ currentCode, stepCode, logger = console, traceId = 'test' }) {
   logger.info('StaticCheckerChain input:', {
     traceId,

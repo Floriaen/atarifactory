@@ -9,6 +9,13 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+export const CHAIN_STATUS = {
+  name: 'ContextStepBuilderChain',
+  label: 'Code Generation',
+  description: 'Implementing game logic',
+  category: 'coding'
+};
+
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
