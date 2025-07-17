@@ -5,7 +5,7 @@
 import { runPlanningPipeline } from './planningPipeline.js';
 import { runCodingPipeline } from './codingPipeline.js';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.js';
-import logger from '../../utils/logger.js';
+import logger, { statusLogger } from '../../utils/logger.js';
 
 // Accepts a fully-formed sharedState object. Always runs both planning and coding pipelines.
 // Sub-pipelines emit only local progress (0–1); orchestrator maps to unified progress for frontend.
@@ -44,15 +44,32 @@ async function runModularGameSpecPipeline(sharedState) {
           throw new Error('Progress event phase must be a canonical object with { name, label, description }. Received: ' + JSON.stringify(phase));
         }
         const phaseObj = phase;
-        frontendOnStatusUpdate('PipelineStatus', {
+        const statusEvent = {
           type: 'PipelineStatus',
           phase: phaseObj,
           progress: unified,
           tokenCount: typeof payload.tokenCount === 'number' ? payload.tokenCount : 0,
           timestamp: new Date().toISOString()
+        };
+        
+        // Log all PipelineStatus events
+        statusLogger.info('PipelineStatus event', {
+          eventType: 'PipelineStatus',
+          phase: phaseObj,
+          progress: unified,
+          tokenCount: statusEvent.tokenCount,
+          originalPayload: payload
         });
+        
+        frontendOnStatusUpdate('PipelineStatus', statusEvent);
       }
     } else {
+      // Log all other events
+      statusLogger.info('Pipeline event', {
+        eventType: type,
+        payload: payload
+      });
+      
       // Forward all other events directly
       if (frontendOnStatusUpdate) frontendOnStatusUpdate(type, payload);
     }
@@ -73,13 +90,24 @@ async function runModularGameSpecPipeline(sharedState) {
       label: 'Coding',
       description: 'Generating code'
     };
-    frontendOnStatusUpdate('PipelineStatus', {
+    const finalEvent = {
       type: 'PipelineStatus',
       phase: phaseObj,
       progress: 1.0,
       tokenCount: typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : 0,
       timestamp: new Date().toISOString()
+    };
+    
+    // Log final PipelineStatus event
+    statusLogger.info('Final PipelineStatus event', {
+      eventType: 'PipelineStatus',
+      phase: phaseObj,
+      progress: 1.0,
+      tokenCount: finalEvent.tokenCount,
+      isFinalEvent: true
     });
+    
+    frontendOnStatusUpdate('PipelineStatus', finalEvent);
   }
   return sharedState;
 }

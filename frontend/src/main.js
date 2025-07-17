@@ -59,20 +59,131 @@ function updateProgressBar(progress) {
   DOM.progressBarLabel.textContent = pct + '%';
   showProgressBar();
 }
+// Track current token count for animation
+let currentTokenCount = 0;
+let animationFrameId = null;
+
 /**
- * Sets and shows the token count display.
+ * Gets the appropriate animation duration based on the size of the increment.
+ * @param {number} difference - The difference between start and end values.
+ * @returns {number} Animation duration in milliseconds.
+ */
+function getAnimationDuration(difference) {
+  if (difference < 5) return 300;
+  if (difference < 25) return 600;
+  if (difference < 100) return 1000;
+  if (difference < 500) return 1200;
+  return 1500;
+}
+
+/**
+ * Animates the token count from one value to another with smooth easing.
+ * @param {HTMLElement} element - The element containing the token count.
+ * @param {number} startValue - Starting token count.
+ * @param {number} endValue - Target token count.
+ * @param {number} [duration] - Animation duration in ms (auto-calculated if not provided).
+ */
+function animateTokenCount(element, startValue, endValue, duration = null) {
+  // Cancel any existing animation
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  const difference = endValue - startValue;
+  if (difference <= 0) {
+    // No animation needed for decreases or no change
+    setTokenCountDirect(endValue);
+    return;
+  }
+
+  // Calculate duration if not provided
+  if (!duration) {
+    duration = getAnimationDuration(difference);
+  }
+
+  // Add updating class for CSS effects
+  element.classList.add('updating');
+
+  const startTime = performance.now();
+  
+  function updateCounter(timestamp) {
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Ease-out cubic function for smooth deceleration
+    const easedProgress = 1 - Math.pow(1 - progress, 3);
+    
+    const currentValue = Math.floor(startValue + (difference * easedProgress));
+    
+    // Update the display
+    const strongElement = element.querySelector('strong');
+    if (strongElement) {
+      strongElement.textContent = currentValue.toLocaleString();
+    }
+    
+    if (progress < 1) {
+      animationFrameId = requestAnimationFrame(updateCounter);
+    } else {
+      // Animation complete
+      element.classList.remove('updating');
+      animationFrameId = null;
+      // Ensure final value is exact
+      if (strongElement) {
+        strongElement.textContent = endValue.toLocaleString();
+      }
+      currentTokenCount = endValue;
+    }
+  }
+  
+  animationFrameId = requestAnimationFrame(updateCounter);
+}
+
+/**
+ * Sets the token count directly without animation (for resets/decreases).
+ * @param {number|string} count - Token count value.
+ */
+function setTokenCountDirect(count) {
+  const numericCount = typeof count === 'string' ? parseInt(count) || 0 : count;
+  DOM.tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${numericCount.toLocaleString()}</strong>`;
+  DOM.tokenCountDiv.style.visibility = 'visible';
+  DOM.tokenCountDiv.style.opacity = '1';
+  currentTokenCount = numericCount;
+}
+
+/**
+ * Sets and shows the token count display with animation.
  * @param {number|string} count - Token count value.
  */
 function setTokenCount(count) {
-  DOM.tokenCountDiv.innerHTML = `<span>Tokens:</span> <strong>${count}</strong>`;
+  const numericCount = typeof count === 'string' ? parseInt(count) || 0 : count;
+  
+  // Show the element if hidden
   DOM.tokenCountDiv.style.visibility = 'visible';
   DOM.tokenCountDiv.style.opacity = '1';
+  
+  // If this is the first time or count decreased, set directly
+  if (currentTokenCount === 0 || numericCount <= currentTokenCount) {
+    setTokenCountDirect(numericCount);
+    return;
+  }
+  
+  // Animate the increase
+  animateTokenCount(DOM.tokenCountDiv, currentTokenCount, numericCount);
 }
 /** Hides the token count display. */
 function hideTokenCount() {
+  // Cancel any running animation
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
   DOM.tokenCountDiv.style.visibility = 'hidden';
   DOM.tokenCountDiv.style.opacity = '0';
   DOM.tokenCountDiv.textContent = '';
+  DOM.tokenCountDiv.classList.remove('updating');
+  currentTokenCount = 0; // Reset for next session
 }
 /**
  * Resets UI to ready state (button, status, progress, token count).
@@ -83,6 +194,7 @@ function setReady() {
   DOM.statusLabel.textContent = '';
   hideTokenCount();
   hideProgressBar();
+  currentTokenCount = 0; // Ensure token count is reset
 }
 setReady();
 
@@ -212,7 +324,7 @@ async function handlePipelineEvent(data, btn) {
       // Parse phase if it's a JSON string
       const phase = typeof data.phase === 'string' ? JSON.parse(data.phase) : data.phase;
       if (phase && phase.label) {
-        setStatusLabel(phase.label + (phase.description ? ': ' + phase.description : ''));
+        setStatusLabel(phase.description ? phase.description : phase.label);
       }
     }
   } else {

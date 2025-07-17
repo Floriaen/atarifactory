@@ -2,6 +2,13 @@
 import fs from 'fs';
 import path from 'path';
 
+export const CHAIN_STATUS = {
+  name: 'GameDesignChain',
+  label: 'Game Design',
+  description: 'Creating game mechanics and entities',
+  category: 'planning'
+};
+
 const COT_LOG_PATH = path.join(process.cwd(), 'logs/GameDesignChain.cot.log.txt'); // Chain-of-Thought log
 
 import { createIdeaGeneratorChain } from './IdeaGeneratorChain.js';

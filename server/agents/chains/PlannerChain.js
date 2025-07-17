@@ -6,6 +6,13 @@ import { dirname } from 'path';
 import { plannerSchema } from '../../schemas/langchain-schemas.js';
 import logger from '../../utils/logger.js';
 
+export const CHAIN_STATUS = {
+  name: 'PlannerChain',
+  label: 'Planner',
+  description: 'Breaking down game into implementation steps',
+  category: 'planning'
+};
+
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

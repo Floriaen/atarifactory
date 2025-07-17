@@ -2,6 +2,13 @@ import { createStandardChain } from '../../utils/chainFactory.js';
 import { createStandardLLM } from '../../config/langchain.config.js';
 import logger from '../../utils/logger.js';
 
+export const CHAIN_STATUS = {
+  name: 'ControlBarTransformerAgent',
+  label: 'Control Bar Transform',
+  description: 'Adding mobile-friendly controls',
+  category: 'coding'
+};
+
 /**
  * Create a ControlBarTransformerAgent chain that converts game code to use control bar input
  * 

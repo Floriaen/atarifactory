@@ -5,6 +5,13 @@
 import { createJSONChain } from '../../utils/chainFactory.js';
 import { feedbackSchema } from '../../schemas/langchain-schemas.js';
 
+export const CHAIN_STATUS = {
+  name: 'FeedbackChain',
+  label: 'Feedback',
+  description: 'Analyzing runtime logs and suggesting improvements',
+  category: 'coding'
+};
+
 // Standardized async factory for the chain
 async function createFeedbackChain(llm, options = {}) {
   return createJSONChain({

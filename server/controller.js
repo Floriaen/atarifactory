@@ -1,4 +1,4 @@
-import logger from './utils/logger.js';
+import logger, { statusLogger } from './utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { createSharedState } from './types/SharedState.js';
 import fs from 'fs';
@@ -21,6 +21,17 @@ const __dirname = dirname(__filename);
 async function runPipeline(title, onStatusUpdate) {
   const traceId = uuidv4();
   logger.info('Pipeline started', { traceId, title });
+  
+  // Wrap onStatusUpdate to log all events
+  const wrappedOnStatusUpdate = onStatusUpdate ? (type, payload) => {
+    statusLogger.info('Controller status event', {
+      eventType: type,
+      payload: payload,
+      traceId: traceId
+    });
+    return onStatusUpdate(type, payload);
+  } : undefined;
+  
   try {
     // --- Save generated game to disk and update manifest ---
     const gameId = uuidv4();
@@ -44,7 +55,7 @@ async function runPipeline(title, onStatusUpdate) {
     }
 
     // Get code and game design info (with env var fallback logic)
-    const sharedState = await generateGameSourceCode(title, logger, onStatusUpdate);
+    const sharedState = await generateGameSourceCode(title, logger, wrappedOnStatusUpdate);
     const code = sharedState.gameSource;
     const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || title;

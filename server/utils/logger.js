@@ -86,4 +86,29 @@ export const llmLogger = {
   }
 };
 
+/**
+ * Dedicated logger for pipeline status events
+ */
+export const statusLogger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.json()
+  ),
+  defaultMeta: { service: 'pipeline-status' },
+  transports: [
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.printf(({ timestamp, level, message, ...meta }) => {
+          return `[STATUS] ${timestamp} ${level}: ${message} ${Object.keys(meta).length ? JSON.stringify(meta) : ''}`;
+        })
+      )
+    }),
+    // Write status logs to dedicated file
+    new transports.File({ filename: path.join(__dirname, '..', 'logs', 'pipeline-status.log') })
+  ]
+});
+
 export default logger; 

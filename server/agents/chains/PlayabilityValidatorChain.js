@@ -6,6 +6,13 @@ import { dirname } from 'path';
 import { playabilityValidatorSchema } from '../../schemas/langchain-schemas.js';
 import logger from '../../utils/logger.js';
 
+export const CHAIN_STATUS = {
+  name: 'PlayabilityValidatorChain',
+  label: 'Playability Validator',
+  description: 'Checking if game design is playable',
+  category: 'planning'
+};
+
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
