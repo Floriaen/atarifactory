@@ -1,0 +1,15 @@
+:root { color-scheme: dark; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #0f1115; color: #eaecee; }
+.container { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+h1 { font-size: 1.4rem; margin: 0 0 12px 0; }
+.row { display: flex; gap: 8px; margin-bottom: 10px; }
+input#q { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #2a2f3a; background: #0c0e13; color: #eaecee; }
+button { padding: 10px 14px; border-radius: 8px; border: 1px solid #2a2f3a; background: #1f2633; color: #eaecee; cursor: pointer; }
+button:hover { background: #283144; }
+.status { min-height: 20px; color: #a3acc3; margin: 6px 0; }
+.status.error { color: #ff6b6b; }
+.results { display: flex; flex-direction: column; gap: 10px; }
+.item { border: 1px solid #2a2f3a; border-radius: 8px; background: #131722; padding: 10px 12px; }
+.item .head { color: #9fb3ff; font-size: 0.95rem; margin-bottom: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.item .snippet { margin: 0; font-size: 0.92rem; white-space: pre-wrap; color: #eaecee; }
+.empty { color: #7f8799; text-align: center; padding: 12px; }

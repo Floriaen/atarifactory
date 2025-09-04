@@ -95,8 +95,10 @@ Create `server/.env` with your configuration:
 # Required
 OPENAI_API_KEY=your-openai-api-key
 
-# Optional  
-OPENAI_MODEL=gpt-4                    # Defaults to gpt-3.5-turbo
+# Required for real LLM runs (no default)
+OPENAI_MODEL=gpt-4.1
+
+# Optional
 LOG_LEVEL=info                        # debug|info|warn|error (default: info)
 TEST_LOGS=1                           # Enable verbose test logging
 ```
@@ -162,6 +164,24 @@ OPENAI_API_KEY=your-key npm test
 - **Real LLM Testing**: Optional integration with actual OpenAI API
 - **Token Counting Tests**: Verify cost tracking functionality
 
+## 📚 RAG Knowledge Index (separate module)
+
+The RAG tool is a fully independent module under `rag/` with its own server and UI. Use it directly from that directory:
+
+- Build index (inside `rag/`): `npm run index`
+- Start server/UI (inside `rag/`): `npm run start` → `http://localhost:4001`
+- Query via CLI (inside `rag/`): `npm run query -- "progress pipeline status events"`
+
+HTTP API (served by the RAG server):
+- POST `http://localhost:4001/api/reindex` → rebuilds the index
+- POST `http://localhost:4001/api/query` with `{ "q": "your query", "k": 5 }`
+
+Notes:
+- Index scope: `docs/`, `server/`, `frontend/`, and root `README.md`.
+- Storage: `rag/knowledge/index.json` (git-ignored).
+- No external services; BM25 scoring runs locally.
+
+
 ## Running the Server
 
 - Navigate to the `server` directory:
@@ -192,10 +212,10 @@ OPENAI_API_KEY=your-key npm test
   npm test
   ```
 
-- Alternatively, from the root directory, you can run:
+- Alternatively, from the root directory, you can run the same:
 
   ```bash
-  npm run test:server
+  npm test
   ```
 
 - The Vitest configuration is located in the root directory and loads environment variables from `server/.env`.

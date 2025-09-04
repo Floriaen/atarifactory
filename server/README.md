@@ -16,10 +16,10 @@ This directory contains the next-generation, agent-based, LLM-driven game genera
 
 ### Usage
 
-To run the pipeline with a minimal game for testing:
+To run the pipeline with a minimal game for testing (from repo root):
 
 ```sh
-MINIMAL_GAME=1 npm start
+MINIMAL_GAME=1 npm run start:server
 ```
 
 You can combine this with other environment variables as needed. Only one special mode (MOCK or MINIMAL) will be active at a time.
@@ -32,7 +32,7 @@ You can run the pipeline in a fast, robust mock mode for end-to-end testing and 
   ```sh
   MOCK_PIPELINE=1 npm run start:server
   ```
-- In mock mode, the pipeline skips all agent/LLM logic and uses the static mock game code from `server/mocks/game.js`.
+- In mock mode, the pipeline skips all agent/LLM logic and uses the static mock game code from `server/tests/fixtures/bouncing-square-game.js`.
 - All generated files (`game.js`, `gameBoilerplate/controlBar/controlBar.js`, `gameBoilerplate/controlBar/controlBar.css`, `index.html`) are written directly into `/server/games/<gameId>/` (no `assets/` directory).
 - The frontend and server behave as if a real game was generated, allowing you to test serving, loading, and playing the game.
 
