@@ -1,0 +1,24 @@
+{
+  "name": "rag",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:rag": "node src/server.js",
+    "index": "node src/indexer.js",
+    "rag:index": "node src/indexer.js",
+    "query": "node src/search.js",
+    "rag:query": "node src/search.js",
+    "mode:auto": "node scripts/setMode.js auto",
+    "mode:ask": "node scripts/setMode.js ask-first",
+    "mode:status": "node scripts/setMode.js status"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}

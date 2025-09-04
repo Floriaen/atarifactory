@@ -1,30 +1,9 @@
-# Coverage files
-coverage/
-*.lcov
-clover.xml
-
-# Node modules
 node_modules/
-
-# Environment variables
-.env
-
-# Logs
-logs/
-*.log
-
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-games/
+server/knowledge/
+rag/knowledge/
+server/logs/
+server/.env
 frontend/node_modules/
-frontend/dist/
-*aiCoder/llmConfig*key*
-*aiCoder/backups/*
+dist/
+.DS_Store
+.assistant-mode

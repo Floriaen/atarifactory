@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repo RAG Search</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Repo Knowledge Search</h1>
+      <div class="row">
+        <input id="q" type="text" placeholder="Search docs and code (e.g., PipelineStatus, ProgressionManager)" />
+        <button id="search">Search</button>
+        <button id="reindex" title="Rebuild index">Reindex</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="results" class="results"></div>
+    </div>
+    <script src="/main.js" type="module"></script>
+  </body>
+  </html>
+
