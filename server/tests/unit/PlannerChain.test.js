@@ -44,6 +44,11 @@ describe('PlannerChain Pipeline Tests', () => {
       const promptString = await fs.readFile(promptPath, 'utf8');
       expect(promptString).toMatch(/gameDefinition/);
       expect(promptString).toMatch(/JSON array/);
+      // New guidance should be present without changing output shape
+      expect(promptString).toMatch(/MANDATORY IMPLEMENTATION STEPS/);
+      expect(promptString).toMatch(/Implement controls mapping/);
+      expect(promptString).toMatch(/Implement victory check/);
+      expect(promptString).toMatch(/Implement failure check/);
     });
   });
 

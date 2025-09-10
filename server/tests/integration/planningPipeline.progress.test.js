@@ -6,7 +6,6 @@ const makeMockChain = (output) => ({
   invoke: vi.fn().mockResolvedValue(output)
 });
 
-const mockGameInventor = makeMockChain({ idea: 'test idea' });
 const mockGameDesign = makeMockChain({
   gameDef: {
     title: 'Test Game',
@@ -21,15 +20,6 @@ const mockHeuristic = makeMockChain({ score: 7 });
 const mockAutoFix = makeMockChain({ title: 'Fixed Game', mechanics: ['move'], winCondition: 'win', constraints: '' });
 const mockPlanner = makeMockChain([{ step: 'do something' }]);
 
-vi.mock('../../agents/chains/GameInventorChain.js', () => ({
-  createGameInventorChain: async () => mockGameInventor,
-  CHAIN_STATUS: {
-    name: 'GameInventorChain',
-    label: 'Game Inventor',
-    description: 'Generating initial game idea',
-    category: 'planning'
-  }
-}));
 vi.mock('../../agents/chains/design/GameDesignChain.js', () => ({
   createGameDesignChain: async () => mockGameDesign,
   CHAIN_STATUS: {
@@ -92,23 +82,23 @@ describe('runPlanningPipeline progress events', () => {
     await runPlanningPipeline(sharedState, onStatusUpdate);
     
     // With the new PipelineTracker, we expect start and completion events for each step
-    expect(events).toHaveLength(10); // 5 steps × 2 events (start + complete) each
+    expect(events).toHaveLength(8); // 4 steps × 2 events (start + complete) each
     
-    // Check first completion event (Game Inventor)
+    // Check first completion event (Game Design)
     expect(events[1]).toMatchObject({
       phase: {
         name: 'planning',
-        label: 'Game Inventor',
+        label: 'Game Design',
         stepStatus: 'completed',
-        totalProgress: 0.2
+        totalProgress: 0.25
       },
-      progress: 0.2
+      progress: 0.25
     });
     expect(events[1]).toHaveProperty('tokenCount');
     expect(typeof events[1].tokenCount).toBe('number');
     
     // Check final completion event (Planner) 
-    expect(events[9]).toMatchObject({
+    expect(events[7]).toMatchObject({
       phase: {
         name: 'planning',
         label: 'Planner', 
@@ -117,8 +107,8 @@ describe('runPlanningPipeline progress events', () => {
       },
       progress: 1
     });
-    expect(events[9]).toHaveProperty('tokenCount');
-    expect(typeof events[9].tokenCount).toBe('number');
+    expect(events[7]).toHaveProperty('tokenCount');
+    expect(typeof events[7].tokenCount).toBe('number');
   });
 
   it('should emit correct progress events (with AutoFix)', async () => {
@@ -135,23 +125,23 @@ describe('runPlanningPipeline progress events', () => {
     await runPlanningPipeline(sharedState, onStatusUpdate);
     
     // Same expectations as no AutoFix case - AutoFix is conditional and doesn't emit progress events
-    expect(events).toHaveLength(10); // 5 steps × 2 events (start + complete) each
+    expect(events).toHaveLength(8); // 4 steps × 2 events (start + complete) each
     
-    // Check first completion event (Game Inventor)
+    // Check first completion event (Game Design)
     expect(events[1]).toMatchObject({
       phase: {
         name: 'planning',
-        label: 'Game Inventor',
+        label: 'Game Design',
         stepStatus: 'completed',
-        totalProgress: 0.2
+        totalProgress: 0.25
       },
-      progress: 0.2
+      progress: 0.25
     });
     expect(events[1]).toHaveProperty('tokenCount');
     expect(typeof events[1].tokenCount).toBe('number');
     
     // Check final completion event (Planner)
-    expect(events[9]).toMatchObject({
+    expect(events[7]).toMatchObject({
       phase: {
         name: 'planning',
         label: 'Planner',
@@ -160,7 +150,7 @@ describe('runPlanningPipeline progress events', () => {
       },
       progress: 1
     });
-    expect(events[9]).toHaveProperty('tokenCount');
-    expect(typeof events[9].tokenCount).toBe('number');
+    expect(events[7]).toHaveProperty('tokenCount');
+    expect(typeof events[7].tokenCount).toBe('number');
   });
 });

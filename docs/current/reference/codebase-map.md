@@ -53,7 +53,7 @@ server/
 **Reference Examples:**
 - `server/agents/chains/design/IdeaGeneratorChain.js` - Creative chain example
 - `server/agents/chains/design/PlannerChain.js` - Structured array output
-- `server/agents/chains/GameInventorChain.js` - Simple object output
+- (removed) GameInventorChain — consolidated into IdeaGeneratorChain
 
 ### **Need to Modify Existing Chain Behavior?**
 
@@ -69,7 +69,7 @@ server/
 - `FinalAssemblerChain.js` - Assembles final game definition
 
 #### **Main Chains** (`server/agents/chains/`)
-- `GameInventorChain.js` - Initial game concept generation
+- Idea generation handled by `design/IdeaGeneratorChain.js`
 - `PlannerChain.js` - Breaks design into implementation steps
 - `ContextStepBuilderChain.js` - Implements individual plan steps
 - `FeedbackChain.js` - Provides improvement feedback
@@ -116,7 +116,7 @@ server/tests/
 ### **`server/agents/chains/`**
 | File | Purpose | Input | Output | Modification Safety |
 |------|---------|-------|--------|-------------------|
-| `GameInventorChain.js` | Game concept creation | `{}` or constraints | `{name, description}` | ✅ Safe |
+| `design/IdeaGeneratorChain.js` | Creative ideas | Constraints | `{title, pitch}` | ✅ Safe |
 | `PlannerChain.js` | Implementation planning | Game definition | Array of plan steps | ✅ Safe |
 | `ContextStepBuilderChain.js` | Code generation | Plan step + context | Updated game code | ⚠️ Careful |
 | `FeedbackChain.js` | Improvement suggestions | Error/failure info | Feedback object | ✅ Safe |
@@ -138,7 +138,7 @@ server/tests/
 ### **`server/agents/prompts/`**
 Prompt templates organized by chain category:
 - `design/` - Design chain prompts
-- `GameInventorChain.prompt.md` - Game invention prompt
+- `design/idea-generator.md` - Idea generator prompt
 - `PlannerChain.prompt.md` - Planning prompt
 - etc.
 
@@ -158,7 +158,7 @@ Prompt templates organized by chain category:
 ## 🔍 "If You Need To..." Quick Reference
 
 ### **Add Creative Functionality**
-→ Look at `IdeaGeneratorChain.js` and `GameInventorChain.js`
+→ Look at `IdeaGeneratorChain.js`
 
 ### **Modify Game Logic Generation**
 → Look at `ContextStepBuilderChain.js` and related tests

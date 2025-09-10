@@ -19,7 +19,7 @@ describe('MechanicExtractorChain integration (ChatOpenAI)', () => {
       maxTokens: 256
     });
     const chain = await createMechanicExtractorChain(llm);
-    const input = { loop: 'Player jumps between platforms and dodges lasers.' };
+    const input = { context: { loop: 'Player jumps between platforms and dodges lasers.' } };
     const result = await chain.invoke(input);
     expect(result).toHaveProperty('mechanics');
     expect(Array.isArray(result.mechanics)).toBe(true);

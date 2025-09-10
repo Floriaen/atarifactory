@@ -5,11 +5,10 @@
  * and standardized chain factories for consistent, maintainable code.
  */
 
-import { createGameInventorChain } from '../agents/chains/GameInventorChain.js';
 import { createFeedbackChain } from '../agents/chains/FeedbackChain.js';
 import { createStandardLLM, CHAIN_PRESETS, createTokenCountingCallback } from '../config/langchain.config.js';
 import { createSmartChain } from '../utils/chainFactory.js';
-import { gameInventorSchema, feedbackSchema } from '../schemas/langchain-schemas.js';
+import { feedbackSchema, ideaGeneratorSchema } from '../schemas/langchain-schemas.js';
 
 /**
  * Example 1: Using modernized existing chains with token counting
@@ -21,11 +20,6 @@ async function exampleModernizedChains() {
   const sharedState = { tokenCount: 0 };
   
   // Create chains with token counting
-  const gameInventorChain = await createGameInventorChain(undefined, { 
-    sharedState,
-    enableLogging: true 
-  });
-  
   const feedbackChain = await createFeedbackChain(undefined, { 
     sharedState,
     enableLogging: true 
@@ -35,9 +29,6 @@ async function exampleModernizedChains() {
   
   // Example usage (commented out to avoid API calls in demo)
   /*
-  const gameIdea = await gameInventorChain.invoke({});
-  console.log('After GameInventor:', sharedState.tokenCount, 'tokens');
-  
   const feedback = await feedbackChain.invoke({
     runtimeLogs: JSON.stringify({ canvasActive: false }),
     stepId: 'test-step'
@@ -133,17 +124,17 @@ async function exampleSchemaValidation() {
   
   try {
     // This demonstrates how schemas provide type safety
-    const validGameIdea = gameInventorSchema.parse({
-      name: 'Space Adventure',
-      description: 'An exciting space exploration game'
+    const validIdea = ideaGeneratorSchema.parse({
+      title: 'Space Adventure',
+      pitch: 'An exciting space exploration game in 60 seconds'
     });
-    console.log('✅ Valid game idea:', validGameIdea);
+    console.log('✅ Valid idea:', validIdea);
     
     // This would throw a validation error
     /*
-    const invalidGameIdea = gameInventorSchema.parse({
-      name: '', // Invalid: empty string
-      description: 'A game description'
+    const invalidIdea = ideaGeneratorSchema.parse({
+      title: '', // Invalid: empty string
+      pitch: 'A game description'
     });
     */
     

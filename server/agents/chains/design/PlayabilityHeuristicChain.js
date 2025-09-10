@@ -12,7 +12,7 @@ async function createPlayabilityHeuristicChain(llm, options = {}) {
   return createValidationChain({
     chainName: 'PlayabilityHeuristicChain',
     promptFile: 'design/playability-heuristic.md',
-    inputVariables: ['gameDef'],
+    inputVariables: ['context'],
     schema: playabilityHeuristicSchema,
     llm: llm,
     sharedState: options.sharedState,

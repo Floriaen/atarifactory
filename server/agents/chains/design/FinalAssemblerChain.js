@@ -5,7 +5,7 @@ async function createFinalAssemblerChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'FinalAssemblerChain',
     promptFile: 'design/final-assembler.md',
-    inputVariables: ['title', 'pitch', 'loop', 'mechanics', 'winCondition', 'entities'],
+    inputVariables: ['context'],
     schema: finalAssemblerSchema,
     preset: 'structured',
     llm: llm,

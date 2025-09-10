@@ -1,15 +1,11 @@
 # Final Assembler Prompt
 
+Context:
+{context}
+
 Assemble all components into one final gameDef JSON object. No extra logic, no commentary.
 
-**Spatial validation**: Ensure the assembled game naturally requires full canvas utilization through entity placement, movement patterns, or player navigation.
-
-Input:
-- Title: {title}
-- Description: {pitch}
-- Mechanics: {mechanics}
-- Win Condition: {winCondition}
-- Entities: {entities}
+Spatial validation: Ensure the assembled game naturally requires full canvas utilization through entity placement, movement patterns, or player navigation.
 
 Return the result as a valid JSON object with the following structure:
 

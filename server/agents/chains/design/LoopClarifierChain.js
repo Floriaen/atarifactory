@@ -5,7 +5,7 @@ async function createLoopClarifierChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'LoopClarifierChain',
     promptFile: 'design/loop-clarifier.md',
-    inputVariables: ['title', 'pitch'],
+    inputVariables: ['context'],
     schema: loopClarifierSchema,
     preset: 'structured',
     llm: llm,

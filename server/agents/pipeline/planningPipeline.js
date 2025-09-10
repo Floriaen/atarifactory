@@ -1,6 +1,5 @@
-// Planning Pipeline: runs GameInventor, GameDesign, PlayabilityValidator, PlayabilityAutoFix, Planner
+// Planning Pipeline: runs GameDesign, PlayabilityValidator, PlayabilityAutoFix, Planner
 import { IDEA_GENERATOR_LLM_TEMPERATURE, GAME_THEMES, PLANNING_PHASE } from '../../config/pipeline.config.js';
-import { createGameInventorChain, CHAIN_STATUS as GAME_INVENTOR_STATUS } from '../chains/GameInventorChain.js';
 import { createGameDesignChain, CHAIN_STATUS as GAME_DESIGN_STATUS } from '../chains/design/GameDesignChain.js';
 import { createPlayabilityValidatorChain, CHAIN_STATUS as PLAYABILITY_VALIDATOR_STATUS } from '../chains/PlayabilityValidatorChain.js';
 import { createPlayabilityAutoFixChain } from '../chains/PlayabilityAutoFixChain.js';
@@ -10,6 +9,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
 // Token estimation no longer needed - handled automatically by chains
 import logger from '../../utils/logger.js';
+import { validateContext } from '../../utils/designContext.js';
 
 async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
@@ -20,11 +20,10 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   
   // Define pipeline steps with proper weights
   tracker.addSteps([
-    { ...GAME_INVENTOR_STATUS, weight: 0.2 },
-    { ...GAME_DESIGN_STATUS, weight: 0.2 },
-    { ...PLAYABILITY_VALIDATOR_STATUS, weight: 0.2 },
-    { ...PLAYABILITY_HEURISTIC_STATUS, weight: 0.2 },
-    { ...PLANNER_STATUS, weight: 0.2 }
+    { ...GAME_DESIGN_STATUS, weight: 0.25 },
+    { ...PLAYABILITY_VALIDATOR_STATUS, weight: 0.25 },
+    { ...PLAYABILITY_HEURISTIC_STATUS, weight: 0.25 },
+    { ...PLANNER_STATUS, weight: 0.25 }
   ]);
 
   const openaiModel = process.env.OPENAI_MODEL;
@@ -35,23 +34,7 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const llmIdea = new ChatOpenAI({ model: openaiModel, temperature: IDEA_GENERATOR_LLM_TEMPERATURE });
   const llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
 
-  // 1. Game Inventor
-  const inventorOut = await tracker.executeStep(async () => {
-    const gameInventorChain = await createGameInventorChain(llmIdea, { sharedState });
-    const result = await gameInventorChain.invoke({});
-    
-    // Token counting is now handled automatically by the chain
-    if (typeof result !== 'object' || result === null) {
-      logger.error('GameInventorChain returned non-object', { inventorOut: result });
-      throw new Error('GameInventorChain did not return a valid object. Output: ' + String(result));
-    }
-    
-    return result;
-  }, GAME_INVENTOR_STATUS, { sharedState, llm: llmIdea });
-
-  sharedState.idea = inventorOut.idea || inventorOut.name || inventorOut.title || inventorOut;
-
-  // 2. Game Design
+  // 1. Game Design
   const designOut = await tracker.executeStep(async () => {
     // Generate a random constraint/theme for variety
     const randomTheme = GAME_THEMES[Math.floor(Math.random() * GAME_THEMES.length)];
@@ -83,7 +66,12 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
     throw new Error('GameDesignChain did not return a valid game definition. Output: ' + JSON.stringify(designOut));
   }
 
-  // 3. Playability Validator
+  // Normalize title/name at boundary (non-breaking): prefer 'title', fall back from 'name'
+  if (sharedState.gameDef && !sharedState.gameDef.title && sharedState.gameDef.name) {
+    sharedState.gameDef.title = sharedState.gameDef.name;
+  }
+
+  // 2. Playability Validator
   const validatorOut = await tracker.executeStep(async () => {
     const playabilityValidatorChain = await createPlayabilityValidatorChain(llm, { sharedState });
     const result = await playabilityValidatorChain.invoke({ 
@@ -93,13 +81,26 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
     return result;
   }, PLAYABILITY_VALIDATOR_STATUS, { sharedState, llm });
 
-  sharedState.isPlayable = validatorOut.isPlayable;
+  // Map schema field 'winnable' to internal 'isPlayable' (non-breaking)
+  sharedState.isPlayable = typeof validatorOut?.winnable === 'boolean'
+    ? validatorOut.winnable
+    : validatorOut.isPlayable;
   sharedState.suggestion = validatorOut.suggestion;
 
-  // 4. Playability Heuristic
+  // 3. Playability Heuristic
   const playability = await tracker.executeStep(async () => {
     const playabilityHeuristicChain = await createPlayabilityHeuristicChain(llm, { sharedState });
-    const result = await playabilityHeuristicChain.invoke({ ...sharedState, gameDef: sharedState.gameDef });
+    const gd = sharedState.gameDef || {};
+    const context = validateContext({
+      version: 'v1',
+      title: gd.title || gd.name,
+      pitch: gd.description || gd.pitch,
+      mechanics: gd.mechanics,
+      winCondition: gd.winCondition,
+      entities: gd.entities,
+    });
+    sharedState.context = context;
+    const result = await playabilityHeuristicChain.invoke({ context });
     return result;
   }, PLAYABILITY_HEURISTIC_STATUS, { sharedState, llm });
 
@@ -125,6 +126,10 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
     if (autofixResult && typeof autofixResult === 'object' && Object.keys(autofixResult).length > 0) {
       // Token counting is now handled automatically by the chain
       fixedGameDef = autofixResult;
+      // Normalize title/name again after autofix
+      if (fixedGameDef && !fixedGameDef.title && fixedGameDef.name) {
+        fixedGameDef.title = fixedGameDef.name;
+      }
     }
   }
 
@@ -151,6 +156,25 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   }
   if (!planArr || planArr.length === 0) throw new Error('PlannerChain did not return a valid plan array. Output: ' + JSON.stringify(planOut));
   sharedState.plan = planArr;
+
+  // Warn-only runtime sanity checks (non-breaking): ensure plan includes key implementation steps
+  try {
+    const hasGoal = !!sharedState.gameDef?.goal || !!sharedState.gameDef?.winCondition;
+    const hasFail = !!sharedState.gameDef?.fail;
+    const hasControls = !!sharedState.gameDef?.controls || (Array.isArray(sharedState.gameDef?.mechanics) && sharedState.gameDef.mechanics.length > 0);
+    const planText = (sharedState.plan || []).map(s => String(s.description || '').toLowerCase()).join(' | ');
+    if (hasControls && !(/control|input|map|arrowleft|arrowright|wasd/.test(planText))) {
+      logger.warn('Planner plan may be missing controls mapping step');
+    }
+    if (hasGoal && !(/victory|win|goal|reach|collect|survive|check/.test(planText))) {
+      logger.warn('Planner plan may be missing explicit victory check step');
+    }
+    if (hasFail && !(/fail|lose|collision|hit|timeout|game over/.test(planText))) {
+      logger.warn('Planner plan may be missing explicit failure check step');
+    }
+  } catch (e) {
+    logger.debug('Sanity checks failed silently', { error: e?.message });
+  }
 
   return sharedState;
 }

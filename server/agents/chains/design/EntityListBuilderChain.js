@@ -5,7 +5,7 @@ async function createEntityListBuilderChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'EntityListBuilderChain',
     promptFile: 'design/entity-list-builder.md',
-    inputVariables: ['mechanics', 'loop', 'winCondition'],
+    inputVariables: ['context'],
     schema: entityListBuilderSchema,
     preset: 'structured',
     llm: llm,

@@ -7,14 +7,7 @@
 
 import { z } from 'zod';
 
-/**
- * GameInventorChain output schema
- * Expected: { name: string, description: string }
- */
-export const gameInventorSchema = z.object({
-  name: z.string().min(1, 'Game name is required'),
-  description: z.string().min(1, 'Game description is required')
-});
+// (removed) GameInventorChain schema — replaced by IdeaGeneratorChain
 
 /**
  * PlannerChain output schema

@@ -12,6 +12,11 @@ STRICT RULES:
 - If mechanics imply complexity (e.g., jumping), simplify them or break steps down
 - The plan MUST focus on minimal playable core only
 
+MANDATORY IMPLEMENTATION STEPS (adapt as needed to the design):
+- Implement controls mapping (based on minimal mechanics)
+- Implement victory check (use `goal` if provided, otherwise the textual `winCondition`)
+- Implement failure check (use `fail` if provided, otherwise a simple loss like obstacle collision or timeout)
+
 ---
 
 ## GAME DEFINITION

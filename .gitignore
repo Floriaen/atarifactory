@@ -1,9 +1,14 @@
-node_modules/
-server/knowledge/
-rag/knowledge/
+# Local environment and IDE
+.env
+.vscode/
+
+# Logs and runtime artifacts
+logs/
 server/logs/
-server/.env
-frontend/node_modules/
-dist/
-.DS_Store
-.assistant-mode
+
+# Coverage reports
+coverage/
+
+# Generated games/artifacts
+server/games/
+

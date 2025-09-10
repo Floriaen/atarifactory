@@ -20,7 +20,7 @@ describe('PlayabilityHeuristicChain integration (ChatOpenAI)', () => {
     });
     const chain = await createPlayabilityHeuristicChain(llm);
     const input = {
-      gameDef: {
+      context: {
         title: 'Memory Lane',
         pitch: 'A memory game where players recall details from scenes.',
         loop: 'Observe scene, recall, answer, feedback, repeat.',

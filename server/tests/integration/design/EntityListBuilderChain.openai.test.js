@@ -20,9 +20,11 @@ describe('EntityListBuilderChain integration (ChatOpenAI)', () => {
     });
     const chain = await createEntityListBuilderChain(llm);
     const input = {
-      mechanics: ['jump', 'dodge', 'score'],
-      loop: 'Player jumps between platforms, dodges obstacles, and scores points.',
-      winCondition: 'Reach 100 points without falling.'
+      context: {
+        mechanics: ['jump', 'dodge', 'score'],
+        loop: 'Player jumps between platforms, dodges obstacles, and scores points.',
+        winCondition: 'Reach 100 points without falling.'
+      }
     };
     const result = await chain.invoke(input);
     expect(result).toHaveProperty('entities');
