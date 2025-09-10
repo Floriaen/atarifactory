@@ -10,17 +10,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { runModularGameSpecPipeline } from '../../agents/pipeline/pipeline.js';
 
 // Mock LLM outputs for each agent step
-vi.mock('../../agents/chains/GameInventorChain', () => ({
-  createGameInventorChain: vi.fn().mockReturnValue({
-    invoke: vi.fn().mockResolvedValue({ idea: 'A platformer where you control gravity.' })
-  }),
-  CHAIN_STATUS: {
-    name: 'GameInventorChain',
-    label: 'Game Inventor',
-    description: 'Generating initial game idea',
-    category: 'planning'
-  }
-}));
 vi.mock('../../agents/chains/design/GameDesignChain', () => ({
   createGameDesignChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ gameDef: { name: 'Gravity Jumper', genre: 'Platformer', rules: '...' } })

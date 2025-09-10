@@ -5,7 +5,7 @@ async function createIdeaGeneratorChain(llm, options = {}) {
   return createCreativeChain({
     chainName: 'IdeaGeneratorChain',
     promptFile: 'design/idea-generator.md',
-    inputVariables: ['constraints'],
+    inputVariables: ['context'],
     schema: ideaGeneratorSchema,
     llm: llm,
     sharedState: options.sharedState,

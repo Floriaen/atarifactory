@@ -1,4 +1,5 @@
 import logger, { statusLogger } from './utils/logger.js';
+import { addPipelineEvent } from './debug/traceBuffer.js';
 import { v4 as uuidv4 } from 'uuid';
 import { createSharedState } from './types/SharedState.js';
 import fs from 'fs';
@@ -29,6 +30,9 @@ async function runPipeline(title, onStatusUpdate) {
       payload: payload,
       traceId: traceId
     });
+    if (process.env.ENABLE_DEBUG === '1') {
+      try { addPipelineEvent({ type, payload, traceId }); } catch {}
+    }
     return onStatusUpdate(type, payload);
   } : undefined;
   
@@ -58,7 +62,7 @@ async function runPipeline(title, onStatusUpdate) {
     const sharedState = await generateGameSourceCode(title, logger, wrappedOnStatusUpdate);
     const code = sharedState.gameSource;
     const gameDef = sharedState.gameDef;
-    const gameName = gameDef?.title || title;
+    const gameName = gameDef?.title || gameDef?.name || title;
 
     try {
       const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');

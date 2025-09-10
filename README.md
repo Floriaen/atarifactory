@@ -49,8 +49,6 @@ The system uses a sophisticated AI pipeline to generate complete games:
 ### High-Level Pipeline Flow
 
 ```
-GameInventorChain
-      ↓
 GameDesignChain
       ↓
 PlayabilityValidatorChain
@@ -69,7 +67,6 @@ StaticCheckerChain
 ```
 
 ### Chain Roles
-- **GameInventorChain:** Generates a new game idea (`name`, `description`).
 - **GameDesignChain:** Designs mechanics, entities, and win condition for the idea.
 - **PlayabilityValidatorChain:** Checks if the game design is playable.
 - **PlayabilityHeuristicChain:** Provides a score for the game's playability.
@@ -111,6 +108,22 @@ TEST_LOGS=1                           # Enable verbose test logging
 - `LOG_LEVEL=error` - Errors only
 
 Logs are output to console (colorized) and `server/logs/pipeline-v2.log` (structured JSON).
+
+## 🔎 LLM Logs Viewer (Dev)
+
+- Start server: `ENABLE_DEBUG=1 ENABLE_DEV_TRACE=1 OPENAI_API_KEY=... OPENAI_MODEL=gpt-4o-mini npm run start:server`
+- Open: http://localhost:3001/debug/llm/
+- Generate traces:
+  - UI: `npm run start:frontend` in another terminal, then click Generate
+  - API: `curl -N -X POST http://localhost:3001/generate-stream -H "Content-Type: application/json" -d '{"title":"Test"}'`
+- Options:
+  - `DEV_TRACE_SAMPLE`: sampling rate 0..1 (default: 1)
+  - `DEV_TRACE_BUFFER`: max in-memory traces (default: 200)
+  - `DEV_EVENTS_BUFFER`: pipeline events buffer (default: 300)
+- Notes:
+  - Requires real LLM calls; do not set `MOCK_PIPELINE=1`.
+  - Env file: `npm run start:server` reads `server/.env`; `node server/index.js` reads repo root `.env`.
+- APIs: `/debug/llm/health`, `/debug/llm/traces`, `/debug/llm/trace/:id`, `/debug/pipeline/events`
 
 ### Development Commands
 

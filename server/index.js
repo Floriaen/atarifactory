@@ -9,6 +9,7 @@ import { dirname } from 'path';
 // Legacy imports removed after refactor. Core pipeline lives in controller.js
 import { runPipeline } from './controller.js';
 import logger from './utils/logger.js';
+import debugRouter from './debug/routes.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -24,6 +25,9 @@ app.use(cors());
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/games', express.static(path.join(__dirname, 'games')));
+if (process.env.ENABLE_DEBUG === '1') {
+  app.use('/debug', debugRouter);
+}
 
 // Dummy in-memory games list for MVP skeleton
 global.gamesManifest = [];

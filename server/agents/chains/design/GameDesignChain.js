@@ -18,6 +18,7 @@ import { createWinConditionBuilderChain } from './WinConditionBuilderChain.js';
 import { createEntityListBuilderChain } from './EntityListBuilderChain.js';
 import { createPlayabilityHeuristicChain } from './PlayabilityHeuristicChain.js';
 import { createFinalAssemblerChain } from './FinalAssemblerChain.js';
+import { createInitialContext, mergeContext, contextToPrompt } from '../../../utils/designContext.js';
 
 /**
  * Generic phase runner for a design step.
@@ -65,6 +66,7 @@ async function createGameDesignChain({
 
   return {
     async invoke(input = {}) {
+      let context = createInitialContext(input);
       // Helper to log CoT step
       async function logCOT(step, stepInput, stepOutput) {
         const logEntry = {
@@ -87,57 +89,62 @@ async function createGameDesignChain({
       const idea = await runDesignPhase({
         chain: ideaChain,
         phase: 'Idea',
-        input,
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && out.title && out.pitch
       });
+      context = mergeContext(context, { title: idea.title, pitch: idea.pitch, constraints: idea.constraints });
 
       // LOOP PHASE
       const loop = await runDesignPhase({
         chain: loopChain,
         phase: 'Loop',
-        input: { ...input, ...idea },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && out.loop
       });
+      context = mergeContext(context, { loop: loop.loop });
 
       // MECHANICS PHASE
       const mechanics = await runDesignPhase({
         chain: mechanicsChain,
         phase: 'Mechanics',
-        input: { ...input, ...idea, ...loop },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && Array.isArray(out.mechanics)
       });
+      context = mergeContext(context, { mechanics: mechanics.mechanics });
 
       // WIN CONDITION PHASE
       const win = await runDesignPhase({
         chain: winChain,
         phase: 'WinCondition',
-        input: { ...input, ...idea, ...loop, ...mechanics },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && out.winCondition
       });
+      context = mergeContext(context, { winCondition: win.winCondition });
 
       // ENTITIES PHASE
       const entities = await runDesignPhase({
         chain: entitiesChain,
         phase: 'Entities',
-        input: { ...input, ...idea, ...loop, ...mechanics, ...win },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && Array.isArray(out.entities)
       });
+      context = mergeContext(context, { entities: entities.entities });
 
       // PLAYABILITY PHASE
       const playability = await runDesignPhase({
         chain: playabilityChain,
         phase: 'Playability',
-        input: { gameDef: { ...idea, ...loop, ...mechanics, ...win, ...entities } },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && out.playabilityAssessment && out.strengths && out.potentialIssues && out.score
@@ -147,14 +154,7 @@ async function createGameDesignChain({
       const final = await runDesignPhase({
         chain: finalChain,
         phase: 'FinalAssembly',
-        input: {
-          title: idea.title,
-          pitch: idea.pitch,
-          loop: loop.loop,
-          mechanics: mechanics.mechanics,
-          winCondition: win.winCondition,
-          entities: entities.entities
-        },
+        input: { context },
         sharedState,
         logCOT,
         validate: (out) => out && typeof out === 'object' && out.gameDef

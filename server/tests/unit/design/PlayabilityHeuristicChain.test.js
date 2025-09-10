@@ -11,7 +11,7 @@ describe('PlayabilityHeuristicChain (ESM)', () => {
       potentialIssues: [],
       score: 8 
     })));
-    const input = { gameDef: { winCondition: 'Survive' } };
+    const input = { context: { winCondition: 'Survive' } };
     const result = await chain.invoke(input);
     expect(result).toEqual({ 
       playabilityAssessment: "Has a clear win condition.", 
@@ -28,7 +28,7 @@ describe('PlayabilityHeuristicChain (ESM)', () => {
       potentialIssues: ["Missing win condition"],
       score: 2 
     })));
-    const input = { gameDef: { foo: 'bar' } };
+    const input = { context: { foo: 'bar' } };
     const result = await chain.invoke(input);
     expect(result).toEqual({ 
       playabilityAssessment: "No win condition specified.", 
@@ -40,21 +40,21 @@ describe('PlayabilityHeuristicChain (ESM)', () => {
 
   it('throws if input is missing', async () => {
     const chain = await createPlayabilityHeuristicChain(new MockLLM(JSON.stringify({ playabilityScore: 8, rationale: "Has a clear win condition." })));
-    await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: gameDef');
+    await expect(chain.invoke()).rejects.toThrow('Input must be an object with required fields: context');
   });
 
   it('throws if gameDef is missing', async () => {
     const chain = await createPlayabilityHeuristicChain(new MockLLM(JSON.stringify({ playabilityScore: 8, rationale: "Has a clear win condition." })));
-    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with required fields: gameDef');
+    await expect(chain.invoke({})).rejects.toThrow('Input must be an object with required fields: context');
   });
 
   it('throws if output is malformed', async () => {
     const chain = await createPlayabilityHeuristicChain(new FlexibleMalformedLLM('missingContent'));
-    await expect(chain.invoke({ gameDef: { winCondition: 'Survive' } })).rejects.toThrow('LLM output missing content');
+    await expect(chain.invoke({ context: { winCondition: 'Survive' } })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if output is malformed (simulate)', async () => {
     const chain = await createPlayabilityHeuristicChain(new FlexibleMalformedLLM('notJson'));
-    await expect(chain.invoke({ gameDef: { winCondition: 'Survive' } })).rejects.toThrow('LLM output missing content');
+    await expect(chain.invoke({ context: { winCondition: 'Survive' } })).rejects.toThrow('LLM output missing content');
   });
 });

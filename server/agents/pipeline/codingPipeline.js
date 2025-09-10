@@ -104,6 +104,26 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   sharedState.contextSteps = allStepContexts;
   sharedState.gameSource = accumulatedCode.trim();
 
+  // Warn-only checks: ensure generated code likely includes controls and win/lose indicators if plan suggested them
+  try {
+    const planText = (sharedState.plan || []).map(s => String(s.description || '').toLowerCase()).join(' | ');
+    const code = sharedState.gameSource || '';
+    const needsControls = /control|input|arrowleft|arrowright|move/.test(planText);
+    const needsVictory = /victory|win|reach|collect|goal|exit/.test(planText);
+    const needsFailure = /fail|lose|collision|hit|timeout|enemy/.test(planText);
+    if (needsControls && !(/addEventListener\(|keydown|keyup/.test(code))) {
+      logger.warn('Generated code may be missing controls handling');
+    }
+    if (needsVictory && !(/YOU WIN|WIN|victory/i.test(code))) {
+      logger.warn('Generated code may be missing a victory check or indicator');
+    }
+    if (needsFailure && !(/GAME OVER|LOSE|failure/i.test(code))) {
+      logger.warn('Generated code may be missing a failure check or indicator');
+    }
+  } catch (e) {
+    logger.debug('Coding warn-only checks skipped', { error: e?.message });
+  }
+
   // 2. Feedback
   const feedbackOut = await tracker.executeStep(async () => {
     let feedbackChain;

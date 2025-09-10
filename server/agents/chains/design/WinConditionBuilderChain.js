@@ -5,7 +5,7 @@ async function createWinConditionBuilderChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'WinConditionBuilderChain',
     promptFile: 'design/win-condition-builder.md',
-    inputVariables: ['mechanics'],
+    inputVariables: ['context'],
     schema: winConditionBuilderSchema,
     preset: 'structured',
     llm: llm,

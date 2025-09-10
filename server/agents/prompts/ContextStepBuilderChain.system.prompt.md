@@ -31,4 +31,20 @@ STRICT RULES – DO NOT BREAK:
    - **Solid fills**: Use ctx.fillStyle with solid colors only
    - **Blocky aesthetic**: Thick, simple geometric shapes with clear borders
    - **Examples**: ctx.fillStyle = 'white'; ctx.fillStyle = 'red'; ctx.fillStyle = 'black'
-   - **FORBIDDEN**: hex colors like #4caf50, #ffb300, rgba() values, shadowBlur, shadowColor, gradients
+ - **FORBIDDEN**: hex colors like #4caf50, #ffb300, rgba() values, shadowBlur, shadowColor, gradients
+
+6. Controls mapping (when step requires controls):
+   - Listen for keyboard events (keydown and keyup) for ArrowLeft and ArrowRight.
+   - If an action is needed, use Space as the action key.
+   - Track booleans for left, right, and action, and apply movement accordingly each frame.
+
+7. Victory predicate (when step describes winning):
+   - Implement a clear condition that, when met, sets a win state and stops gameplay updates.
+   - Show a simple overlay text like YOU WIN at the end.
+
+8. Failure predicate (when step describes losing):
+   - Implement a simple loss condition such as collision with an obstacle or a timeout.
+   - When triggered, set a lose state and stop gameplay updates. Show GAME OVER.
+
+9. State handling:
+   - Ensure that when the game is in a win or lose state, movement and updates stop, and only drawing of the final screen persists.

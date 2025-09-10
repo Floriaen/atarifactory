@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLM Traces</title>
+    <link rel="stylesheet" href="/debug/llm/style.css" />
+  </head>
+  <body>
+    <div class="bar">
+      <div class="left">
+        <input id="filter-chain" placeholder="Filter by chain (e.g., PlannerChain)" />
+        <input id="filter-trace" placeholder="Filter by traceId" />
+        <input id="filter-text" placeholder="Search text" />
+      </div>
+      <div class="right">
+        <label><input type="checkbox" id="auto-refresh" checked /> Auto refresh</label>
+        <select id="limit">
+          <option>50</option>
+          <option>100</option>
+          <option>200</option>
+        </select>
+        <button id="refresh">Refresh</button>
+      </div>
+    </div>
+    <div id="summary" class="summary"></div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Time</th><th>Chain</th><th>Dur (ms)</th><th>Tokens</th><th>TraceId</th><th>View</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <button id="close">×</button>
+        <div id="meta" class="meta"></div>
+        <h3>Hydrated Prompt</h3>
+        <pre id="prompt" class="mono"></pre>
+        <h3>Output</h3>
+        <pre id="output" class="mono"></pre>
+      </div>
+    </div>
+    <script src="/debug/llm/main.js" type="module"></script>
+  </body>
+  </html>

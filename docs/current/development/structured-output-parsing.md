@@ -11,9 +11,9 @@ Create comprehensive schemas in `server/schemas/langchain-schemas.js`:
 ```js
 import { z } from 'zod';
 
-export const gameInventorSchema = z.object({
-  name: z.string().min(1, 'Game name is required'),
-  description: z.string().min(1, 'Game description is required')
+export const ideaGeneratorSchema = z.object({
+  title: z.string().min(1, 'Game title is required'),
+  pitch: z.string().min(1, 'Game pitch is required')
 });
 
 export const plannerSchema = z.object({
@@ -28,14 +28,14 @@ export const plannerSchema = z.object({
 
 ```js
 import { createStandardChain } from '../utils/chainFactory.js';
-import { gameInventorSchema } from '../schemas/langchain-schemas.js';
+import { ideaGeneratorSchema } from '../schemas/langchain-schemas.js';
 
 async function createGameInventorChain(llm, options = {}) {
   return await createStandardChain({
     chainName: 'GameInventorChain',
     promptFile: 'GameInventorChain.prompt.md',
     inputVariables: ['input'],
-    schema: gameInventorSchema,
+    schema: ideaGeneratorSchema,
     preset: 'creative',
     llm,
     sharedState: options.sharedState

@@ -12,7 +12,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
     expect(chain).toBeDefined();
     expect(typeof chain.invoke).toBe('function');
     // Test invoke actually works
-    const result = await chain.invoke({ constraints: 'test' });
+    const result = await chain.invoke({ context: { constraints: 'test' } });
     expect(result).toHaveProperty('title', 'Test Game');
     expect(result).toHaveProperty('pitch', 'A fun test.');
   });
@@ -20,7 +20,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
   it('throws if output is malformed', async () => {
     const mockLLM = new FlexibleMalformedLLM('missingContent');
     const chain = await createIdeaGeneratorChain(mockLLM);
-    await expect(chain.invoke({ constraints: 'test' })).rejects.toThrow('LLM output missing content');
+    await expect(chain.invoke({ context: { constraints: 'test' } })).rejects.toThrow('LLM output missing content');
   });
     it('should increment sharedState.tokenCount when provided', async () => {
     // Arrange: create a mock LLM that returns a known string
@@ -31,7 +31,7 @@ describe('createIdeaGeneratorChain (ESM)', () => {
     // Patch the chain to accept sharedState (future implementation)
     const chain = await createIdeaGeneratorChain(mockLLM, { sharedState });
     // Act
-    await chain.invoke({ constraints: 'test' });
+    await chain.invoke({ context: { constraints: 'test' } });
     // The mockContent is 47 characters, so estimateTokens = 12
     expect(sharedState.tokenCount).toBeGreaterThan(0); // Will fail until implemented
   });

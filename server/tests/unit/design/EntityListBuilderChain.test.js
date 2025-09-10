@@ -9,9 +9,11 @@ describe('EntityListBuilderChain (ESM)', () => {
     const mockLLM1 = new MockLLM(JSON.stringify({ entities: ['mock1', 'mock2'] }));
     const chain1 = await createEntityListBuilderChain(mockLLM1);
     const input = {
-      mechanics: ['move', 'jump', 'avoid'],
-      loop: 'Player jumps between platforms and dodges lasers.',
-      winCondition: 'Reach the end of the level.'
+      context: {
+        mechanics: ['move', 'jump', 'avoid'],
+        loop: 'Player jumps between platforms and dodges lasers.',
+        winCondition: 'Reach the end of the level.'
+      }
     };
     const result = await chain1.invoke(input);
     // The following log is to confirm what is returned
@@ -24,14 +26,14 @@ describe('EntityListBuilderChain (ESM)', () => {
     // The mock LLM should never be called in this test
     const mockLLM2 = new FlexibleMalformedLLM('missingContent');
     const chain2 = await createEntityListBuilderChain(mockLLM2);
-    await expect(chain2.invoke()).rejects.toThrow('Input must be an object with required fields: mechanics, loop, winCondition');
+    await expect(chain2.invoke()).rejects.toThrow('Input must be an object with required fields: context');
   });
 
   it('handles nonsense input gracefully', async () => {
     // LLM returns valid JSON string, but missing entities array
     const mockLLM4 = new FlexibleMalformedLLM('missingMechanics');
     const chain4 = await createEntityListBuilderChain(mockLLM4);
-    await expect(chain4.invoke({ mechanics: ['foo'], loop: 'bar', winCondition: 'baz' })).rejects.toThrow('LLM output missing content');
+    await expect(chain4.invoke({ context: { mechanics: ['foo'], loop: 'bar', winCondition: 'baz' } })).rejects.toThrow('LLM output missing content');
   });
 
   it('throws if output is malformed (mock returns bad data)', async () => {
@@ -40,17 +42,21 @@ describe('EntityListBuilderChain (ESM)', () => {
     const chain5 = await createEntityListBuilderChain(mockLLM5);
     await expect(
       chain5.invoke({
-        mechanics: ['foo'],
-        loop: 'bar',
-        winCondition: 'baz'
+        context: {
+          mechanics: ['foo'],
+          loop: 'bar',
+          winCondition: 'baz'
+        }
       })
     ).rejects.toThrow('LLM output missing content');
     // Previously: await expect(chain5.invoke()).rejects.toThrow(...);
     await expect(
       chain5.invoke({
-        mechanics: ['foo'],
-        loop: 'bar',
-        winCondition: 'baz'
+        context: {
+          mechanics: ['foo'],
+          loop: 'bar',
+          winCondition: 'baz'
+        }
       })
     ).rejects.toThrow('LLM output missing content');
   });

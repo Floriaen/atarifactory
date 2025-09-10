@@ -5,7 +5,7 @@ async function createMechanicExtractorChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'MechanicExtractorChain',
     promptFile: 'design/mechanic-extractor.md',
-    inputVariables: ['loop'],
+    inputVariables: ['context'],
     schema: mechanicExtractorSchema,
     preset: 'structured',
     llm: llm,

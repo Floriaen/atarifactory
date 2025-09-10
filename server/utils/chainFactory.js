@@ -14,6 +14,8 @@ import { PromptTemplate } from '@langchain/core/prompts';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import logger from './logger.js';
+import { addLlmTrace } from '../debug/traceBuffer.js';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   createStandardLLM,
   createTokenCountingCallback,
@@ -135,11 +137,37 @@ export async function createStandardChain(options) {
           if (!input || typeof input !== 'object' || inputVariables.some(v => !(v in input))) {
             throw new Error(`Input must be an object with required fields: ${inputVariables.join(', ')}`);
           }
-          
+          const startedAt = Date.now();
+          let hydratedPrompt = null;
+          try {
+            hydratedPrompt = await new Promise((resolve, reject) => {
+              try { resolve(prompt.format(input)); } catch (e) { resolve(null); }
+            });
+          } catch {}
+          const tokenBefore = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
           if (enableLogging) {
             logger.debug('Chain invoking with input', { chainName, input });
           }
           const result = await baseChain.invoke(input);
+          const durationMs = Date.now() - startedAt;
+          const tokenAfter = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
+          const tokenDelta = typeof tokenBefore === 'number' && typeof tokenAfter === 'number' ? (tokenAfter - tokenBefore) : undefined;
+          if (process.env.ENABLE_DEV_TRACE === '1') {
+            const traceId = (input && input.traceId) || (sharedState && sharedState.traceId) || undefined;
+            const outputFull = typeof result === 'string' ? result : (() => { try { return JSON.stringify(result); } catch { return String(result); } })();
+            const promptFull = hydratedPrompt != null ? String(hydratedPrompt) : null;
+            addLlmTrace({
+              chain: chainName,
+              phase: chainName.includes('Planner') ? 'planning' : (chainName.includes('ContextStep') ? 'coding' : undefined),
+              model: process.env.OPENAI_MODEL || 'unknown',
+              durationMs,
+              inputVars: inputVariables,
+              hydratedPrompt: promptFull,
+              output: outputFull,
+              tokenDelta,
+              traceId,
+            });
+          }
           if (enableLogging) {
             logger.debug('Chain successfully completed', { chainName });
           }
