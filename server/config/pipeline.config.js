@@ -25,11 +25,12 @@ export const GAME_THEMES = [
 ];
 
 // Temperature for LLM used in idea generation (idea generator chain)
-export const IDEA_GENERATOR_LLM_TEMPERATURE = 0.7;
+export const IDEA_GENERATOR_LLM_TEMPERATURE = 0.9;
 
 export const PROGRESS_WEIGHTS = {
   planning: 0.3,
-  coding: 0.7,
+  art: 0.2,
+  coding: 0.5,
 };
 
 export const PLANNING_PHASE = {
@@ -42,4 +43,10 @@ export const CODING_PHASE = {
   name: 'coding',
   label: 'Coding',
   description: 'Generating code'
+};
+
+export const ART_PHASE = {
+  name: 'art',
+  label: 'Art',
+  description: 'Generating sprites'
 };

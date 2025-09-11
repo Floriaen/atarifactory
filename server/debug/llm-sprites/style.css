@@ -1,0 +1,6 @@
+:root{color-scheme:dark}
+body{margin:0;background:#0f1115;color:#eaecee;font-family:system-ui,sans-serif}
+.bar{display:flex;gap:.5rem;align-items:center;padding:.6rem;background:#121826;border-bottom:1px solid #2a2f3a;position:sticky;top:0}
+#c{display:block;margin:12px auto;background:#0b120b;border:1px solid #2a2f3a}
+#ascii{max-width:900px;margin:8px auto;padding:8px;background:#0c0e13;border:1px solid #2a2f3a}
+

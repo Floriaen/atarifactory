@@ -7,6 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { runCodingPipeline } from './agents/pipeline/codingPipeline.js';
+import { runArtPipeline } from './agents/pipeline/artPipeline.js';
+import { loadPack, savePack } from './utils/sprites/packStore.js';
 import { runModularGameSpecPipeline } from './agents/pipeline/pipeline.js';
 
 // ESM equivalent of __dirname
@@ -60,6 +62,7 @@ async function runPipeline(title, onStatusUpdate) {
 
     // Get code and game design info (with env var fallback logic)
     const sharedState = await generateGameSourceCode(title, logger, wrappedOnStatusUpdate);
+    sharedState.traceId = sharedState.traceId || traceId;
     const code = sharedState.gameSource;
     const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || gameDef?.name || title;
@@ -73,6 +76,12 @@ async function runPipeline(title, onStatusUpdate) {
       // Copy control bar assets
       fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
       fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
+      // Copy sprite helpers
+      try {
+        fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'sprites', 'sprites.js'), path.join(gameFolder, 'sprites.js'));
+      } catch (e) {
+        logger.warn('sprites.js not copied', { error: e?.message });
+      }
 
       // Read the boilerplate template
       const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.html');
@@ -85,6 +94,35 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
+
+      // Art pipeline: ensure sprites pack (fail hard on errors)
+      if (Array.isArray(gameDef?.entities) && gameDef.entities.length > 0) {
+        const packPath = path.join(gameFolder, 'sprites.json');
+        sharedState.spritePackPath = packPath;
+        // If orchestrator already prepared spritePack, persist it; else run Art pipeline now
+        if (!sharedState.spritePack || !sharedState.spritePack.items || Object.keys(sharedState.spritePack.items).length === 0) {
+          // Controller loads current pack for cache warm; Art pipeline mutates in-memory
+          sharedState.spritePack = loadPack(packPath);
+          try {
+            const { stats, pack } = await runArtPipeline(sharedState, wrappedOnStatusUpdate);
+            savePack(packPath, pack);
+            logger.info('Sprite pack summary', { gameId, ...stats, packPath });
+            if (process.env.ENABLE_DEBUG === '1') {
+              try { addPipelineEvent({ type: 'SpritesSummary', payload: { gameId, ...stats, packPath } }); } catch {}
+            }
+          } catch (e) {
+            logger.error('Art pipeline failed', { error: e?.message });
+            throw e;
+          }
+        } else {
+          // Orchestrator already produced pack; persist it now
+          savePack(packPath, sharedState.spritePack);
+          logger.info('Sprite pack summary (persisted orchestrator pack)', { gameId, packPath, requested: gameDef.entities.length });
+          if (process.env.ENABLE_DEBUG === '1') {
+            try { addPipelineEvent({ type: 'SpritesSummary', payload: { gameId, packPath } }); } catch {}
+          }
+        }
+      }
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });
       throw err;
@@ -107,10 +145,6 @@ async function runPipeline(title, onStatusUpdate) {
 }
 
 async function generateGameSourceCode(title, logger, onStatusUpdate) {
-  //const planningPipelineModule = await import('./agents/pipeline/planningPipeline.js');
-  //const { runPlanningPipeline } = planningPipelineModule;
-
-
   // MOCK_PIPELINE: Serve static tests/fixtures/bouncing-square-game.js and mock gameDef
   // If both MOCK_PIPELINE and MINIMAL_GAME are set, prefer MOCK_PIPELINE
   if (process.env.MOCK_PIPELINE === '1') {

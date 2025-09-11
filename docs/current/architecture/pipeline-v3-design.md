@@ -16,6 +16,8 @@ GameInventorChain
       ↓
 GameDesignChain
       ↓
+ArtPipeline (Sprite generation)
+      ↓
 PlannerChain
       ↓
 ContextStepBuilderChain (×N)
@@ -74,7 +76,11 @@ FeedbackChain
   ]
   ```
 
-### 4. ContextStepBuilderChain
+### 4. ArtPipeline (new)
+- **Purpose:** Ensures a per‑game sprite pack exists for all entities (LLM → DSL → compile → pack) using `SpriteMaskGenerator`.
+- **Output:** `sharedState.spritePack` populated; controller later persists `sprites.json` in the game folder.
+
+### 5. ContextStepBuilderChain
 - **Purpose:** Iteratively implements each plan step, always receiving and returning the full game source code.
 - **Input:**
   ```json
@@ -86,16 +92,16 @@ FeedbackChain
   ```
 - **Output:** Updated full `gameSource` string.
 
-### 5. StaticCheckerChain
+### 6. StaticCheckerChain
 - **Purpose:** Lints and checks the entire code for functional and forbidden patterns (e.g., no `alert()`, no external images).
 
-### 6. SyntaxSanityChain
+### 7. SyntaxSanityChain
 - **Purpose:** Checks code syntax (no LLM used).
 
-### 7. RuntimePlayabilityChain
+### 8. RuntimePlayabilityChain
 - **Purpose:** Runs the game in a headless browser to check for playability (canvas active, win condition reachable, etc).
 
-### 8. FeedbackChain
+### 9. FeedbackChain
 - **Purpose:** Provides suggestions for improvement or retries if issues are detected.
 
 ---

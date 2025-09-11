@@ -39,7 +39,17 @@ async function createContextStepBuilderChain(llm) {
   const parser = new StringOutputParser({
     parse: (text) => text.trim()
   });
-  return prompt.pipe(llm).pipe(parser);
+  const base = prompt.pipe(llm).pipe(parser);
+  // Provide a default for `entities` so callers/tests that don't pass it won't error
+  return {
+    async invoke(input) {
+      const safeInput = { ...input };
+      if (typeof safeInput.entities === 'undefined') {
+        safeInput.entities = '[]';
+      }
+      return base.invoke(safeInput);
+    }
+  };
 }
 
 export { createContextStepBuilderChain };

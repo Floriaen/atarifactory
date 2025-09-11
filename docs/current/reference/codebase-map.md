@@ -75,6 +75,7 @@ server/
 - `FeedbackChain.js` - Provides improvement feedback
 - `PlayabilityValidatorChain.js` - Validates game playability
 - `ControlBarTransformerAgent.js` - Transforms input to control bar
+ - `art/SpriteMaskGenerator.js` - Sprite design agent (LLM→DSL→mask)
 
 #### **Pipeline Integration** (`server/agents/chains/design/`)
 - `GameDesignChain.js` - **SPECIAL**: Orchestrates all design chains
@@ -144,6 +145,13 @@ Prompt templates organized by chain category:
 
 **Prompt Modification**: ✅ Generally safe, but test thoroughly
 
+### **`server/agents/pipeline/`**
+| File | Purpose | Modification Safety |
+|------|---------|-------------------|
+| `planningPipeline.js` | Runs design/planning chains | ⚠️ Careful |
+| `artPipeline.js` | Ensures sprite pack via SpriteMaskGenerator | ✅ Safe (isolated) |
+| `codingPipeline.js` | Runs codegen and transforms | ⚠️ Careful |
+
 ### **`server/config/`**
 | File | Purpose | Modification Safety |
 |------|---------|-------------------|
@@ -162,6 +170,9 @@ Prompt templates organized by chain category:
 
 ### **Modify Game Logic Generation**
 → Look at `ContextStepBuilderChain.js` and related tests
+
+### **Modify Sprite Generation**
+→ Look at `agents/chains/art/SpriteMaskGenerator.js` and `agents/pipeline/artPipeline.js`
 
 ### **Change Validation Logic**
 → Look at `PlayabilityValidatorChain.js` and `PlayabilityHeuristicChain.js`

@@ -30,21 +30,31 @@ STRICT RULES – DO NOT BREAK:
    - **Simple shapes**: Only rectangles, circles, and basic lines - no complex drawings
    - **Solid fills**: Use ctx.fillStyle with solid colors only
    - **Blocky aesthetic**: Thick, simple geometric shapes with clear borders
-   - **Examples**: ctx.fillStyle = 'white'; ctx.fillStyle = 'red'; ctx.fillStyle = 'black'
+ - **Examples**: ctx.fillStyle = 'white'; ctx.fillStyle = 'red'; ctx.fillStyle = 'black'
  - **FORBIDDEN**: hex colors like #4caf50, #ffb300, rgba() values, shadowBlur, shadowColor, gradients
 
-6. Controls mapping (when step requires controls):
+6. **Sprites for entities (MANDATORY):**
+   The runtime exposes helpers for Atari-style mono sprites generated at build time.
+   - To draw any entity, always call:
+     `renderEntity(ctx, '<entityName>', x, y, scale, color, frameIndex)`
+   - Do NOT draw custom primitives for entity visuals (rects/circles) unless explicitly asked for background/FX. Use sprites for players, enemies, pickups, obstacles, etc.
+ - `renderEntity` is always available; it reads the sprite from `window.spritePack` and draws it via `drawSpriteMono`.
+  - Use small integer scales (e.g., 3–6) to keep the blocky look.
+   - IMPORTANT: Use the entity name EXACTLY as provided by the design (GameDef.entities). Do not invent or modify names. Do not add adjectives. Do not singularize/pluralize. The string must match the canonical ID.
+   - Allowed entity IDs (use only these): {entities}
+
+7. Controls mapping (when step requires controls):
    - Listen for keyboard events (keydown and keyup) for ArrowLeft and ArrowRight.
    - If an action is needed, use Space as the action key.
    - Track booleans for left, right, and action, and apply movement accordingly each frame.
 
-7. Victory predicate (when step describes winning):
+8. Victory predicate (when step describes winning):
    - Implement a clear condition that, when met, sets a win state and stops gameplay updates.
    - Show a simple overlay text like YOU WIN at the end.
 
-8. Failure predicate (when step describes losing):
+9. Failure predicate (when step describes losing):
    - Implement a simple loss condition such as collision with an obstacle or a timeout.
    - When triggered, set a lose state and stop gameplay updates. Show GAME OVER.
 
-9. State handling:
+10. State handling:
    - Ensure that when the game is in a win or lose state, movement and updates stop, and only drawing of the final screen persists.

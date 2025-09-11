@@ -65,24 +65,24 @@ function queryIndex(q, k = 5) {
 async function main() {
   const q = process.argv.slice(2).join(' ').trim();
   if (!q) {
-    // eslint-disable-next-line no-console
+     
     console.error('Usage: npm -w rag run query -- <query>');
     process.exit(1);
   }
   const { results, totalChunks } = queryIndex(q, 8);
-  // eslint-disable-next-line no-console
+   
   console.log(`Query: ${q}`);
-  // eslint-disable-next-line no-console
+   
   console.log(`Searched ${totalChunks} chunks. Top results:`);
   for (const r of results) {
-    // eslint-disable-next-line no-console
+     
     console.log(`- ${r.file}:${r.startLine} (score ${r.score.toFixed(3)})`);
   }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => {
-    // eslint-disable-next-line no-console
+     
     console.error('Search failed:', err);
     process.exit(1);
   });

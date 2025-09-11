@@ -3,6 +3,7 @@
 // Orchestrator for the full modular pipeline.
 // Delegates to planningPipeline and codingPipeline modules; progress is fully decoupled and unified only at this layer.
 import { runPlanningPipeline } from './planningPipeline.js';
+import { runArtPipeline } from './artPipeline.js';
 import { runCodingPipeline } from './codingPipeline.js';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.js';
 import logger, { statusLogger } from '../../utils/logger.js';
@@ -78,6 +79,10 @@ async function runModularGameSpecPipeline(sharedState) {
   // Run planning pipeline (local progress events intercepted)
   await runPlanningPipeline(sharedState, orchestratorOnStatusUpdate);
   logger.debug('SharedState after planning', { sharedState });
+  
+  // Run art pipeline to prepare in-memory sprite pack
+  await runArtPipeline(sharedState, orchestratorOnStatusUpdate);
+  logger.debug('SharedState after art', { spritePackKeys: Object.keys(sharedState.spritePack?.items || {}) });
 
   // Run coding pipeline (runCodingPipeline is now imported at the top)
   await runCodingPipeline(sharedState, orchestratorOnStatusUpdate);
