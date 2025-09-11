@@ -1,6 +1,7 @@
 # Local environment and IDE
 .env
 .vscode/
+.DS_Store
 
 # Logs and runtime artifacts
 logs/
