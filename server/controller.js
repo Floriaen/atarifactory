@@ -88,14 +88,14 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
 
-      // P2/P5: ensure sprites pack (optional; guarded by env) + metrics
-      if (process.env.ENABLE_SPRITE_GENERATION === '1' && Array.isArray(gameDef?.entities)) {
+      // P2/P5: ensure sprites pack (built-in) + metrics
+      if (Array.isArray(gameDef?.entities)) {
         const packPath = path.join(gameFolder, 'sprites.json');
         const pack = loadPack(packPath);
         const stats = { requested: 0, generated: 0, cached: 0, fallback: 0 };
         for (const ent of gameDef.entities) {
           const key = String(ent).toLowerCase();
-           stats.requested++;
+          stats.requested++;
           if (!pack.items[key]) {
             try {
               const mask = await generateMaskViaLLM(key, { gridSize: 12 });
