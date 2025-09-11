@@ -1,9 +1,14 @@
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d', { alpha: false });
+const gamesSel = document.getElementById('games');
+const loadBtn = document.getElementById('load-pack');
 const nameInp = document.getElementById('name');
+const entitiesList = document.getElementById('entities');
 const gridInp = document.getElementById('grid');
 const colorInp = document.getElementById('color');
 const scaleInp = document.getElementById('scale');
+const playChk = document.getElementById('play');
+const fpsInp = document.getElementById('fps');
 const btn = document.getElementById('generate');
 const ascii = document.getElementById('ascii');
 
@@ -51,12 +56,65 @@ async function generate() {
   const mask = data.mask;
   const scale = Math.max(1, Math.min(12, Number(scaleInp.value)||4));
   const color = colorInp.value || '#ffd34e';
-  drawSprite(mask, color, 32, 32, scale, 0);
-  if (mask.frames.length>1) drawSprite(mask, color, 32 + mask.gridSize*scale + 24, 32, scale, 1);
-  ascii.textContent = toAscii(mask, 0);
+  play(mask, color, scale);
+}
+
+function play(mask, color, scale) {
+  const frames = mask.frames.length;
+  let fi = 0;
+  const drawOnce = () => {
+    clear();
+    drawSprite(mask, color, 32, 32, scale, fi % frames);
+    ascii.textContent = toAscii(mask, fi % frames);
+  };
+  drawOnce();
+  if (!playChk.checked || frames <= 1) return;
+  const fps = Math.max(1, Math.min(24, Number(fpsInp.value)||6));
+  const iv = setInterval(() => { if (!playChk.checked) return clearInterval(iv); fi++; drawOnce(); }, 1000 / fps);
 }
 
 btn.addEventListener('click', generate);
 nameInp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') generate(); });
 window.addEventListener('load', ()=>{ nameInp.focus(); });
 
+// Load games and allow pack preview
+async function loadGames() {
+  try {
+    const r = await fetch('/games');
+    const games = await r.json();
+    gamesSel.innerHTML = '';
+    for (const g of games) {
+      const opt = document.createElement('option');
+      opt.value = g.id; opt.textContent = `${g.name || 'Game'} (${g.id.slice(0,8)})`;
+      gamesSel.appendChild(opt);
+    }
+  } catch {}
+}
+
+async function loadPack() {
+  const id = gamesSel.value;
+  if (!id) return;
+  try {
+    const r = await fetch(`/games/${id}/sprites.json`);
+    if (!r.ok) { ascii.textContent = `No sprites.json for ${id}`; return; }
+    const pack = await r.json();
+    const items = Object.keys(pack.items || {});
+    entitiesList.innerHTML = '';
+    items.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k; entitiesList.appendChild(opt);
+    });
+    if (items.length) { nameInp.value = items[0]; }
+    ascii.textContent = `Loaded ${items.length} sprites from ${id}`;
+    // Draw first one
+    const color = colorInp.value || '#ffd34e';
+    const scale = Math.max(1, Math.min(12, Number(scaleInp.value)||4));
+    const mask = pack.items[ nameInp.value ];
+    if (mask) play(mask, color, scale);
+  } catch (e) {
+    ascii.textContent = 'Error loading pack: ' + (e?.message||'failed');
+  }
+}
+
+loadBtn.addEventListener('click', loadPack);
+window.addEventListener('load', loadGames);

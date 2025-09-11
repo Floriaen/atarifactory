@@ -9,14 +9,18 @@
 </head>
 <body>
   <div class="bar">
-    <label>Entity <input id="name" placeholder="e.g., plane, lantern, person" /></label>
+    <label>Game <select id="games"></select></label>
+    <button id="load-pack">Load Pack</button>
+    <label>Entity <input id="name" list="entities" placeholder="e.g., plane, lantern, person" /></label>
+    <datalist id="entities"></datalist>
     <label>Grid <input id="grid" type="number" min="8" max="32" step="1" value="12" /></label>
-    <label>Color <input id="color" type="color" value="#ffd34e" /></label>
     <label>Scale <input id="scale" type="number" min="1" max="12" value="4" /></label>
+    <label>Color <input id="color" type="color" value="#ffd34e" /></label>
+    <label>Play <input id="play" type="checkbox" /></label>
+    <label>FPS <input id="fps" type="number" min="1" max="24" value="6" /></label>
     <button id="generate">Generate</button>
   </div>
   <canvas id="c" width="512" height="320"></canvas>
   <pre id="ascii"></pre>
 </body>
 </html>
-

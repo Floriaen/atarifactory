@@ -45,6 +45,9 @@ router.get('/pipeline/events', (req, res) => {
 
 // GET /debug/sprites/generate?name=<entity>&grid=12
 router.get('/sprites/generate', async (req, res) => {
+  if (process.env.ENABLE_SPRITE_GENERATION !== '1') {
+    return res.status(403).json({ ok: false, error: 'Sprite generation disabled. Set ENABLE_SPRITE_GENERATION=1.' });
+  }
   try {
     const name = String(req.query.name || '').trim();
     const grid = Number(req.query.grid || 12) || 12;

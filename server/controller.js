@@ -7,6 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { runCodingPipeline } from './agents/pipeline/codingPipeline.js';
+import { generateMaskViaLLM } from './utils/sprites/llmGenerator.js';
+import { loadPack, savePack } from './utils/sprites/packStore.js';
 import { runModularGameSpecPipeline } from './agents/pipeline/pipeline.js';
 
 // ESM equivalent of __dirname
@@ -85,6 +87,26 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
+
+      // P2: ensure sprites pack (optional; guarded by env)
+      if (process.env.ENABLE_SPRITE_GENERATION === '1' && Array.isArray(gameDef?.entities)) {
+        const packPath = path.join(gameFolder, 'sprites.json');
+        const pack = loadPack(packPath);
+        for (const ent of gameDef.entities) {
+          const key = String(ent).toLowerCase();
+          if (!pack.items[key]) {
+            try {
+              const mask = await generateMaskViaLLM(key, { gridSize: 12 });
+              pack.items[key] = mask;
+            } catch (e) {
+              logger.warn('Sprite generation failed, using placeholder', { entity: key, error: e?.message });
+              // minimal placeholder (single pixel center)
+              pack.items[key] = { gridSize: 12, frames: [Array.from({length:12},(_,y)=>Array.from({length:12},(_,x)=> x===6&&y===6))] };
+            }
+          }
+        }
+        savePack(packPath, pack);
+      }
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });
       throw err;
