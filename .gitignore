@@ -12,3 +12,4 @@ coverage/
 # Generated games/artifacts
 server/games/
 
+node_modules

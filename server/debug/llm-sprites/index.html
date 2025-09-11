@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Sprite Test</title>
+  <link rel="stylesheet" href="/debug/llm-sprites/style.css" />
+  <script type="module" src="/debug/llm-sprites/main.js"></script>
+</head>
+<body>
+  <div class="bar">
+    <label>Entity <input id="name" placeholder="e.g., plane, lantern, person" /></label>
+    <label>Grid <input id="grid" type="number" min="8" max="32" step="1" value="12" /></label>
+    <label>Color <input id="color" type="color" value="#ffd34e" /></label>
+    <label>Scale <input id="scale" type="number" min="1" max="12" value="4" /></label>
+    <button id="generate">Generate</button>
+  </div>
+  <canvas id="c" width="512" height="320"></canvas>
+  <pre id="ascii"></pre>
+</body>
+</html>
+

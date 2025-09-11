@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { getHealth, listTraces, getTrace, listPipelineEvents } from './traceBuffer.js';
+import { generateMaskViaLLM } from '../utils/sprites/llmGenerator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,6 +19,8 @@ router.use(debugEnabled);
 
 // Static dev UI
 router.use('/llm', express.static(path.join(__dirname, 'public')));
+// Sprite debug page (LLM sprite generator test UI)
+router.use('/llm-sprites', express.static(path.join(__dirname, 'llm-sprites')));
 
 // APIs
 router.get('/llm/health', (req, res) => {
@@ -40,5 +43,17 @@ router.get('/pipeline/events', (req, res) => {
   res.json({ ok: true, events: listPipelineEvents({ limit }) });
 });
 
-export default router;
+// GET /debug/sprites/generate?name=<entity>&grid=12
+router.get('/sprites/generate', async (req, res) => {
+  try {
+    const name = String(req.query.name || '').trim();
+    const grid = Number(req.query.grid || 12) || 12;
+    if (!name) return res.status(400).json({ ok: false, error: 'name is required' });
+    const mask = await generateMaskViaLLM(name, { gridSize: grid });
+    res.json({ ok: true, mask });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || 'sprite generation failed' });
+  }
+});
 
+export default router;
