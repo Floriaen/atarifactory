@@ -80,7 +80,8 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       const contextStepInput = {
         gameSource: gameSourceForStep,
         plan: JSON.stringify(sharedState.plan, null, 2),
-        step: JSON.stringify(step, null, 2)
+        step: JSON.stringify(step, null, 2),
+        entities: JSON.stringify(sharedState.gameDef?.entities || [], null, 0)
       };
       
       // Token counting is now handled automatically by the chain

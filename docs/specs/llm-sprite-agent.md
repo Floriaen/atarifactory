@@ -23,10 +23,11 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 
 ## Interfaces
 
-### Chain
+### Agent + Chain
 
-- Name: `SpriteDesignChain`
-- Location: `server/agents/chains/art/SpriteDesignChain.js`
+- Agent: `SpriteMaskGenerator`
+- Location: `server/agents/chains/art/SpriteMaskGenerator.js`
+- Internals: constructs a `SpriteDesignChain` via chainFactory with centralized schema
 - Prompt: `server/agents/prompts/art/sprite-dsl-generator.md`
 - Input (`context`):
   - `entity`: string (e.g., "plane", "lantern", "person")
@@ -69,14 +70,13 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 ## Integration Points
 
 1) Where in the pipeline
-- After `GameDesignChain` (once entities are known) and before code generation.
-- For each entity in `gameDef.entities`, request/create a sprite:
-  - If cached in sprite pack: use cached
-  - Else call `SpriteDesignChain` → compile → cache
+- Orchestrator runs Planning → Art → Coding.
+- ArtPipeline (new) runs after `GameDesignChain` and before code generation.
+- For each entity in `gameDef.entities`, SpriteMaskGenerator ensures a mask exists (generate on cache miss).
 
 2) Emission into game build
-- Write compiled masks to the game’s assets as JSON or JS module (e.g., `assets/sprites.json`).
-- At runtime, load masks and call `drawSprite` in the existing render loop instead of drawing primitives.
+- Controller persists compiled masks to `server/games/<id>/sprites.json` (per game).
+- At runtime, the game template loads `sprites.json` and calls `renderEntity`/`drawSpriteMono` instead of primitives. See `server/gameBoilerplate/sprites/sprites.js`.
 
 3) Replacement policy
 - Map `gameDef.entities[]` to a canonical sprite key (e.g., "guard" → "person").
@@ -84,8 +84,7 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 
 ## Caching & Determinism
 
-- Cache key: `sha256(entity|gridSize|model|promptVersion)`
-- Store compiled masks on disk in a sprite pack (per game) or a global cache folder.
+- Per‑game sprite pack stored at `server/games/<id>/sprites.json`.
 - Default mode: prefer cache; call LLM only on cache miss.
 
 ## Configuration

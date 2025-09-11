@@ -14,7 +14,7 @@ const arg = (process.argv[2] || '').toLowerCase();
 function printStatus() {
   let mode = 'ask-first';
   try { mode = fs.readFileSync(MODE_FILE, 'utf8').trim(); } catch {}
-  // eslint-disable-next-line no-console
+   
   console.log(JSON.stringify({ mode, file: MODE_FILE }));
 }
 
@@ -24,7 +24,7 @@ if (arg === 'status' || !arg) {
 }
 
 if (!['auto', 'ask-first'].includes(arg)) {
-  // eslint-disable-next-line no-console
+   
   console.error('Usage: node scripts/setMode.js <auto|ask-first|status>');
   process.exit(1);
 }

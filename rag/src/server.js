@@ -57,6 +57,6 @@ app.use(express.static(PUBLIC_DIR));
 app.get(/.*/, (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
+   
   console.log(`RAG server running on http://localhost:${PORT}`);
 });
