@@ -92,7 +92,7 @@ async function runPipeline(title, onStatusUpdate) {
       if (Array.isArray(gameDef?.entities)) {
         const packPath = path.join(gameFolder, 'sprites.json');
         const pack = loadPack(packPath);
-        const stats = { requested: 0, generated: 0, cached: 0, fallback: 0 };
+        const stats = { requested: 0, generated: 0, cached: 0 };
         for (const ent of gameDef.entities) {
           const key = String(ent).toLowerCase();
           stats.requested++;
@@ -102,10 +102,9 @@ async function runPipeline(title, onStatusUpdate) {
               pack.items[key] = mask;
               stats.generated++;
             } catch (e) {
-              logger.warn('Sprite generation failed, using placeholder', { entity: key, error: e?.message });
-              // minimal placeholder (single pixel center)
-              pack.items[key] = { gridSize: 12, frames: [Array.from({length:12},(_,y)=>Array.from({length:12},(_,x)=> x===6&&y===6))] };
-              stats.fallback++;
+              // Fail hard — credentials or LLM generation is required for sprite-enabled builds
+              logger.error('Sprite generation failed', { entity: key, error: e?.message });
+              throw new Error(`Sprite generation failed for entity "${key}": ${e?.message || 'unknown error'}`);
             }
           } else {
             stats.cached++;
