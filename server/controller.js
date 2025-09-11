@@ -88,24 +88,34 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
 
-      // P2: ensure sprites pack (optional; guarded by env)
+      // P2/P5: ensure sprites pack (optional; guarded by env) + metrics
       if (process.env.ENABLE_SPRITE_GENERATION === '1' && Array.isArray(gameDef?.entities)) {
         const packPath = path.join(gameFolder, 'sprites.json');
         const pack = loadPack(packPath);
+        const stats = { requested: 0, generated: 0, cached: 0, fallback: 0 };
         for (const ent of gameDef.entities) {
           const key = String(ent).toLowerCase();
+           stats.requested++;
           if (!pack.items[key]) {
             try {
               const mask = await generateMaskViaLLM(key, { gridSize: 12 });
               pack.items[key] = mask;
+              stats.generated++;
             } catch (e) {
               logger.warn('Sprite generation failed, using placeholder', { entity: key, error: e?.message });
               // minimal placeholder (single pixel center)
               pack.items[key] = { gridSize: 12, frames: [Array.from({length:12},(_,y)=>Array.from({length:12},(_,x)=> x===6&&y===6))] };
+              stats.fallback++;
             }
+          } else {
+            stats.cached++;
           }
         }
         savePack(packPath, pack);
+        logger.info('Sprite pack summary', { gameId, ...stats, packPath });
+        if (process.env.ENABLE_DEBUG === '1') {
+          try { addPipelineEvent({ type: 'SpritesSummary', payload: { gameId, ...stats, packPath } }); } catch {}
+        }
       }
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });
