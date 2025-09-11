@@ -65,6 +65,16 @@
         }
         ctx.restore();
       };
+      window.renderEntity = function(ctx, name, x, y, scale, color, frame){
+        // Always attempt to draw via sprite; fallback to 1px block if missing
+        const mask = window.getSprite(name);
+        if (mask) {
+          window.drawSpriteMono(ctx, mask, color || '#ffd34e', x, y, scale || 4, (frame||0) % (mask.frames?.length||1));
+        } else {
+          ctx.fillStyle = color || '#ffd34e';
+          ctx.fillRect(x, y, Math.max(1, scale||4), Math.max(1, scale||4));
+        }
+      };
       // Try to load sprites.json generated during build; ignore errors if missing
       try {
         fetch('sprites.json').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(j){
