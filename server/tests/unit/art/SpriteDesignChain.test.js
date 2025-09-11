@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { MockLLM } from '../../helpers/MockLLM.js';
-import { createSpriteDesignChain } from '../../../agents/chains/art/SpriteDesignChain.js';
+import { createSpriteMaskGenerator } from '../../../agents/chains/art/SpriteMaskGenerator.js';
 import { compileSpriteDSL } from '../../../utils/sprites/dsl/compiler.js';
 
-describe('SpriteDesignChain + DSL compiler', () => {
+describe('SpriteMaskGenerator compiles sprites', () => {
   it('returns valid DSL and compiles to a mask', async () => {
     const mockJson = JSON.stringify({
       gridSize: 12,
@@ -11,14 +11,8 @@ describe('SpriteDesignChain + DSL compiler', () => {
       meta: { entity: 'plane' }
     });
     const llm = new MockLLM(mockJson);
-    const chain = await createSpriteDesignChain(llm);
-    const dsl = await chain.invoke({ context: { entity: 'plane', gridSize: 12 } });
-    expect(dsl).toBeDefined();
-    expect(dsl.gridSize).toBe(12);
-    expect(Array.isArray(dsl.frames)).toBe(true);
-    expect(dsl.meta && dsl.meta.entity).toBe('plane');
-
-    const mask = compileSpriteDSL(dsl);
+    const agent = await createSpriteMaskGenerator(llm);
+    const mask = await agent.generate('plane', { gridSize: 12 });
     expect(mask).toBeDefined();
     expect(mask.gridSize).toBe(12);
     expect(Array.isArray(mask.frames)).toBe(true);
@@ -27,4 +21,3 @@ describe('SpriteDesignChain + DSL compiler', () => {
     expect(anyOn).toBe(true);
   });
 });
-

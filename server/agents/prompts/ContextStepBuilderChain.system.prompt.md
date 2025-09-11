@@ -40,6 +40,7 @@ STRICT RULES – DO NOT BREAK:
    - Do NOT draw custom primitives for entity visuals (rects/circles) unless explicitly asked for background/FX. Use sprites for players, enemies, pickups, obstacles, etc.
    - `renderEntity` is always available; it reads the sprite from `window.spritePack` and draws it via `drawSpriteMono`.
    - Use small integer scales (e.g., 3–6) to keep the blocky look.
+   - IMPORTANT: Use the entity name EXACTLY as provided by the design (GameDef.entities). Do not invent or modify names. Do not add adjectives. Do not singularize/pluralize. The string must match the canonical ID.
 
 7. Controls mapping (when step requires controls):
    - Listen for keyboard events (keydown and keyup) for ArrowLeft and ArrowRight.

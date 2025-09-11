@@ -156,3 +156,18 @@ export const genericObjectSchema = z.record(z.any());
 export function createSchemaWithValidation(baseSchema, validator) {
   return baseSchema.refine(validator.test, validator.message);
 }
+
+/**
+ * SpriteDesignChain DSL schema (OpenAI structured outputs compatible)
+ * Expected:
+ * {
+ *   gridSize: number (8..32, default 12),
+ *   frames: [ { ops: string[] } ] (1..3 frames),
+ *   meta: { entity: string }
+ * }
+ */
+export const spriteDslSchema = z.object({
+  gridSize: z.number().int().min(8).max(32).default(12),
+  frames: z.array(z.object({ ops: z.array(z.string().min(1)) })).min(1).max(3),
+  meta: z.object({ entity: z.string().min(1) })
+});

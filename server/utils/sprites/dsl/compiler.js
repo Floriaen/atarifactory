@@ -63,7 +63,6 @@ function normalizeDSL(dsl){
   return out;
 }
 
-export default { compileSpriteDSL };
 
 // ---------- Heuristics ----------
 const MIN_FILL_RATIO = 0.08; // 8%

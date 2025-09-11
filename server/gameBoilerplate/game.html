@@ -20,6 +20,7 @@
   {{controlBarHTML}}
   <div id='game-info' style='color:#ffb300;text-align:center;font-size:1em;margin:0.5em 0 0.2em 0;'>{{description}}<br><span style='color:#ccc;font-size:0.95em;'>{{instructions}}</span></div>
   <script src='controlBar.js'></script>
+  <script src='sprites.js'></script>
   <script>
     // Dynamically resize the game container and canvas to avoid control bar overlap
     function resizeGameArea() {
@@ -41,47 +42,7 @@
     window.addEventListener('gamepad-press', function(e) { window.gamepadState[e.detail.key] = true; });
     window.addEventListener('gamepad-release', function(e) { window.gamepadState[e.detail.key] = false; });
 
-    // --- Sprite pack loader & helpers (P2 runtime hook) ---
-    (function(){
-      // Expose helpers on window for generated code to use
-      window.spritePack = { items: {} };
-      window.getSprite = function(name) {
-        if (!name) return null;
-        const key = String(name).toLowerCase();
-        return (window.spritePack && window.spritePack.items && window.spritePack.items[key]) || null;
-      };
-      window.drawSpriteMono = function(ctx, mask, color, x, y, scale, frameIndex){
-        if (!mask || !ctx) return;
-        const s = mask.gridSize || 12;
-        const fi = Math.max(0, Math.min((mask.frames?.length||1)-1, frameIndex||0));
-        ctx.save();
-        ctx.fillStyle = color || '#ffd34e';
-        for (let yy = 0; yy < s; yy++) {
-          for (let xx = 0; xx < s; xx++) {
-            if (mask.frames[fi] && mask.frames[fi][yy] && mask.frames[fi][yy][xx]) {
-              ctx.fillRect(Math.round(x + xx * scale), Math.round(y + yy * scale), scale, scale);
-            }
-          }
-        }
-        ctx.restore();
-      };
-      window.renderEntity = function(ctx, name, x, y, scale, color, frame){
-        // Always attempt to draw via sprite; fallback to 1px block if missing
-        const mask = window.getSprite(name);
-        if (mask) {
-          window.drawSpriteMono(ctx, mask, color || '#ffd34e', x, y, scale || 4, (frame||0) % (mask.frames?.length||1));
-        } else {
-          ctx.fillStyle = color || '#ffd34e';
-          ctx.fillRect(x, y, Math.max(1, scale||4), Math.max(1, scale||4));
-        }
-      };
-      // Try to load sprites.json generated during build; ignore errors if missing
-      try {
-        fetch('sprites.json').then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(j){
-          if (j && j.items) { window.spritePack = j; }
-        }).catch(function(){ /* no-op */ });
-      } catch(e) { /* no-op */ }
-    })();
+    // sprite helpers moved to sprites.js
   </script>
   <script src='game.js'></script>
 </body>

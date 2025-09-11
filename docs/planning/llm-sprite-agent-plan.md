@@ -36,9 +36,9 @@ Owner: Game Agent Team
 - Flow: lookup pack → if miss → call chain → compile → pack.put → save
 
 ### P2 – Pipeline Integration (1 day)
-- After `GameDesignChain` and before code generation:
-  - For each `gameDef.entities[]`, compute canonical sprite key
-  - Ensure a sprite exists in pack (generate on miss per P1)
+- After `GameDesignChain` and during controller output (same pass that writes `game.js`):
+  - Controller invokes `ArtPipeline` to ensure sprites for all `gameDef.entities[]`
+  - `ArtPipeline` generates on cache miss per P1 and writes `sprites.json` to the game folder
   - Attach sprite pack path to the build artifact
 - Frontend/runtime:
   - Load `sprites.json`

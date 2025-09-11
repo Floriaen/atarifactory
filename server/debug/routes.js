@@ -3,7 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { getHealth, listTraces, getTrace, listPipelineEvents } from './traceBuffer.js';
-import { generateMaskViaLLM } from '../utils/sprites/llmGenerator.js';
+import { ChatOpenAI } from '@langchain/openai';
+import { createSpriteMaskGenerator } from '../agents/chains/art/SpriteMaskGenerator.js';
+import { createSharedState } from '../types/SharedState.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,7 +51,12 @@ router.get('/sprites/generate', async (req, res) => {
     const name = String(req.query.name || '').trim();
     const grid = Number(req.query.grid || 12) || 12;
     if (!name) return res.status(400).json({ ok: false, error: 'name is required' });
-    const mask = await generateMaskViaLLM(name, { gridSize: grid });
+    const sharedState = createSharedState();
+    const model = process.env.OPENAI_MODEL;
+    if (!model) return res.status(500).json({ ok: false, error: 'OPENAI_MODEL must be set' });
+    const llm = new ChatOpenAI({ model, temperature: 0 });
+    const agent = await createSpriteMaskGenerator(llm, { sharedState });
+    const mask = await agent.generate(name, { gridSize: grid });
     res.json({ ok: true, mask });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || 'sprite generation failed' });
