@@ -47,6 +47,8 @@ export function compileSpriteDSL(dsl) {
         default: break;
       }
     }
+    // Post-process per frame: connectivity + density heuristics
+    frames[fi] = postProcessFrame(frames[fi]);
   });
   return { gridSize: s, frames };
 }
@@ -63,3 +65,61 @@ function normalizeDSL(dsl){
 
 export default { compileSpriteDSL };
 
+// ---------- Heuristics ----------
+const MIN_FILL_RATIO = 0.08; // 8%
+const MAX_FILL_RATIO = 0.40; // 40%
+
+function postProcessFrame(frame){
+  const s = frame.length;
+  // 1) Connectivity: keep only the largest component
+  const largest = keepLargestComponent(frame);
+  // 2) Density bounds
+  const count = countPixels(largest);
+  const total = s * s;
+  const ratio = count / total;
+  if (ratio > MAX_FILL_RATIO) return thinOut(largest);
+  if (ratio < MIN_FILL_RATIO) return expandOnce(largest);
+  return largest;
+}
+
+function countPixels(frame){
+  let c = 0; for (let y=0;y<frame.length;y++) for (let x=0;x<frame.length;x++) if (frame[y][x]) c++; return c;
+}
+
+function keepLargestComponent(frame){
+  const s = frame.length;
+  const seen = Array.from({length:s},()=>Array.from({length:s},()=>false));
+  let best = []; let bestSize = 0;
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    if (!frame[y][x] || seen[y][x]) continue;
+    // BFS
+    const q=[[x,y]]; seen[y][x]=true; const comp=[[x,y]];
+    while(q.length){ const [cx,cy]=q.shift(); for(const [dx,dy] of dirs){ const nx=cx+dx, ny=cy+dy; if(nx>=0&&ny>=0&&nx<s&&ny<s&&!seen[ny][nx]&&frame[ny][nx]){ seen[ny][nx]=true; q.push([nx,ny]); comp.push([nx,ny]); } } }
+    if (comp.length>bestSize){ bestSize=comp.length; best=comp; }
+  }
+  // Build new frame with only best component (if there were none, return original)
+  if (bestSize===0) return frame;
+  const out = frame.map(row=>row.map(()=>false));
+  for(const [x,y] of best) out[y][x]=true;
+  return out;
+}
+
+function thinOut(frame){
+  const s = frame.length; const out = frame.map(row=>row.slice());
+  // Keep only pixels where both x and y are even -> ~25% density
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    if (out[y][x] && ((x%2!==0) || (y%2!==0))) out[y][x]=false;
+  }
+  return out;
+}
+
+function expandOnce(frame){
+  const s = frame.length; const out = frame.map(row=>row.slice());
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    if (!frame[y][x]) continue;
+    for(const [dx,dy] of dirs){ const nx=x+dx, ny=y+dy; if(nx>=0&&ny>=0&&nx<s&&ny<s) out[ny][nx]= true; }
+  }
+  return out;
+}
