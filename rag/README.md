@@ -84,7 +84,7 @@ The mode is stored at `/.assistant-mode` (repo root). To set a shared default, c
 
 ### Index Scope and Storage
 
-- Included: `docs/`, `server/`, `frontend/`, `README.md`, `CLAUDE.md`
+- Included: `docs/`, `server/`, `frontend/`, `README.md`, `AGENT.md`
 - Excluded: `node_modules/`, `.git/`, `rag/` (to avoid self-indexing)
 - Output: `rag/knowledge/index.json` (git-ignored)
 
