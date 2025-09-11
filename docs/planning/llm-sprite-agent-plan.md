@@ -30,10 +30,10 @@ Owner: Game Agent Team
 
 ### P1 – Cache + Pack (0.5–1 day)
 - Add pack store: `server/utils/sprites/packStore.js`
-  - `loadPack(dir)`, `savePack(dir, pack)`, `get(name)`, `put(name, mask)`
-  - Default per game: `server/games/<id>/assets/sprites.json`
+  - `loadPack(dir)`, `savePack(dir, pack)`
+  - Default per game: `server/games/<id>/sprites.json`
 - Cache key: `sha256(entity|grid|model|promptVer)`
-- Flow: lookup pack → if miss and LLM allowed → call chain → compile → pack.put → save
+- Flow: lookup pack → if miss → call chain → compile → pack.put → save
 
 ### P2 – Pipeline Integration (1 day)
 - After `GameDesignChain` and before code generation:
@@ -42,7 +42,7 @@ Owner: Game Agent Team
   - Attach sprite pack path to the build artifact
 - Frontend/runtime:
   - Load `sprites.json`
-  - Replace placeholder draw calls with `drawSprite(mask, color, x, y, scale[, frame])`
+  - Replace placeholder draw calls with `renderEntity(ctx, name, x, y, scale, color, frame)` (uses sprites)
 
 ### P3 – Debug & Tools (0.5 day)
 - Extend `/debug/sprites` to preview pack entries (search, frame playback)
@@ -54,13 +54,11 @@ Owner: Game Agent Team
 
 ### P5 – Hardening (0.5 day)
 - Alias mapping ("airplane"→"plane", "apple/pear"→"fruit")
-- Placeholder fallback on repeated LLM/compile failure
-- Metrics/logging for cache hits/misses and compile failures
+- Metrics/logging for cache hits/misses and compile failures; emit debug summary
+- No fallback: sprite generation errors or missing creds fail the build
 
-## Config / Flags
-- `OPENAI_API_KEY`, `OPENAI_MODEL` – required for LLM runs
-- `ENABLE_SPRITE_CACHE=1` – enable pack save/load
-- `ENABLE_SPRITE_GENERATION=1` – allow LLM calls during build
+## Config
+- `OPENAI_API_KEY`, `OPENAI_MODEL` – required (build fails when missing)
 - `SPRITE_GRID_SIZE=12` – default grid
 
 ## Risks & Mitigations
@@ -106,4 +104,3 @@ Owner: Game Agent Team
 
 7) Tests
 - MockLLM for chain; golden ASCII snapshots; compiler/renderer unit tests; integration pack write/read
-

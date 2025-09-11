@@ -1,4 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
+import { addLlmTrace } from '../../debug/traceBuffer.js';
 import { createSpriteDesignChain } from '../../agents/chains/art/SpriteDesignChain.js';
 import { compileSpriteDSL } from './dsl/compiler.js';
 
@@ -18,6 +19,7 @@ function normalizeEntity(name) {
 }
 
 export async function generateMaskViaLLM(entity, opts = {}) {
+  const startedAt = Date.now();
   const gridSize = Number(opts.gridSize || 12) || 12;
   const model = process.env.OPENAI_MODEL;
   const apiKey = process.env.OPENAI_API_KEY;
@@ -29,6 +31,19 @@ export async function generateMaskViaLLM(entity, opts = {}) {
   const context = { entity: normalizeEntity(entity), gridSize };
   const dsl = await chain.invoke({ context });
   const mask = compileSpriteDSL(dsl);
+  // Emit explicit trace for visibility in debug UI
+  try {
+    if (process.env.ENABLE_DEBUG === '1' && process.env.ENABLE_DEV_TRACE === '1') {
+      addLlmTrace({
+        chain: 'SpriteDesignChain',
+        model: model,
+        durationMs: Date.now() - startedAt,
+        inputVars: ['context'],
+        hydratedPrompt: JSON.stringify(context),
+        output: JSON.stringify(dsl),
+      });
+    }
+  } catch {}
   return mask;
 }
 

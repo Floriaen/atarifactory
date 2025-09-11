@@ -90,14 +90,14 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 
 ## Configuration
 
-- `OPENAI_API_KEY` / `OPENAI_MODEL`: required for LLM runs
+- `OPENAI_API_KEY` / `OPENAI_MODEL`: required (build fails when missing)
 - `SPRITE_GRID_SIZE`: default 12
-- `ENABLE_SPRITE_CACHE=1`: use on‑disk cache
+- Optional cache knobs (future): global sprite pack reuse
 
 ## Error Handling
 
 - If LLM output fails validation/compilation: retry up to N times (low temperature)
-- On repeated failure: fallback placeholder mask; log warning with entity name and reason
+- On repeated failure or missing credentials: the build fails with a clear error (no placeholder fallback)
 
 ## Testing
 
@@ -113,7 +113,6 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 
 ## Acceptance Criteria
 
-- Given a game with entities, sprites are generated (or fetched from cache), compiled, and rendered instead of placeholder figures.
+- Given a game with entities and valid credentials, sprites are generated (or fetched from cache), compiled, and rendered instead of placeholder figures.
 - Sprites are flat, one‑color, low‑res, and recognizable; optional 2–3 frame flicker/motion for pseudo‑animation.
 - No LLM calls occur during gameplay when cache is warm.
-
