@@ -28,7 +28,7 @@ function shouldInclude(file) {
     rel.startsWith('server/') ||
     rel.startsWith('frontend/') ||
     rel === 'README.md' ||
-    rel === 'CLAUDE.md'
+    rel === 'AGENT.md'
   );
 }
 
@@ -148,4 +148,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export default main;
-
