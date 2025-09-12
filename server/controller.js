@@ -10,6 +10,7 @@ import { runCodingPipeline } from './agents/pipeline/codingPipeline.js';
 import { runArtPipeline } from './agents/pipeline/artPipeline.js';
 import { loadPack, savePack } from './utils/sprites/packStore.js';
 import { runModularGameSpecPipeline } from './agents/pipeline/pipeline.js';
+import { computeCostTotals } from './utils/costing.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -122,6 +123,32 @@ async function runPipeline(title, onStatusUpdate) {
             try { addPipelineEvent({ type: 'SpritesSummary', payload: { gameId, packPath } }); } catch {}
           }
         }
+      }
+      // Persist build metadata (for frontend capsule details)
+      try {
+        const started = sharedState?.metadata?.startTime ? new Date(sharedState.metadata.startTime).getTime() : Date.now();
+        const durationMs = Math.max(0, Date.now() - started);
+        const cost = computeCostTotals(sharedState);
+        const meta = {
+          id: gameId,
+          name: gameName,
+          description: gameDef?.description || '',
+          date: gameDate,
+          model: process.env.OPENAI_MODEL || 'unknown',
+          durationMs,
+          tokens: {
+            total: Number(sharedState.tokenCount || 0),
+            prompt: Number(sharedState.promptTokens || 0),
+            completion: Number(sharedState.completionTokens || 0)
+          },
+          cost: {
+            usd: Number((cost?.total?.usd ?? 0).toFixed ? cost.total.usd.toFixed(2) : (Math.round((cost?.total?.usd || 0)*100)/100)),
+            byModel: cost?.byModel || {}
+          }
+        };
+        fs.writeFileSync(path.join(gameFolder, 'meta.json'), JSON.stringify(meta, null, 2), 'utf8');
+      } catch (e) {
+        logger.warn('Failed to write build meta.json', { error: e?.message });
       }
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });

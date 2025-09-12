@@ -1,0 +1,368 @@
+diff --git a/server/agents/chains/ContextStepBuilderChain.js b/server/agents/chains/ContextStepBuilderChain.js
+index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a561491d2 100644
+--- a/server/agents/chains/ContextStepBuilderChain.js
++++ b/server/agents/chains/ContextStepBuilderChain.js
+@@ -1,55 +1,35 @@
+-// Modular LangChain chain for ContextStepBuilderAgent
+-// Receives: { gameSource, plan, step }
++// Modular chain built via chainFactory for ContextStepBuilderAgent
++// Receives: { gameSource, plan, step, entities }
+ // Returns: revised JavaScript source as a string
+ 
+-import fs from 'fs';
+-import path from 'path';
+-import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
+-import { StringOutputParser } from '@langchain/core/output_parsers';
+-import { fileURLToPath } from 'url';
+-import { dirname } from 'path';
++import { createChatChain } from '../../utils/chainFactory.js';
+ 
+ export const CHAIN_STATUS = {
+   name: 'ContextStepBuilderChain',
+   label: 'Code Generation',
+   description: 'Implementing game logic',
+-  category: 'coding'
++  category: 'coding',
+ };
+ 
+-// ESM equivalent of __dirname
+-const __filename = fileURLToPath(import.meta.url);
+-const __dirname = dirname(__filename);
+-
+-// Load system and human prompt templates from .md files
+-function loadPromptTemplate(filename) {
+-  return fs.readFileSync(path.join(__dirname, '../prompts', filename), 'utf8');
+-}
+-
+-const systemTemplate = loadPromptTemplate('ContextStepBuilderChain.system.prompt.md');
+-const humanTemplate = loadPromptTemplate('ContextStepBuilderChain.human.prompt.md');
+-
+-const prompt = ChatPromptTemplate.fromMessages([
+-  SystemMessagePromptTemplate.fromTemplate(systemTemplate),
+-  HumanMessagePromptTemplate.fromTemplate(humanTemplate)
+-]);
+-
+ // Async factory for the chain
+-async function createContextStepBuilderChain(llm) {
+-  // Use the new JS prompt with system/human separation
+-  const parser = new StringOutputParser({
+-    parse: (text) => text.trim()
++export async function createContextStepBuilderChain(llm, options = {}) {
++  const chain = await createChatChain({
++    chainName: 'ContextStepBuilderChain',
++    systemFile: 'ContextStepBuilderChain.system.prompt.md',
++    humanFile: 'ContextStepBuilderChain.human.prompt.md',
++    inputVariables: ['gameSource', 'plan', 'step', 'entities'],
++    preset: 'creative',
++    llm,
++    sharedState: options.sharedState,
+   });
+-  const base = prompt.pipe(llm).pipe(parser);
+-  // Provide a default for `entities` so callers/tests that don't pass it won't error
++
+   return {
+     async invoke(input) {
+       const safeInput = { ...input };
+       if (typeof safeInput.entities === 'undefined') {
+         safeInput.entities = '[]';
+       }
+-      return base.invoke(safeInput);
+-    }
++      return chain.invoke(safeInput);
++    },
+   };
+ }
+-
+-export { createContextStepBuilderChain };
+diff --git a/server/tests/unit/ContextStepBuilderChain.test.js b/server/tests/unit/ContextStepBuilderChain.test.js
+index 6ed4160c2390321b2577cf6f4706a4204af040b2..3a2daa6405e37263a2b72b26906d248bfaebd578 100644
+--- a/server/tests/unit/ContextStepBuilderChain.test.js
++++ b/server/tests/unit/ContextStepBuilderChain.test.js
+@@ -21,50 +21,61 @@ describe('ContextStepBuilderChain', () => {
+     const systemPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.system.prompt.md');
+     const humanPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.human.prompt.md');
+     systemPromptString = await fs.readFile(systemPromptPath, 'utf8');
+     humanPromptString = await fs.readFile(humanPromptPath, 'utf8');
+   });
+ 
+   it('loads the system prompt template (rules) as a non-empty string', () => {
+     expect(typeof systemPromptString).toBe('string');
+     expect(systemPromptString.length).toBeGreaterThan(0);
+     expect(systemPromptString).toContain('STRICT RULES');
+   });
+ 
+   it('loads the human prompt template with correct variables', () => {
+     expect(humanPromptString).toContain('{gameSource}');
+     expect(humanPromptString).toContain('{plan}');
+     expect(humanPromptString).toContain('{step}');
+   });
+ 
+   it('parses output string using StringOutputParser', async () => {
+     // StringOutputParser is now imported at the top
+     const parser = new StringOutputParser();
+     const output = await parser.invoke({ content: 'function foo() { return 1; }' });
+     expect(output).toBe('function foo() { return 1; }');
+   });
+ 
++  it('defaults entities to [] when not provided', async () => {
++    const llm = {
++      withStructuredOutput() { return this; },
++      withConfig() { return this; },
++      async invoke() { return { content: 'function foo(){}' }; }
++    };
++    const chain = await createContextStepBuilderChain(llm);
++    const result = await chain.invoke({ gameSource: '', plan: '[]', step: '{}' });
++    expect(result).toBe('function foo(){}');
++  });
++
+   it('integration: runs end-to-end with real OpenAI if API key is present', async () => {
+     if (!process.env.OPENAI_API_KEY) {
+       console.warn('Skipping integration test: no OPENAI_API_KEY');
+       return;
+     }
+     // ChatOpenAI is now imported at the top
+     const modelName = process.env.OPENAI_MODEL;
+     const chain = await createContextStepBuilderChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
+     const result = await chain.invoke({
+       gameSource: '// Minimal HTML5 Canvas Game Scaffold\nconst canvas = document.getElementById(\'game-canvas\');\nconst ctx = canvas.getContext(\'2d\');\nfunction gameLoop() { ctx.clearRect(0,0,canvas.width,canvas.height); }\ngameLoop();',
+       plan: JSON.stringify([
+         { id: 1, description: 'Set up the HTML canvas and main game loop' },
+         { id: 2, description: 'Create the player entity and implement left/right movement' },
+         { id: 3, description: 'Implement win condition when player reaches the right edge' }
+       ]),
+       step: JSON.stringify({ id: 1, description: 'Set up the HTML canvas and main game loop' })
+     });
+     expect(typeof result).toBe('string');
+     expect(result.length).toBeGreaterThan(0);
+     // Try to execute the returned code to ensure it is valid JavaScript
+     let fn;
+     try {
+       fn = new Function(result);
+     } catch (err) {
+       throw new Error('Returned output is not valid JavaScript: ' + err.message + '\nOutput was:\n' + result);
+diff --git a/server/utils/chainFactory.js b/server/utils/chainFactory.js
+index a6432eecefa5f832b97f79d4f39b6b037ee512cc..9cc033f6db1f2832160fa6be6448667d25822b1f 100644
+--- a/server/utils/chainFactory.js
++++ b/server/utils/chainFactory.js
+@@ -1,38 +1,44 @@
+ /**
+  * Standardized chain factory utilities for consistent Langchain chain creation
+  * 
+  * This module provides a unified approach to creating chains with:
+  * - Consistent configuration patterns
+  * - Structured output support
+  * - Token counting and logging
+  * - Error handling
+  */
+ 
+ import { promises as fs } from 'fs';
+ import path from 'path';
+-import { PromptTemplate } from '@langchain/core/prompts';
++import {
++  PromptTemplate,
++  ChatPromptTemplate,
++  SystemMessagePromptTemplate,
++  HumanMessagePromptTemplate,
++} from '@langchain/core/prompts';
++import { StringOutputParser } from '@langchain/core/output_parsers';
+ import { fileURLToPath } from 'url';
+ import { dirname } from 'path';
+ import logger from './logger.js';
+ import { addLlmTrace } from '../debug/traceBuffer.js';
+ import { v4 as uuidv4 } from 'uuid';
+ import { 
+   createStandardLLM,
+   createTokenCountingCallback,
+   createChainConfig, 
+   getPresetConfig,
+   handleChainError 
+ } from '../config/langchain.config.js';
+ 
+ // ESM equivalent of __dirname
+ const __filename = fileURLToPath(import.meta.url);
+ const __dirname = dirname(__filename);
+ 
+ /**
+  * Standard chain factory options interface
+  * @typedef {Object} ChainFactoryOptions
+  * @property {string} chainName - Name of the chain for logging and identification
+  * @property {string} promptFile - Path to the prompt file (relative to prompts directory)
+  * @property {string[]} inputVariables - Variables for the prompt template
+  * @property {Object} schema - Zod schema for structured output (optional)
+  * @property {string} preset - Configuration preset (creative, structured, planning, validation)
+@@ -161,50 +167,175 @@ export async function createStandardChain(options) {
+               phase: chainName.includes('Planner') ? 'planning' : (chainName.includes('ContextStep') ? 'coding' : undefined),
+               model: process.env.OPENAI_MODEL || 'unknown',
+               durationMs,
+               inputVars: inputVariables,
+               hydratedPrompt: promptFull,
+               output: outputFull,
+               tokenDelta,
+               traceId,
+             });
+           }
+           if (enableLogging) {
+             logger.debug('Chain successfully completed', { chainName });
+           }
+           return result;
+         } catch (error) {
+           handleChainError(error, chainName, { input });
+         }
+       }
+     };
+ 
+   } catch (error) {
+     handleChainError(error, chainName, { promptFile, inputVariables });
+   }
+ }
+ 
++/**
++ * Creates a chat-based chain preserving system/human roles
++ * @param {Object} options - Chat chain configuration
++ * @returns {Promise<Object>} Configured chat chain instance
++ */
++export async function createChatChain(options) {
++  const {
++    chainName,
++    systemFile,
++    humanFile,
++    inputVariables = [],
++    schema,
++    preset = 'structured',
++    llm: customLLM,
++    sharedState,
++    enableLogging = true,
++  } = options;
++
++  if (!chainName) {
++    throw new Error('Chain name is required for chat chain creation');
++  }
++
++  try {
++    const systemPath = path.join(__dirname, '../agents/prompts', systemFile);
++    const humanPath = path.join(__dirname, '../agents/prompts', humanFile);
++    const [systemString, humanString] = await Promise.all([
++      fs.readFile(systemPath, 'utf8'),
++      fs.readFile(humanPath, 'utf8'),
++    ]);
++
++    if (enableLogging) {
++      logger.debug('Loaded chat prompts from files', { chainName, systemFile, humanFile });
++    }
++
++    const prompt = ChatPromptTemplate.fromMessages([
++      SystemMessagePromptTemplate.fromTemplate(systemString),
++      HumanMessagePromptTemplate.fromTemplate(humanString),
++    ]);
++
++    let baseLLM = customLLM;
++    if (!baseLLM) {
++      const presetConfig = getPresetConfig(preset);
++      baseLLM = createStandardLLM(presetConfig);
++    }
++
++    const configuredLLM = schema ? baseLLM.withStructuredOutput(schema) : baseLLM;
++
++    let finalLLM = configuredLLM;
++    if (sharedState && typeof configuredLLM.withConfig === 'function') {
++      const tokenCallback = createTokenCountingCallback(sharedState, chainName);
++      finalLLM = configuredLLM.withConfig({ callbacks: [tokenCallback] });
++    }
++
++    const chainConfig = createChainConfig(chainName, {
++      callbacks: [{
++        handleLLMEnd: () => {
++          if (enableLogging) {
++            logger.debug('LLM response received', { chainName });
++          }
++        },
++      }],
++    });
++
++    const parser = new StringOutputParser({ parse: (text) => text.trim() });
++    const baseChain = prompt
++      .pipe(finalLLM)
++      .withConfig(chainConfig)
++      .pipe(parser);
++
++    return {
++      async invoke(input) {
++        try {
++          if (!input || typeof input !== 'object' || inputVariables.some((v) => !(v in input))) {
++            throw new Error(`Input must be an object with required fields: ${inputVariables.join(', ')}`);
++          }
++          const startedAt = Date.now();
++          let hydratedPrompt = null;
++          try {
++            hydratedPrompt = await new Promise((resolve) => {
++              try {
++                const msgs = prompt.formatMessages ? prompt.formatMessages(input) : [];
++                resolve(msgs.map((m) => `${m._getType()}: ${m.content}`).join('\n\n'));
++              } catch {
++                resolve(null);
++              }
++            });
++          } catch {}
++          const tokenBefore = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
++          if (enableLogging) {
++            logger.debug('Chain invoking with input', { chainName, input });
++          }
++          const result = await baseChain.invoke(input);
++          const durationMs = Date.now() - startedAt;
++          const tokenAfter = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
++          const tokenDelta = typeof tokenBefore === 'number' && typeof tokenAfter === 'number' ? tokenAfter - tokenBefore : undefined;
++          if (process.env.ENABLE_DEV_TRACE === '1') {
++            const traceId = (input && input.traceId) || (sharedState && sharedState.traceId) || undefined;
++            const outputFull = typeof result === 'string' ? result : (() => { try { return JSON.stringify(result); } catch { return String(result); } })();
++            const promptFull = hydratedPrompt != null ? String(hydratedPrompt) : null;
++            addLlmTrace({
++              chain: chainName,
++              phase: chainName.includes('Planner') ? 'planning' : (chainName.includes('ContextStep') ? 'coding' : undefined),
++              model: process.env.OPENAI_MODEL || 'unknown',
++              durationMs,
++              inputVars: inputVariables,
++              hydratedPrompt: promptFull,
++              output: outputFull,
++              tokenDelta,
++              traceId,
++            });
++          }
++          if (enableLogging) {
++            logger.debug('Chain successfully completed', { chainName });
++          }
++          return result;
++        } catch (error) {
++          handleChainError(error, chainName, { input });
++        }
++      },
++    };
++  } catch (error) {
++    handleChainError(error, chainName, { systemFile, humanFile, inputVariables });
++  }
++}
++
+ /**
+  * Creates a JSON extraction chain with standardized patterns
+  * @param {ChainFactoryOptions} options - Chain configuration options
+  * @returns {Promise<Object>} JSON extraction chain
+  */
+ export async function createJSONChain(options) {
+   if (!options.schema) {
+     throw new Error('Schema is required for JSON extraction chains');
+   }
+ 
+   return createStandardChain({
+     preset: 'structured',
+     ...options
+   });
+ }
+ 
+ /**
+  * Creates a creative chain with standardized patterns
+  * @param {ChainFactoryOptions} options - Chain configuration options
+  * @returns {Promise<Object>} Creative chain
+  */
+ export async function createCreativeChain(options) {
+   return createStandardChain({
+     preset: 'creative',
+     ...options
