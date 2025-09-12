@@ -43,6 +43,17 @@ describe('ContextStepBuilderChain', () => {
     expect(output).toBe('function foo() { return 1; }');
   });
 
+  it('defaults entities to [] when not provided', async () => {
+    const llm = {
+      withStructuredOutput() { return this; },
+      withConfig() { return this; },
+      async invoke() { return { content: 'function foo(){}' }; }
+    };
+    const chain = await createContextStepBuilderChain(llm);
+    const result = await chain.invoke({ gameSource: '', plan: '[]', step: '{}' });
+    expect(result).toBe('function foo(){}');
+  });
+
   it('integration: runs end-to-end with real OpenAI if API key is present', async () => {
     if (!process.env.OPENAI_API_KEY) {
       console.warn('Skipping integration test: no OPENAI_API_KEY');
