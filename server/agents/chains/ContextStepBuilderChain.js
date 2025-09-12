@@ -1,55 +1,35 @@
-// Modular LangChain chain for ContextStepBuilderAgent
-// Receives: { gameSource, plan, step }
+// Modular chain built via chainFactory for ContextStepBuilderAgent
+// Receives: { gameSource, plan, step, entities }
 // Returns: revised JavaScript source as a string
 
-import fs from 'fs';
-import path from 'path';
-import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from '@langchain/core/prompts';
-import { StringOutputParser } from '@langchain/core/output_parsers';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { createChatChain } from '../../utils/chainFactory.js';
 
 export const CHAIN_STATUS = {
   name: 'ContextStepBuilderChain',
   label: 'Code Generation',
   description: 'Implementing game logic',
-  category: 'coding'
+  category: 'coding',
 };
 
-// ESM equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load system and human prompt templates from .md files
-function loadPromptTemplate(filename) {
-  return fs.readFileSync(path.join(__dirname, '../prompts', filename), 'utf8');
-}
-
-const systemTemplate = loadPromptTemplate('ContextStepBuilderChain.system.prompt.md');
-const humanTemplate = loadPromptTemplate('ContextStepBuilderChain.human.prompt.md');
-
-const prompt = ChatPromptTemplate.fromMessages([
-  SystemMessagePromptTemplate.fromTemplate(systemTemplate),
-  HumanMessagePromptTemplate.fromTemplate(humanTemplate)
-]);
-
 // Async factory for the chain
-async function createContextStepBuilderChain(llm) {
-  // Use the new JS prompt with system/human separation
-  const parser = new StringOutputParser({
-    parse: (text) => text.trim()
+export async function createContextStepBuilderChain(llm, options = {}) {
+  const chain = await createChatChain({
+    chainName: 'ContextStepBuilderChain',
+    systemFile: 'ContextStepBuilderChain.system.prompt.md',
+    humanFile: 'ContextStepBuilderChain.human.prompt.md',
+    inputVariables: ['gameSource', 'plan', 'step', 'entities'],
+    preset: 'creative',
+    llm,
+    sharedState: options.sharedState,
   });
-  const base = prompt.pipe(llm).pipe(parser);
-  // Provide a default for `entities` so callers/tests that don't pass it won't error
+
   return {
     async invoke(input) {
       const safeInput = { ...input };
       if (typeof safeInput.entities === 'undefined') {
         safeInput.entities = '[]';
       }
-      return base.invoke(safeInput);
-    }
+      return chain.invoke(safeInput);
+    },
   };
 }
-
-export { createContextStepBuilderChain };
