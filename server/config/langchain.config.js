@@ -63,10 +63,26 @@ export function createStandardLLM(options = {}) {
 export function createTokenCountingCallback(sharedState, chainName = 'Unknown', traceId = null) {
   return {
     handleLLMEnd: (output) => {
-      if (output.llmOutput?.tokenUsage && sharedState && typeof sharedState.tokenCount === 'number') {
-        const tokens = output.llmOutput.tokenUsage.totalTokens;
-        sharedState.tokenCount += tokens;
-        llmLogger.logTokenUsage(chainName, tokens, sharedState.tokenCount, traceId);
+      try {
+        const usage = output.llmOutput?.tokenUsage;
+        if (usage && sharedState && typeof sharedState.tokenCount === 'number') {
+          const prompt = Number(usage.promptTokens || 0);
+          const completion = Number(usage.completionTokens || 0);
+          const total = Number(usage.totalTokens || (prompt + completion));
+          sharedState.promptTokens = (sharedState.promptTokens || 0) + prompt;
+          sharedState.completionTokens = (sharedState.completionTokens || 0) + completion;
+          sharedState.tokenCount += total;
+          // Per-model bucket (best-effort using current model env)
+          const model = process.env.OPENAI_MODEL || 'default';
+          if (!sharedState.modelTotals) sharedState.modelTotals = {};
+          if (!sharedState.modelTotals[model]) sharedState.modelTotals[model] = { prompt: 0, completion: 0, total: 0 };
+          sharedState.modelTotals[model].prompt += prompt;
+          sharedState.modelTotals[model].completion += completion;
+          sharedState.modelTotals[model].total += total;
+          llmLogger.logTokenUsage(chainName, total, sharedState.tokenCount, traceId);
+        }
+      } catch (e) {
+        // swallow counting errors; do not disrupt chain
       }
     },
     handleLLMError: (error) => {

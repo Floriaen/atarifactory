@@ -267,9 +267,20 @@ function renderGallery(games) {
         <div class="thumb-date">${new Date(game.date).toLocaleDateString()}</div>
       </div>
     `;
-    thumb.onclick = () => openGame(game.id);
+    thumb.onclick = () => toggleGameDetails(thumb, game);
     gallery.appendChild(thumb);
   });
+  // Ensure a single details banner exists right below the gallery
+  ensureDetailsBanner();
+  // Add light gray placeholders when fewer items
+  const minThumbs = 5;
+  const toAdd = Math.max(0, minThumbs - games.length);
+  for (let i = 0; i < toAdd; i++) {
+    const ph = document.createElement('div');
+    ph.className = 'thumb placeholder';
+    ph.innerHTML = `<div class="thumb-bg"></div>`;
+    gallery.appendChild(ph);
+  }
 }
 
 async function openGame(id) {
@@ -277,6 +288,68 @@ async function openGame(id) {
   const frame = DOM.gameFrame;
   frame.src = `${API_BASE}/games/${id}`;
   modal.style.display = 'flex';
+}
+
+// Ensure a global details banner below the capsule grid
+function ensureDetailsBanner() {
+  const gallery = DOM.gallery;
+  if (!document.getElementById('game-details-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'game-details-banner';
+    banner.className = 'game-details-banner';
+    banner.classList.add('empty');
+    gallery.insertAdjacentElement('afterend', banner);
+  }
+}
+
+// Toggle details banner below the gallery, spanning full app width
+let currentOpenGameId = null;
+async function toggleGameDetails(thumbEl, game) {
+  ensureDetailsBanner();
+  const banner = document.getElementById('game-details-banner');
+  if (!banner) return;
+  // Collapse if already showing this game's details
+  if (currentOpenGameId === game.id) {
+    banner.classList.add('empty');
+    banner.innerHTML = '';
+    currentOpenGameId = null;
+    return;
+  }
+  // Show banner and load data
+  currentOpenGameId = game.id;
+  banner.classList.remove('empty');
+  banner.innerHTML = `<div class="gd-row">Loading details…</div>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/games/${game.id}/meta.json`);
+    let meta = null;
+    if (res.ok) meta = await res.json();
+    const name = (meta && meta.name) || game.name || 'Game';
+    const date = (meta && meta.date) || game.date;
+    const desc = (meta && meta.description) || '';
+    const model = (meta && meta.model) || 'unknown';
+    const durationMs = (meta && meta.durationMs) || 0;
+    const tokens = (meta && meta.tokens && meta.tokens.total) || 0;
+    const usd = (meta && meta.cost && meta.cost.usd != null) ? Number(meta.cost.usd).toFixed(2) : '0.00';
+    const secs = Math.max(0, Math.round(durationMs/100)/10);
+    const humanDuration = formatDuration(secs);
+    const humanDate = formatHumanDate(new Date(date));
+    banner.innerHTML = `
+      <div class="gd-header gd-header-row">
+        <div class="gd-title-block">
+          <div class="gd-title">${name}</div>
+          <div class="gd-date">${humanDate}</div>
+        </div>
+        <div class="gd-actions-right"><button class="gd-play">Play</button></div>
+      </div>
+      ${desc ? `<div class="gd-desc">${desc}</div>` : ''}
+      <div class="gd-build">Model: <strong>${model}</strong> · Time: <strong>${humanDuration}</strong> · Tokens: <strong>${Number(tokens).toLocaleString()}</strong> · Cost: <strong>$${usd}</strong></div>
+    `;
+    const playBtn = banner.querySelector('.gd-play');
+    playBtn.onclick = (e) => { e.stopPropagation(); openGame(game.id); };
+  } catch (e) {
+    banner.innerHTML = `<div class="gd-row error">Failed to load details</div>`;
+  }
 }
 
 DOM.closeModal.onclick = function () {
@@ -369,6 +442,10 @@ DOM.generateBtn.onclick = async function () {
   showProgressBar();
   updateProgressBar(0);
   setTokenCount('');
+  // Hide any open details on new generation
+  const banner = document.getElementById('game-details-banner');
+  if (banner) { banner.classList.add('empty'); banner.innerHTML = ''; }
+  currentOpenGameId = null;
   const btn = this;
   setStatusLabel('Generating...');
   btn.disabled = true;
@@ -451,3 +528,42 @@ function handlePadRelease(e) {
   btn.addEventListener('touchend', handlePadRelease);
   btn.addEventListener('touchcancel', handlePadRelease);
 });
+
+// Human-friendly date like "Friday the 12th of September at 2:43PM"
+function formatHumanDate(d) {
+  try {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dow = days[d.getDay()];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const ordinal = (n) => {
+      const s = ["th","st","nd","rd"], v = n % 100;
+      return n + (s[(v-20)%10] || s[v] || s[0]);
+    };
+    let hrs = d.getHours();
+    const mins = d.getMinutes().toString().padStart(2,'0');
+    const ampm = hrs >= 12 ? 'PM' : 'AM';
+    hrs = hrs % 12; if (hrs === 0) hrs = 12;
+    return `${dow} the ${ordinal(day)} of ${month} at ${hrs}:${mins}${ampm}`;
+  } catch {
+    return d.toLocaleString();
+  }
+}
+
+// Human-friendly duration: seconds -> "Xm Ys" when >= 60s, otherwise "Xs" (with 0.1s precision for small values)
+function formatDuration(totalSeconds) {
+  try {
+    const s = Number(totalSeconds || 0);
+    if (s < 60) {
+      // show one decimal when under 10 seconds
+      if (s < 10) return `${s.toFixed(1)}s`;
+      return `${Math.round(s)}s`;
+    }
+    const minutes = Math.floor(s / 60);
+    const seconds = Math.round(s % 60);
+    return `${minutes}m ${seconds}s`;
+  } catch {
+    return `${Math.round(totalSeconds || 0)}s`;
+  }
+}

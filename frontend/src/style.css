@@ -37,7 +37,7 @@ h1 {
 }
 
 #app {
-  max-width: 380px;
+  max-width: 580px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -163,6 +163,47 @@ button:focus-visible {
   animation: tokenPulse 0.8s ease-in-out;
 }
 
+/* Game details panel under capsule */
+/* Full-width banner for game details below the gallery */
+.game-details-banner {
+  margin: 10px 0 14px 0;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #ddd;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 150px; /* reserve space to avoid layout shift */
+  transition: opacity 0.25s ease;
+}
+.game-details-banner.empty {
+  opacity: 0;
+  background: transparent;
+  border-color: transparent;
+}
+.game-details-banner .gd-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.game-details-banner .gd-header-row { align-items: flex-start; }
+.game-details-banner .gd-actions-right { margin-left: 12px; }
+.game-details-banner .gd-title { font-weight: 700; color: #ffb300; text-align: left;}
+.game-details-banner .gd-title-block { display: flex; flex-direction: column; }
+.game-details-banner .gd-date { color: #b0b0b8; font-size: 0.9em; margin-top: 2px; }
+.game-details-banner .gd-desc { color: #cfcfcf; margin-bottom: 6px; line-height: 1.35; text-align: left;}
+.game-details-banner .gd-build { color: #b0b0b8; margin-bottom: 8px; }
+.game-details-banner .gd-build strong { color: #b3e5fc; }
+.game-details-banner .gd-actions-right { display: flex; justify-content: flex-end; }
+.game-details-banner .gd-actions-right .gd-play { background: #ffb300; color:#222; border:none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700; }
+.game-details-banner .gd-actions-right .gd-play:active { background: #ffa000; }
+
+/* Placeholder thumbnails */
+.thumb.placeholder { opacity: 0.3; cursor: default; }
+.thumb.placeholder .thumb-label { display: none; }
+
+/* Reserve space for progress to avoid layout shift */
+#progress-bar-container {
+  min-height: 28px;
+}
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
@@ -178,8 +219,8 @@ body {
 }
 
 .header h1 {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem 0;
+  font-size: 3rem;
+  margin: 0 0 3rem 0;
 }
 
 #generate-btn {
