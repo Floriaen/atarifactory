@@ -10,7 +10,13 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { PromptTemplate } from '@langchain/core/prompts';
+import {
+  PromptTemplate,
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+} from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import logger from './logger.js';
@@ -180,6 +186,131 @@ export async function createStandardChain(options) {
 
   } catch (error) {
     handleChainError(error, chainName, { promptFile, inputVariables });
+  }
+}
+
+/**
+ * Creates a chat-based chain preserving system/human roles
+ * @param {Object} options - Chat chain configuration
+ * @returns {Promise<Object>} Configured chat chain instance
+ */
+export async function createChatChain(options) {
+  const {
+    chainName,
+    systemFile,
+    humanFile,
+    inputVariables = [],
+    schema,
+    preset = 'structured',
+    llm: customLLM,
+    sharedState,
+    enableLogging = true,
+  } = options;
+
+  if (!chainName) {
+    throw new Error('Chain name is required for chat chain creation');
+  }
+
+  try {
+    const systemPath = path.join(__dirname, '../agents/prompts', systemFile);
+    const humanPath = path.join(__dirname, '../agents/prompts', humanFile);
+    const [systemString, humanString] = await Promise.all([
+      fs.readFile(systemPath, 'utf8'),
+      fs.readFile(humanPath, 'utf8'),
+    ]);
+
+    if (enableLogging) {
+      logger.debug('Loaded chat prompts from files', { chainName, systemFile, humanFile });
+    }
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      SystemMessagePromptTemplate.fromTemplate(systemString),
+      HumanMessagePromptTemplate.fromTemplate(humanString),
+    ]);
+
+    let baseLLM = customLLM;
+    if (!baseLLM) {
+      const presetConfig = getPresetConfig(preset);
+      baseLLM = createStandardLLM(presetConfig);
+    }
+
+    const configuredLLM = schema ? baseLLM.withStructuredOutput(schema) : baseLLM;
+
+    let finalLLM = configuredLLM;
+    if (sharedState && typeof configuredLLM.withConfig === 'function') {
+      const tokenCallback = createTokenCountingCallback(sharedState, chainName);
+      finalLLM = configuredLLM.withConfig({ callbacks: [tokenCallback] });
+    }
+
+    const chainConfig = createChainConfig(chainName, {
+      callbacks: [{
+        handleLLMEnd: () => {
+          if (enableLogging) {
+            logger.debug('LLM response received', { chainName });
+          }
+        },
+      }],
+    });
+
+    const parser = new StringOutputParser({ parse: (text) => text.trim() });
+    const baseChain = prompt
+      .pipe(finalLLM)
+      .withConfig(chainConfig)
+      .pipe(parser);
+
+    return {
+      async invoke(input) {
+        try {
+          if (!input || typeof input !== 'object' || inputVariables.some((v) => !(v in input))) {
+            throw new Error(`Input must be an object with required fields: ${inputVariables.join(', ')}`);
+          }
+          const startedAt = Date.now();
+          let hydratedPrompt = null;
+          try {
+            hydratedPrompt = await new Promise((resolve) => {
+              try {
+                const msgs = prompt.formatMessages ? prompt.formatMessages(input) : [];
+                resolve(msgs.map((m) => `${m._getType()}: ${m.content}`).join('\n\n'));
+              } catch {
+                resolve(null);
+              }
+            });
+          } catch {}
+          const tokenBefore = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
+          if (enableLogging) {
+            logger.debug('Chain invoking with input', { chainName, input });
+          }
+          const result = await baseChain.invoke(input);
+          const durationMs = Date.now() - startedAt;
+          const tokenAfter = sharedState && typeof sharedState.tokenCount === 'number' ? sharedState.tokenCount : undefined;
+          const tokenDelta = typeof tokenBefore === 'number' && typeof tokenAfter === 'number' ? tokenAfter - tokenBefore : undefined;
+          if (process.env.ENABLE_DEV_TRACE === '1') {
+            const traceId = (input && input.traceId) || (sharedState && sharedState.traceId) || undefined;
+            const outputFull = typeof result === 'string' ? result : (() => { try { return JSON.stringify(result); } catch { return String(result); } })();
+            const promptFull = hydratedPrompt != null ? String(hydratedPrompt) : null;
+            addLlmTrace({
+              chain: chainName,
+              phase: chainName.includes('Planner') ? 'planning' : (chainName.includes('ContextStep') ? 'coding' : undefined),
+              model: process.env.OPENAI_MODEL || 'unknown',
+              durationMs,
+              inputVars: inputVariables,
+              hydratedPrompt: promptFull,
+              output: outputFull,
+              tokenDelta,
+              traceId,
+            });
+          }
+          if (enableLogging) {
+            logger.debug('Chain successfully completed', { chainName });
+          }
+          return result;
+        } catch (error) {
+          handleChainError(error, chainName, { input });
+        }
+      },
+    };
+  } catch (error) {
+    handleChainError(error, chainName, { systemFile, humanFile, inputVariables });
   }
 }
 
