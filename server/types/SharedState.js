@@ -52,7 +52,16 @@ const SharedStateSchema = z.object({
   gameSource: z.string(),
   syntaxResult: z.any().nullable(),
   feedback: z.any().nullable(),
-  tokenCount: z.number()
+  tokenCount: z.number(),
+  // New aggregated token counters (provider-reported)
+  promptTokens: z.number().optional().default(0),
+  completionTokens: z.number().optional().default(0),
+  // Optional per-model breakdown
+  modelTotals: z.record(z.object({
+    prompt: z.number().optional().default(0),
+    completion: z.number().optional().default(0),
+    total: z.number().optional().default(0)
+  })).optional().default({})
 });
 
 /**
@@ -77,6 +86,9 @@ function createSharedState(init = {}) {
     syntaxResult: null,
     feedback: null,
     tokenCount: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    modelTotals: {},
     ...init
   });
 }

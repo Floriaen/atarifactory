@@ -7,6 +7,7 @@ import { runArtPipeline } from './artPipeline.js';
 import { runCodingPipeline } from './codingPipeline.js';
 import { ProgressionManager } from '../../utils/progress/ProgressionManager.js';
 import logger, { statusLogger } from '../../utils/logger.js';
+import { computeCostTotals } from '../../utils/costing.js';
 
 // Accepts a fully-formed sharedState object. Always runs both planning and coding pipelines.
 // Sub-pipelines emit only local progress (0–1); orchestrator maps to unified progress for frontend.
@@ -87,6 +88,16 @@ async function runModularGameSpecPipeline(sharedState) {
   // Run coding pipeline (runCodingPipeline is now imported at the top)
   await runCodingPipeline(sharedState, orchestratorOnStatusUpdate);
   logger.debug('SharedState after coding', { sharedState });
+
+  // Emit cost summary using provider-reported tokens
+  try {
+    const cost = computeCostTotals(sharedState);
+    const payload = { type: 'CostSummary', ...cost, timestamp: new Date().toISOString() };
+    statusLogger.info('CostSummary', payload);
+    if (frontendOnStatusUpdate) frontendOnStatusUpdate('CostSummary', payload);
+  } catch (e) {
+    logger.warn('CostSummary computation failed', { error: e?.message });
+  }
 
   // Ensure a final PipelineStatus event with progress=1.0 is always emitted
   if (frontendOnStatusUpdate) {
