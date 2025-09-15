@@ -69,20 +69,14 @@ async function runPipeline(title, onStatusUpdate) {
     const gameName = gameDef?.title || gameDef?.name || title;
 
     try {
-      const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
-      
+      const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');   
       // Write game.js
       fs.writeFileSync(path.join(gameFolder, 'game.js'), cleanCode, 'utf8');
-      
       // Copy control bar assets
       fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.js'), path.join(gameFolder, 'controlBar.js'));
       fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.css'), path.join(gameFolder, 'controlBar.css'));
-      // Copy sprite helpers
-      try {
-        fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'sprites', 'sprites.js'), path.join(gameFolder, 'sprites.js'));
-      } catch (e) {
-        logger.warn('sprites.js not copied', { error: e?.message });
-      }
+      // Copy sprite helper
+      fs.copyFileSync(path.join(__dirname, 'gameBoilerplate', 'sprites', 'sprites.js'), path.join(gameFolder, 'sprites.js'));
 
       // Read the boilerplate template
       const boilerplatePath = path.join(__dirname, 'gameBoilerplate', 'game.html');
@@ -95,6 +89,28 @@ async function runPipeline(title, onStatusUpdate) {
         .replace('{{gameId}}', gameId)
         .replace('{{controlBarHTML}}', fs.readFileSync(path.join(__dirname, 'gameBoilerplate', 'controlBar', 'controlBar.html'), 'utf8'));
       fs.writeFileSync(path.join(gameFolder, 'index.html'), html, 'utf8');
+
+      // Enforce LLM-generated background: persist background.js and fail if missing (except in MOCK_PIPELINE)
+      try {
+        const bgCode = sharedState?.backgroundCode;
+        if (typeof bgCode === 'string' && bgCode.trim().length > 0) {
+          const cleanBg = bgCode.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+          fs.writeFileSync(path.join(gameFolder, 'background.js'), cleanBg, 'utf8');
+        } else {
+          if (process.env.MOCK_PIPELINE === '1') {
+            // In mock mode, skip strict requirement
+          } else {
+            throw new Error('backgroundCode missing');
+          }
+        }
+      } catch (e) {
+        logger.error('Background generation required but missing', { error: e?.message });
+        if (process.env.MOCK_PIPELINE === '1') {
+          // Continue in mock mode
+        } else {
+          throw e;
+        }
+      }
 
       // Art pipeline: ensure sprites pack (fail hard on errors)
       if (Array.isArray(gameDef?.entities) && gameDef.entities.length > 0) {

@@ -3,6 +3,7 @@ import { createContextStepBuilderChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } fr
 import { createFeedbackChain, CHAIN_STATUS as FEEDBACK_STATUS } from '../chains/FeedbackChain.js';
 import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '../chains/StaticCheckerChain.js';
 import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerAgent.js';
+import { createBackgroundCodeChain, CHAIN_STATUS as BACKGROUND_CODE_STATUS } from '../chains/coding/BackgroundCodeChain.js';
 // Token estimation no longer needed - handled automatically by chains
 import { ChatOpenAI } from '@langchain/openai';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
@@ -41,18 +42,38 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
     planStep: step
   }));
 
-  // Define fixed steps (40% of coding phase)
+  // Define fixed steps (place Background Code first so it shows in progress/logs)
   const fixedSteps = [
+    { ...BACKGROUND_CODE_STATUS, weight: 0.1 },
     { ...FEEDBACK_STATUS, weight: 0.1 },
     { ...STATIC_CHECKER_STATUS, weight: 0.1 },
     { ...CONTROL_BAR_STATUS, weight: 0.1 },
     { name: 'Testing', label: 'Testing', description: 'Final validation', weight: 0.1, category: 'coding' }
   ];
 
-  // Add all steps to tracker
-  tracker.addSteps([...dynamicSteps, ...fixedSteps]);
+  // Add all steps to tracker (Background Code appears before plan steps in progress)
+  tracker.addSteps([ ...fixedSteps.slice(0,1), ...dynamicSteps, ...fixedSteps.slice(1) ]);
 
-  // 1. Context Step Builder (iterate over all steps)
+  // 1. Background code (optional in MOCK, required otherwise). Run as a tracked step for visibility.
+  await tracker.executeStep(async () => {
+    if (process.env.MOCK_PIPELINE === '1') return { skipped: true };
+    const bgChain = await createBackgroundCodeChain(llm, { sharedState });
+    const gd = sharedState.gameDef || {};
+    const context = {
+      title: gd.title || gd.name || 'Untitled',
+      description: gd.description || gd.pitch || '',
+      mechanics: gd.mechanics || [],
+      entities: gd.entities || [],
+      winCondition: gd.winCondition || ''
+    };
+    const out = await bgChain.invoke({ context });
+    if (out && typeof out.code === 'string' && out.code.length > 0) {
+      sharedState.backgroundCode = out.code;
+    }
+    return out;
+  }, BACKGROUND_CODE_STATUS, { sharedState, llm });
+
+  // 2. Context Step Builder (iterate over all steps)
   let contextStepBuilderChain;
   if (process.env.MOCK_PIPELINE === '1') {
     contextStepBuilderChain = {
