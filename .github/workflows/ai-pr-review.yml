@@ -1,0 +1,36 @@
+name: AI PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.png"
+      - "**/*.jpg"
+      - "docs/**"
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: AI code review
+        uses: mktcode/openai-code-review@v1
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          system_message: |
+            You are a senior reviewer. Provide specific, actionable comments.
+            Flag correctness, security, performance, readability, tests, and APIs.
+            Prefer inline suggestions when possible.
+          exclude: |
+            **/*.lock
+            **/dist/**
+            **/build/**
+          max_files: 80
+          max_tokens: 120000
