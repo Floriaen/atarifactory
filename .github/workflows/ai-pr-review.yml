@@ -7,12 +7,13 @@ on:
       - "**/*.png"
       - "**/*.jpg"
       - "docs/**"
-permissions:
-  contents: read
-  pull-requests: write
+
 jobs:
   review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout (shallow)
         uses: actions/checkout@v4
@@ -20,7 +21,7 @@ jobs:
           fetch-depth: 2
 
       - name: AI code review
-        uses: mktcode/openai-code-review@v1
+        uses: mktcode/openai-pr-review@v1
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
@@ -33,4 +34,4 @@ jobs:
             **/dist/**
             **/build/**
           max_files: 80
-          max_tokens: 120000
+          max_tokens: 60000   # safer value
