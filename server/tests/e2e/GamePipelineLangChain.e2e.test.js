@@ -62,11 +62,42 @@ vi.mock('../../agents/chains/design/FinalAssemblerChain.js', () => ({
 }));
 
 // Mock LLMs to prevent network calls
-vi.mock('@langchain/openai', () => ({
-  ChatOpenAI: vi.fn().mockImplementation(() => ({
-    invoke: vi.fn().mockResolvedValue({ content: 'Mocked LLM output.' })
-  }))
-}));
+vi.mock('@langchain/openai', () => {
+  const structuredBackground = {
+    fileName: 'background.js',
+    code: `(() => {
+  window.Background = window.Background || {};
+  window.Background.createBackground = () => ({
+    update() {},
+    draw(ctx) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 10, 10);
+    }
+  });
+})();`,
+    notes: 'Mock structured background response'
+  };
+
+  class MockChatOpenAI {
+    constructor() {
+      this.invoke = vi.fn().mockResolvedValue({ content: 'Mocked LLM output.' });
+    }
+
+    withStructuredOutput() {
+      const structuredInvoke = vi.fn().mockResolvedValue(structuredBackground);
+      return {
+        invoke: structuredInvoke,
+        withConfig: vi.fn().mockReturnValue({ invoke: structuredInvoke })
+      };
+    }
+
+    withConfig() {
+      return { invoke: this.invoke };
+    }
+  }
+
+  return { ChatOpenAI: MockChatOpenAI };
+});
 vi.mock('../../agents/chains/PlayabilityValidatorChain', () => ({
   createPlayabilityValidatorChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ isPlayable: false, suggestion: 'Add a win condition.' })

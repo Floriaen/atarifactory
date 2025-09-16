@@ -171,3 +171,13 @@ export const spriteDslSchema = z.object({
   frames: z.array(z.object({ ops: z.array(z.string().min(1)) })).min(1).max(3),
   meta: z.object({ entity: z.string().min(1) })
 });
+
+/**
+ * BackgroundCodeChain output schema
+ * Generates per-game background.js code
+ */
+export const backgroundCodeSchema = z.object({
+  fileName: z.string().default('background.js'),
+  code: z.string().min(20, 'Background code is required'),
+  notes: z.string().default('')
+});
