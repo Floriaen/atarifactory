@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 2
 
       - name: AI code review
-        uses: mktcode/openai-pr-review@v1
+        uses: sshnaidm/gpt-code-review-action
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
