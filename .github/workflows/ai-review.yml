@@ -1,4 +1,5 @@
 name: AI Code Review
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -8,47 +9,79 @@ permissions:
   pull-requests: write
 
 env:
-  OPENAI_MODEL: gpt-4.1-mini  # change to o4-mini (or your preferred) if you want deeper reasoning
+  OPENAI_MODEL: gpt-4.1-mini   # change to o4-mini or gpt-4o as desired
 
 jobs:
   review:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 2 }
 
-      - name: Collect PR diff (unified=0 for precise lines)
+    steps:
+      - name: Checkout base + head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Ensure core utilities
+        run: |
+          if ! command -v split >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y coreutils
+          fi
+
+      - name: Collect PR diff
+        id: diff
         run: |
           git fetch origin "${{ github.base_ref }}"
           git diff --unified=0 "origin/${{ github.base_ref }}"..."${{ github.sha }}" > pr.diff
-          wc -c pr.diff || true
+          bytes=$(wc -c < pr.diff)
+          echo "Diff size: $bytes bytes"
+          if [ "$bytes" -eq 0 ]; then
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Split diff into manageable chunks
+        if: steps.diff.outputs.has_diff == 'true'
         run: |
-          # Split at ~80k bytes per chunk to stay comfortably under token limits
+          # Split at ~80k bytes per chunk to stay well under token limits
           split -b 80000 -d -a 3 pr.diff chunk_
           ls -l chunk_* || true
 
       - name: Review each chunk with OpenAI
         id: review
+        if: steps.diff.outputs.has_diff == 'true'
+        shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ env.OPENAI_MODEL }}
         run: |
-          PROMPT_HEADER=$'You are a senior code reviewer. Review this PR diff for:\n'\
-          $'- correctness (logic, edge cases)\n'\
-          $'- security (inputs, secrets, injections)\n'\
-          $'- performance (complexity, allocations, hotspots)\n'\
-          $'- tests (coverage, missing cases)\n'\
-          $'- readability & API design\n\n'\
-          $'Be specific. Use bullet points. Reference filenames and line numbers from the diff hunks.\n'\
-          $'Only comment on what you see. If something is fine, be brief. Temperature=0.\n'
+          set -euo pipefail
+          shopt -s nullglob
 
-          echo "" > review_full.md
+          PROMPT_HEADER=$(cat <<'PROMPT'
+You are a senior code reviewer. Review this PR diff for:
+- correctness (logic, edge cases)
+- security (inputs, secrets, injections)
+- performance (complexity, allocations, hotspots)
+- tests (coverage, missing cases)
+- readability & API design
 
-          for f in $(ls -1 chunk_* 2>/dev/null || true); do
-            DIFF=$(sed "s/`/\\\`/g" "$f")
-            BODY=$(jq -nc --arg model "$OPENAI_MODEL" --arg diff "$DIFF" --arg hdr "$PROMPT_HEADER" '
+Be specific. Use bullet points. Reference filenames and line numbers from the diff hunks.
+Only comment on what you see. Be brief when things look fine. Temperature=0.
+PROMPT
+)
+
+          truncate -s 0 review_full.md
+          created=false
+
+          for f in chunk_*; do
+            # Build JSON body safely (jq rawfile escapes the diff)
+            BODY=$(jq -n \
+              --arg model "$OPENAI_MODEL" \
+              --arg hdr "$PROMPT_HEADER" \
+              --rawfile diff "$f" '
               {
                 model: $model,
                 temperature: 0,
@@ -60,20 +93,27 @@ jobs:
                 ]
               }')
 
-            RESP=$(curl -s https://api.openai.com/v1/responses \
-              -H "Authorization: Bearer '$OPENAI_API_KEY'" \
+            RESP=$(curl -sS https://api.openai.com/v1/responses \
+              -H "Authorization: Bearer $OPENAI_API_KEY" \
               -H "Content-Type: application/json" \
               -d "$BODY" | jq -r '.output[0].content[0].text // ""')
 
-            printf "\n\n### Review for %s\n\n%s\n" "$f" "$RESP" >> review_full.md
+            if [ -n "$(echo "$RESP" | tr -d '[:space:]')" ]; then
+              printf "\n\n### Review for %s\n\n%s\n" "$f" "$RESP" >> review_full.md
+              created=true
+            fi
           done
 
-          echo "created=true" >> $GITHUB_OUTPUT
+          echo "created=$created" >> "$GITHUB_OUTPUT"
 
-      - name: Post PR comment with GH CLI
+      - name: No diff to review
+        if: steps.diff.outputs.has_diff != 'true'
+        run: echo "No diff content detected; skipping AI review."
+
+      - name: Post PR comment
         if: steps.review.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUM="${{ github.event.pull_request.number }}"
-          gh pr comment "$PR_NUM" --body-file review_full.md
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body-file review_full.md
