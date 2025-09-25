@@ -46,13 +46,21 @@ export function createStandardLLM(options = {}) {
   const mergedOptions = preset ? { ...preset, ...options } : options;
 
   const resolvedModel = (() => {
+    const aliasModels = {
+      default: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.default,
+      creative: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.creative,
+      precise: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.precise
+    };
+
     if (typeof mergedOptions.model === 'string') {
-      if (LANGCHAIN_CONFIG.models[mergedOptions.model]) {
-        return LANGCHAIN_CONFIG.models[mergedOptions.model];
+      const aliasValue = aliasModels[mergedOptions.model];
+      if (aliasValue) {
+        return aliasValue;
       }
       return mergedOptions.model;
     }
-    return LANGCHAIN_CONFIG.models.default;
+
+    return aliasModels.default;
   })();
 
   const resolvedTemperature = (() => {

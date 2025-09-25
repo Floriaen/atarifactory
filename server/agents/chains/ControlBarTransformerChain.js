@@ -19,10 +19,12 @@ export const CHAIN_STATUS = {
  */
 async function createControlBarTransformerChain(llm, options = {}) {
   const { sharedState } = options;
+  const timeoutMs = Number(process.env.CONTROL_BAR_TIMEOUT_MS || 60000);
   const resolvedLLM = llm || createEnhancedLLM({
     ...getPresetConfig('creative'),
     sharedState,
-    chainName: CHAIN_STATUS.name
+    chainName: CHAIN_STATUS.name,
+    timeout: timeoutMs
   });
 
   return await createStandardChain({
