@@ -5,7 +5,7 @@ import fs from 'fs';
 
 const GAME_SOURCE_PATH = '../fixtures/generated-game.js';
 
-// Only run if OPENAI_API_KEY is set
+// Only run if explicitly enabled and API key is present
 const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
 const shouldRun = RUN_OPENAI && hasOpenAIKey;
