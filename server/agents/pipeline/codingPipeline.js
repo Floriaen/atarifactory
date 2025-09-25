@@ -5,7 +5,7 @@ import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '
 import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerAgent.js';
 import { createBackgroundCodeChain, CHAIN_STATUS as BACKGROUND_CODE_STATUS } from '../chains/coding/BackgroundCodeChain.js';
 // Token estimation no longer needed - handled automatically by chains
-import { ChatOpenAI } from '@langchain/openai';
+import { createEnhancedLLM, getPresetConfig } from '../../config/langchain.config.js';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
 import { CODING_PHASE } from '../../config/pipeline.config.js';
 import fs from 'fs';
@@ -25,7 +25,11 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
     if (!openaiModel) {
       throw new Error('OPENAI_MODEL environment variable must be set');
     }
-    llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+    llm = createEnhancedLLM({
+      ...getPresetConfig('structured'),
+      sharedState,
+      chainName: 'CodingPipeline.Core'
+    });
   }
   
   // Token counting is handled automatically by individual chains
