@@ -27,16 +27,16 @@ Focus: address the three highest-priority technical debt items impacting code qu
   4. Document the convention in `docs/` so new chains follow the same pattern.
 
 ## 3. Align Control Bar Transformer with Chain Conventions
-- **Issue**: `ControlBarTransformerAgent` still follows an agent naming pattern and expects the caller to supply an LLM. Because `codingPipeline` injects a zero-temperature LLM, the chain’s `preset: 'creative'` never gets applied, reducing transformation quality.
+- **Issue**: `ControlBarTransformerChain` should follow the chain naming pattern and make its own creative-preset LLM by default, rather than depending on an injected zero-temperature model that weakens transformations.
 - **Goals**:
-  - Rename the module/export to `ControlBarTransformerChain` and align file/prompt naming.
+  - Keep the module/export as `ControlBarTransformerChain` with aligned file/prompt naming.
   - Let the chain construct its own creative-preset LLM by default while still supporting dependency injection for tests.
   - Keep compatibility with existing tests and pipeline hooks.
 - **Plan**:
-  1. Rename files/exports (`ControlBarTransformerAgent.js` → `ControlBarTransformerChain.js`) and update imports across pipelines and tests.
-  2. Adjust the factory so it calls `createStandardChain` without requiring an external LLM, defaulting to the creative preset when none is provided.
-  3. Update `runCodingPipeline` to stop overriding the LLM unless running in mock mode, ensuring the creative preset is in effect.
-  4. Refresh unit tests to use the new name and verify that, without an injected LLM, the chain still runs using the creative configuration.
+  1. Ensure files/exports (`ControlBarTransformerChain.js`, prompt, tests) remain aligned with the chain convention.
+  2. Use the centralized LLM helpers so the chain defaults to the creative preset when no LLM is injected.
+  3. Keep `runCodingPipeline` from overriding the creative preset during normal execution, while preserving mock support.
+  4. Maintain unit/integration tests to prove the chain still accepts injected mocks and works without them.
 
 ---
 **Next Steps**

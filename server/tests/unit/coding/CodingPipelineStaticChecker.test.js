@@ -15,7 +15,7 @@ vi.mock('../../../agents/chains/StaticCheckerChain.js', () => ({
 
 const transformGameCodeWithLLMMock = vi.fn(async (sharedState) => sharedState.gameSource);
 
-vi.mock('../../../agents/chains/ControlBarTransformerAgent.js', () => ({
+vi.mock('../../../agents/chains/ControlBarTransformerChain.js', () => ({
   CHAIN_STATUS: {
     name: 'ControlBarTransformerChain',
     label: 'Control Bar Transform',
