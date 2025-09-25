@@ -6,11 +6,11 @@ dotenv.config();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL;
-if (!OPENAI_MODEL) {
-  throw new Error('OPENAI_MODEL must be set in your .env file');
-}
+const shouldRun = Boolean(OPENAI_API_KEY && OPENAI_MODEL);
 
-describe('EntityListBuilderChain integration (ChatOpenAI)', () => {
+const maybeDescribe = shouldRun ? describe : describe.skip;
+
+maybeDescribe('EntityListBuilderChain integration (ChatOpenAI)', () => {
   it('extracts entities from a real LLM', async () => {
     const llm = new ChatOpenAI({
       openAIApiKey: OPENAI_API_KEY,

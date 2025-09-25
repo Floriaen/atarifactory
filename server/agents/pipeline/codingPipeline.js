@@ -84,7 +84,8 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   }
   
   // Seed with minimal scaffold for first step
-  let accumulatedCode = '';
+  let accumulatedCode = typeof sharedState.gameSource === 'string' ? sharedState.gameSource : '';
+  let lastStepCode = accumulatedCode;
   let allStepContexts = [];
 
   // Execute each plan step using the tracker
@@ -117,6 +118,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       } else if (contextStepsOut && contextStepsOut.code) {
         accumulatedCode = contextStepsOut.code;
       }
+      lastStepCode = accumulatedCode;
       allStepContexts.push(contextStepsOut.contextSteps || contextStepsOut);
 
       return contextStepsOut;
@@ -125,6 +127,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   
   sharedState.contextSteps = allStepContexts;
   sharedState.gameSource = accumulatedCode.trim();
+  lastStepCode = sharedState.gameSource;
 
   // Warn-only checks: ensure generated code likely includes controls and win/lose indicators if plan suggested them
   try {
@@ -181,7 +184,26 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   // 3. Static Checker
   const staticCheckerOut = await tracker.executeStep(async () => {
-    return await staticCheckerRun({ currentCode: '{}', stepCode: '{}' });
+    const currentCode = typeof sharedState.gameSource === 'string' && sharedState.gameSource.length > 0
+      ? sharedState.gameSource
+      : accumulatedCode;
+    const stepCode = lastStepCode && lastStepCode.length > 0 ? lastStepCode : currentCode;
+
+    const result = await staticCheckerRun({
+      currentCode,
+      stepCode,
+      logger,
+      traceId: sharedState.traceId || 'coding-static-check'
+    });
+
+    sharedState.staticCheckPassed = result.staticCheckPassed;
+    sharedState.staticCheckErrors = result.errors;
+
+    if (!result.staticCheckPassed) {
+      logger.error('Static checker detected issues', { errors: result.errors });
+    }
+
+    return result;
   }, STATIC_CHECKER_STATUS, { sharedState, llm });
 
   sharedState.staticCheckPassed = staticCheckerOut.staticCheckPassed;
