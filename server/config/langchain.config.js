@@ -89,13 +89,30 @@ export function createStandardLLM(options = {}) {
     return LANGCHAIN_CONFIG.maxTokens.default;
   })();
 
+  let finalTemperature = resolvedTemperature;
+  if (typeof resolvedModel === 'string') {
+    const lowerModel = resolvedModel.toLowerCase();
+    if (/gpt-5\.0-mini|gpt-5-mini/.test(lowerModel)) {
+      finalTemperature = 1;
+    }
+  }
+
   const config = {
     model: resolvedModel,
-    temperature: resolvedTemperature,
-    maxTokens: resolvedMaxTokens,
+    temperature: finalTemperature,
     timeout: mergedOptions.timeout || LANGCHAIN_CONFIG.timeout,
     openAIApiKey: process.env.OPENAI_API_KEY
   };
+
+  if (typeof resolvedMaxTokens === 'number') {
+    const modelName = typeof resolvedModel === 'string' ? resolvedModel.toLowerCase() : '';
+    const prefersMaxOutputTokens = /gpt-5|5\.0|mini/.test(modelName);
+    if (prefersMaxOutputTokens) {
+      config.maxOutputTokens = resolvedMaxTokens;
+    } else {
+      config.maxTokens = resolvedMaxTokens;
+    }
+  }
 
   if (Array.isArray(mergedOptions.callbacks) && mergedOptions.callbacks.length > 0) {
     config.callbacks = mergedOptions.callbacks;
