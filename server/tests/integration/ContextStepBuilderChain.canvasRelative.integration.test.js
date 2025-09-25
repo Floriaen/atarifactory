@@ -1,10 +1,12 @@
 import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 
-// Only run if OPENAI_API_KEY is set
+// Only run if explicitly enabled and API key is present
+const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+const maybeTest = RUN_OPENAI && hasOpenAIKey ? test : test.skip;
 
-(hasOpenAIKey ? test : test.skip)('StepBuilder generates complete game code', async () => {
+maybeTest('StepBuilder generates complete game code', async () => {
   const llm = new ChatOpenAI({ 
     model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
     temperature: 0.1

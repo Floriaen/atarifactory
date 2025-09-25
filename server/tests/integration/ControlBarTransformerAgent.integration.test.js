@@ -6,9 +6,11 @@ import fs from 'fs';
 const GAME_SOURCE_PATH = '../fixtures/generated-game.js';
 
 // Only run if OPENAI_API_KEY is set
+const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
 const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+const shouldRun = RUN_OPENAI && hasOpenAIKey;
 
-(hasOpenAIKey ? describe : describe.skip)('ControlBarTransformerChain [integration]', () => {
+(shouldRun ? describe : describe.skip)('ControlBarTransformerChain [integration]', () => {
   it('transforms a real game.js to use only control bar input (LLM)', async () => {
     const gameSource = fs.readFileSync(new URL(GAME_SOURCE_PATH, import.meta.url), 'utf8');
     const llm = new ChatOpenAI({ model: process.env.OPENAI_MODEL, temperature: 0 });

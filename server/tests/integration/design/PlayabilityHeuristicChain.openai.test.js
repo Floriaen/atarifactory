@@ -6,7 +6,8 @@ dotenv.config();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL;
-const shouldRun = Boolean(OPENAI_API_KEY && OPENAI_MODEL);
+const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
+const shouldRun = Boolean(RUN_OPENAI && OPENAI_API_KEY && OPENAI_MODEL);
 
 const maybeDescribe = shouldRun ? describe : describe.skip;
 
