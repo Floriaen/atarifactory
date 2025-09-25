@@ -87,6 +87,12 @@ PlannerChain → ContextStepBuilderChain (×N) → FeedbackChain → StaticCheck
 4. Add comprehensive tests (unit + integration)
 5. Follow async/await patterns throughout
 
+### Guardrails & Fallback Policy
+
+- Do **not** add defensive fallbacks that hide invalid inputs, empty outputs, or other regressions inside this codebase. Let failures surface so the pipeline breaks fast and tests can expose the issue.
+- Guard clauses are only acceptable when we interact with external systems we do not control (e.g., network responses, third-party libraries). For internal modules, prefer explicit errors over silent recovery.
+- If you encounter code that depends on a guardrail, update the caller/tests instead of adding new safety nets.
+
 **Example chain structure:**
 ```javascript
 import { createStandardChain } from '../../../utils/chainFactory.js';

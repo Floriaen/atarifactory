@@ -74,7 +74,7 @@ server/
 - `ContextStepBuilderChain.js` - Implements individual plan steps
 - `FeedbackChain.js` - Provides improvement feedback
 - `PlayabilityValidatorChain.js` - Validates game playability
-- `ControlBarTransformerAgent.js` - Transforms input to control bar
+- `ControlBarTransformerChain.js` - Transforms input to control bar
  - `art/SpriteMaskGenerator.js` - Sprite design agent (LLM→DSL→mask)
 
 #### **Pipeline Integration** (`server/agents/chains/design/`)
@@ -122,7 +122,7 @@ server/tests/
 | `ContextStepBuilderChain.js` | Code generation | Plan step + context | Updated game code | ⚠️ Careful |
 | `FeedbackChain.js` | Improvement suggestions | Error/failure info | Feedback object | ✅ Safe |
 | `PlayabilityValidatorChain.js` | Playability validation | Game definition | Validation result | ✅ Safe |
-| `ControlBarTransformerAgent.js` | Input transformation | Game source code | Transformed code | ✅ Safe |
+| `ControlBarTransformerChain.js` | Input transformation | Game source code | Transformed code | ✅ Safe |
 
 ### **`server/agents/chains/design/`**
 | File | Purpose | Input | Output | Modification Safety |

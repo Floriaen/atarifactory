@@ -19,14 +19,7 @@ async function run({ currentCode, stepCode, logger = console, traceId = 'test' }
     const eslint = new ESLint({
       overrideConfig: pipelineConfig
     });
-    const results = await eslint.lintText(stepCode);
-    if (!results || !Array.isArray(results) || results.length === 0) {
-      logger.warn('StaticCheckerChain: No ESLint results returned', { traceId });
-      return {
-        staticCheckPassed: true,
-        errors: []
-      };
-    }
+    const results = await eslint.lintText(stepCode, { filePath: 'game.js' });
     const errors = results[0].messages.map(message => ({
       line: message.line,
       column: message.column,

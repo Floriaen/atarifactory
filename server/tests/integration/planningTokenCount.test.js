@@ -3,6 +3,10 @@ import { createSharedState } from '../../types/SharedState.js';
 import { createGameDesignChain } from '../../agents/chains/design/GameDesignChain.js';
 import { PLANNING_PHASE } from '../../config/pipeline.config.js';
 
+const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
+const OPENAI_KEY_PRESENT = Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL);
+const maybeDescribe = RUN_OPENAI && OPENAI_KEY_PRESENT ? describe : describe.skip;
+
 // Minimal mockLLM for token counting test
 const mockLLM = {
   invoke: async () => ({ idea: 'Test Game', gameDef: { name: 'Test Game', mechanics: ['move'], winCondition: 'Do something', entities: ['player'] } }),
@@ -71,7 +75,7 @@ const mockLLM = {
   }
 };
 
-describe('Planning Pipeline Token Counting', () => {
+maybeDescribe('Planning Pipeline Token Counting', () => {
   it('should increment token count in sharedState and emit updates (planning pipeline)', async () => {
     const tokenCounts = [];
     const onStatusUpdate = (type, data) => {

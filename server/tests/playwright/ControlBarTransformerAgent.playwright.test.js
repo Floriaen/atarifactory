@@ -1,7 +1,7 @@
 // Playwright integration test: ensures all controlBar actions work after transformation
 import 'dotenv/config';
 import { test, expect } from '@playwright/test';
-import { transformGameCodeWithLLM } from '../../agents/chains/ControlBarTransformerAgent.js';
+import { transformGameCodeWithLLM } from '../../agents/chains/ControlBarTransformerChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs/promises';
 import path from 'path';

@@ -2,10 +2,10 @@
 import { createContextStepBuilderChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } from '../chains/ContextStepBuilderChain.js';
 import { createFeedbackChain, CHAIN_STATUS as FEEDBACK_STATUS } from '../chains/FeedbackChain.js';
 import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '../chains/StaticCheckerChain.js';
-import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerAgent.js';
+import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerChain.js';
 import { createBackgroundCodeChain, CHAIN_STATUS as BACKGROUND_CODE_STATUS } from '../chains/coding/BackgroundCodeChain.js';
 // Token estimation no longer needed - handled automatically by chains
-import { ChatOpenAI } from '@langchain/openai';
+import { createEnhancedLLM, getPresetConfig } from '../../config/langchain.config.js';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
 import { CODING_PHASE } from '../../config/pipeline.config.js';
 import fs from 'fs';
@@ -25,7 +25,11 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
     if (!openaiModel) {
       throw new Error('OPENAI_MODEL environment variable must be set');
     }
-    llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
+    llm = createEnhancedLLM({
+      ...getPresetConfig('structured'),
+      sharedState,
+      chainName: 'CodingPipeline.Core'
+    });
   }
   
   // Token counting is handled automatically by individual chains
@@ -84,7 +88,8 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   }
   
   // Seed with minimal scaffold for first step
-  let accumulatedCode = '';
+  let accumulatedCode = typeof sharedState.gameSource === 'string' ? sharedState.gameSource : '';
+  let lastStepCode = accumulatedCode;
   let allStepContexts = [];
 
   // Execute each plan step using the tracker
@@ -117,6 +122,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       } else if (contextStepsOut && contextStepsOut.code) {
         accumulatedCode = contextStepsOut.code;
       }
+      lastStepCode = accumulatedCode;
       allStepContexts.push(contextStepsOut.contextSteps || contextStepsOut);
 
       return contextStepsOut;
@@ -125,6 +131,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   
   sharedState.contextSteps = allStepContexts;
   sharedState.gameSource = accumulatedCode.trim();
+  lastStepCode = sharedState.gameSource;
 
   // Warn-only checks: ensure generated code likely includes controls and win/lose indicators if plan suggested them
   try {
@@ -181,7 +188,26 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
 
   // 3. Static Checker
   const staticCheckerOut = await tracker.executeStep(async () => {
-    return await staticCheckerRun({ currentCode: '{}', stepCode: '{}' });
+    const currentCode = typeof sharedState.gameSource === 'string' && sharedState.gameSource.length > 0
+      ? sharedState.gameSource
+      : accumulatedCode;
+    const stepCode = lastStepCode && lastStepCode.length > 0 ? lastStepCode : currentCode;
+
+    const result = await staticCheckerRun({
+      currentCode,
+      stepCode,
+      logger,
+      traceId: sharedState.traceId || 'coding-static-check'
+    });
+
+    sharedState.staticCheckPassed = result.staticCheckPassed;
+    sharedState.staticCheckErrors = result.errors;
+
+    if (!result.staticCheckPassed) {
+      logger.error('Static checker detected issues', { errors: result.errors });
+    }
+
+    return result;
   }, STATIC_CHECKER_STATUS, { sharedState, llm });
 
   sharedState.staticCheckPassed = staticCheckerOut.staticCheckPassed;
@@ -191,7 +217,8 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
   await tracker.executeStep(async () => {
     try {
       logger.info('Transforming code to use control bar only input');
-      sharedState.gameSource = await transformGameCodeWithLLM(sharedState, llm);
+      const controlBarLLM = process.env.MOCK_PIPELINE === '1' ? llm : undefined;
+      sharedState.gameSource = await transformGameCodeWithLLM(sharedState, controlBarLLM);
       logger.info('Successfully transformed code to use control bar only input');
       sharedState.logs = ['Pipeline executed', 'Control bar input transformation applied'];
     } catch (error) {

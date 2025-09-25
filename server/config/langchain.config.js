@@ -42,13 +42,64 @@ export const LANGCHAIN_CONFIG = {
  * @returns {ChatOpenAI} Configured LLM instance
  */
 export function createStandardLLM(options = {}) {
+  const preset = options.preset ? getPresetConfig(options.preset) : null;
+  const mergedOptions = preset ? { ...preset, ...options } : options;
+
+  const resolvedModel = (() => {
+    const aliasModels = {
+      default: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.default,
+      creative: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.creative,
+      precise: process.env.OPENAI_MODEL || LANGCHAIN_CONFIG.models.precise
+    };
+
+    if (typeof mergedOptions.model === 'string') {
+      const aliasValue = aliasModels[mergedOptions.model];
+      if (aliasValue) {
+        return aliasValue;
+      }
+      return mergedOptions.model;
+    }
+
+    return aliasModels.default;
+  })();
+
+  const resolvedTemperature = (() => {
+    if (typeof mergedOptions.temperatureValue === 'number') {
+      return mergedOptions.temperatureValue;
+    }
+    if (typeof mergedOptions.temperature === 'number') {
+      return mergedOptions.temperature;
+    }
+    if (typeof mergedOptions.temperature === 'string' && mergedOptions.temperature in LANGCHAIN_CONFIG.temperature) {
+      return LANGCHAIN_CONFIG.temperature[mergedOptions.temperature];
+    }
+    return LANGCHAIN_CONFIG.temperature.precise;
+  })();
+
+  const resolvedMaxTokens = (() => {
+    if (typeof mergedOptions.maxTokensValue === 'number') {
+      return mergedOptions.maxTokensValue;
+    }
+    if (typeof mergedOptions.maxTokens === 'number') {
+      return mergedOptions.maxTokens;
+    }
+    if (typeof mergedOptions.maxTokens === 'string' && mergedOptions.maxTokens in LANGCHAIN_CONFIG.maxTokens) {
+      return LANGCHAIN_CONFIG.maxTokens[mergedOptions.maxTokens];
+    }
+    return LANGCHAIN_CONFIG.maxTokens.default;
+  })();
+
   const config = {
-    model: LANGCHAIN_CONFIG.models[options.model] || LANGCHAIN_CONFIG.models.default,
-    temperature: LANGCHAIN_CONFIG.temperature[options.temperature] ?? LANGCHAIN_CONFIG.temperature.precise,
-    maxTokens: LANGCHAIN_CONFIG.maxTokens[options.maxTokens] || LANGCHAIN_CONFIG.maxTokens.default,
-    timeout: options.timeout || LANGCHAIN_CONFIG.timeout,
+    model: resolvedModel,
+    temperature: resolvedTemperature,
+    maxTokens: resolvedMaxTokens,
+    timeout: mergedOptions.timeout || LANGCHAIN_CONFIG.timeout,
     openAIApiKey: process.env.OPENAI_API_KEY
   };
+
+  if (Array.isArray(mergedOptions.callbacks) && mergedOptions.callbacks.length > 0) {
+    config.callbacks = mergedOptions.callbacks;
+  }
 
   return new ChatOpenAI(config);
 }
@@ -135,14 +186,12 @@ export function createEnhancedLLM(options = {}) {
     }
   });
 
-  const llm = createStandardLLM(options);
-  
-  // Add callbacks to the LLM instance
+  const { sharedState, chainName, traceId, callbacks: originalCallbacks, ...llmOptions } = options;
   if (callbacks.length > 0) {
-    return llm.withConfig({ callbacks });
+    llmOptions.callbacks = callbacks;
   }
-  
-  return llm;
+
+  return createStandardLLM(llmOptions);
 }
 
 /**
