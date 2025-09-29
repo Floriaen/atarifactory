@@ -8,8 +8,9 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL;
 const RUN_OPENAI = process.env.RUN_OPENAI_INTEGRATIONS === '1';
 const shouldRun = Boolean(RUN_OPENAI && OPENAI_API_KEY && OPENAI_MODEL);
+const maybeDescribe = shouldRun ? describe : describe.skip;
 
-(shouldRun ? describe : describe.skip)('GameDesignChain (OpenAI integration)', () => {
+maybeDescribe('GameDesignChain (OpenAI integration)', () => {
   it('should run end-to-end with real OpenAI LLMs', async () => {
     const openaiModel = process.env.OPENAI_MODEL;
     const llmOpts = { model: openaiModel, temperature: 0, openAIApiKey: OPENAI_API_KEY };
