@@ -63,7 +63,7 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
    - Mirror structured output and callback hookup from `createStandardChain`.
    - Add guarded hydrated prompt capture (best‑effort `prompt.format(input)` on aggregated template where possible) and tracing.
 
-2) Refactor `server/agents/chains/IncrementalCodingChain.js`:
+2) Refactor `server/agents/chains/coding/IncrementalCodingChain.js`:
    - Export `async function createIncrementalCodingChain(llm, { sharedState } = {})`.
    - Internally call `createChatChain` with the current `.system.prompt.md` and `.human.prompt.md` files.
    - Keep the `entities` default to `'[]'` in `invoke` as a compatibility shim.

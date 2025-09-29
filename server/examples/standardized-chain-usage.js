@@ -5,7 +5,7 @@
  * and standardized chain factories for consistent, maintainable code.
  */
 
-import { createFeedbackChain } from '../agents/chains/FeedbackChain.js';
+import { createFeedbackChain } from '../agents/chains/coding/FeedbackChain.js';
 import { createStandardLLM, CHAIN_PRESETS, createTokenCountingCallback } from '../config/langchain.config.js';
 import { createSmartChain } from '../utils/chainFactory.js';
 import { feedbackSchema, ideaGeneratorSchema } from '../schemas/langchain-schemas.js';

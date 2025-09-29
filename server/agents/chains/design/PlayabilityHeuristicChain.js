@@ -11,7 +11,7 @@ export const CHAIN_STATUS = {
 async function createPlayabilityHeuristicChain(llm, options = {}) {
   return createValidationChain({
     chainName: 'PlayabilityHeuristicChain',
-    promptFile: 'design/playability-heuristic.md',
+    promptFile: 'design/PlayabilityHeuristicChain.prompt.md',
     inputVariables: ['context'],
     schema: playabilityHeuristicSchema,
     llm: llm,

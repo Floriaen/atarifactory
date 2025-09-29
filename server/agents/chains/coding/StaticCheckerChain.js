@@ -1,5 +1,5 @@
 import { ESLint } from 'eslint';
-import pipelineConfig from '../../config/staticchecker.eslint.config.js';
+import pipelineConfig from '../../../config/staticchecker.eslint.config.js';
 
 export const CHAIN_STATUS = {
   name: 'StaticCheckerChain',

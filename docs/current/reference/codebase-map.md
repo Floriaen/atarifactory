@@ -71,11 +71,14 @@ server/
 #### **Main Chains** (`server/agents/chains/`)
 - Idea generation handled by `design/IdeaGeneratorChain.js`
 - `PlannerChain.js` - Breaks design into implementation steps
-- `IncrementalCodingChain.js` - Implements individual plan steps
-- `FeedbackChain.js` - Provides improvement feedback
+- `coding/IncrementalCodingChain.js` - Implements individual plan steps
+- `coding/FeedbackChain.js` - Provides improvement feedback
 - `PlayabilityValidatorChain.js` - Validates game playability
-- `ControlBarTransformerAgent.js` - Transforms input to control bar
- - `art/SpriteMaskGenerator.js` - Sprite design agent (LLM→DSL→mask)
+- `coding/ControlBarTransformerAgent.js` - Transforms input to control bar
+- `coding/StaticCheckerChain.js` - Lints and validates code
+- `coding/SyntaxSanityChain.js` - Ensures syntax sanity (stub)
+- `coding/RuntimePlayabilityChain.js` - Stubbed runtime validation
+- `art/SpriteMaskGenerator.js` - Sprite design agent (LLM→DSL→mask)
 
 #### **Pipeline Integration** (`server/agents/chains/design/`)
 - `GameDesignChain.js` - **SPECIAL**: Orchestrates all design chains
@@ -99,6 +102,7 @@ server/
 ```
 server/tests/
 ├── unit/                     # Unit tests for individual components
+│   ├── coding/              # Coding chain tests
 │   ├── design/              # Design chain tests
 │   └── [other-categories]/  # Other component tests
 ├── integration/             # Integration tests
@@ -120,9 +124,9 @@ server/tests/
 | `design/IdeaGeneratorChain.js` | Creative ideas | Constraints | `{title, pitch}` | ✅ Safe |
 | `PlannerChain.js` | Implementation planning | Game definition | Array of plan steps | ✅ Safe |
 | `IncrementalCodingChain.js` | Code generation | Plan step + context | Updated game code | ⚠️ Careful |
-| `FeedbackChain.js` | Improvement suggestions | Error/failure info | Feedback object | ✅ Safe |
+| `coding/FeedbackChain.js` | Improvement suggestions | Error/failure info | Feedback object | ✅ Safe |
 | `PlayabilityValidatorChain.js` | Playability validation | Game definition | Validation result | ✅ Safe |
-| `ControlBarTransformerAgent.js` | Input transformation | Game source code | Transformed code | ✅ Safe |
+| `coding/ControlBarTransformerAgent.js` | Input transformation | Game source code | Transformed code | ✅ Safe |
 
 ### **`server/agents/chains/design/`**
 | File | Purpose | Input | Output | Modification Safety |
@@ -139,7 +143,7 @@ server/tests/
 ### **`server/agents/prompts/`**
 Prompt templates organized by chain category:
 - `design/` - Design chain prompts
-- `design/idea-generator.md` - Idea generator prompt
+- `design/IdeaGeneratorChain.prompt.md` - Idea generator prompt
 - `PlannerChain.prompt.md` - Planning prompt
 - etc.
 

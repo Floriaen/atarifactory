@@ -53,7 +53,7 @@ This plan introduces additive, non‑breaking improvements to make designs more 
   - Implement failure check (fail or simple loss)
 
 ### 4) Prompt Updates (Back‑Compatible)
-- Final Assembler (`server/agents/prompts/design/final-assembler.md`):
+- Final Assembler (`server/agents/prompts/design/FinalAssemblerChain.prompt.md`):
   - Kept strict base fields (`title`, `description`, `mechanics`, `winCondition`, `entities`) to remain compliant with structured outputs.
 - Playability Validator (`server/agents/prompts/PlayabilityValidatorChain.prompt.md`):
   - Clarified evaluation should consider quantitative targets when present in the win condition text.

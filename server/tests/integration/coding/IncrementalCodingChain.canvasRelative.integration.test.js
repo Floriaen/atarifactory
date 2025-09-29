@@ -1,4 +1,4 @@
-import { createIncrementalCodingChain } from '../../agents/chains/IncrementalCodingChain.js';
+import { createIncrementalCodingChain } from '../../../agents/chains/coding/IncrementalCodingChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 
 // Only run if explicitly enabled and API key is present

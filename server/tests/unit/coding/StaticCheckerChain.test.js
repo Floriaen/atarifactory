@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { run as staticCheckerRun } from '../../agents/chains/StaticCheckerChain.js';
+import { run as staticCheckerRun } from '../../../agents/chains/coding/StaticCheckerChain.js';
 
 describe('StaticCheckerChain', () => {
   it('passes valid code without errors', async () => {

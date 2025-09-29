@@ -24,7 +24,7 @@ export async function createSpriteMaskGenerator(llm, options = {}) {
   const sharedState = options.sharedState;
   const chain = await createJSONChain({
     chainName: 'SpriteDesignChain',
-    promptFile: 'art/sprite-dsl-generator.md',
+    promptFile: 'art/SpriteDesignChain.prompt.md',
     inputVariables: ['context'],
     schema: spriteDslSchema,
     llm,
@@ -42,4 +42,3 @@ export async function createSpriteMaskGenerator(llm, options = {}) {
 }
 
 export default { createSpriteMaskGenerator };
-

@@ -1,6 +1,6 @@
-import { createStandardChain } from '../../utils/chainFactory.js';
-import { createStandardLLM } from '../../config/langchain.config.js';
-import logger from '../../utils/logger.js';
+import { createStandardChain } from '../../../utils/chainFactory.js';
+import { createStandardLLM } from '../../../config/langchain.config.js';
+import logger from '../../../utils/logger.js';
 
 export const CHAIN_STATUS = {
   name: 'ControlBarTransformerAgent',
@@ -22,7 +22,7 @@ async function createControlBarTransformerChain(llm, options = {}) {
   
   return await createStandardChain({
     chainName: 'ControlBarTransformerAgent',
-    promptFile: 'ControlBarTransformerAgent.prompt.md',
+    promptFile: 'coding/ControlBarTransformerAgent.prompt.md',
     inputVariables: ['gameSource'],
     preset: 'creative', // Use creative preset for code transformation
     llm: llm || createStandardLLM(),
@@ -57,7 +57,7 @@ async function createControlBarTransformerChain(llm, options = {}) {
 
 /**
  * LLM-based transformer for game.js input code. Loads its prompt from
- * server/agents/prompts/ControlBarTransformerAgent.prompt.md.
+ * server/agents/prompts/coding/ControlBarTransformerAgent.prompt.md.
  *
  * @param {object} sharedState - The full pipeline shared context (must include gameSource as string)
  * @param {object} llm - An LLM instance (required)
@@ -79,4 +79,3 @@ export async function transformGameCodeWithLLM(sharedState, llm) {
 }
 
 export { createControlBarTransformerChain };
-

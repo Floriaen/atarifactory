@@ -1,8 +1,8 @@
 // Coding Pipeline: runs IncrementalCoding, Feedback, StaticChecker, SyntaxSanity, RuntimePlayability
-import { createIncrementalCodingChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } from '../chains/IncrementalCodingChain.js';
-import { createFeedbackChain, CHAIN_STATUS as FEEDBACK_STATUS } from '../chains/FeedbackChain.js';
-import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '../chains/StaticCheckerChain.js';
-import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerAgent.js';
+import { createIncrementalCodingChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } from '../chains/coding/IncrementalCodingChain.js';
+import { createFeedbackChain, CHAIN_STATUS as FEEDBACK_STATUS } from '../chains/coding/FeedbackChain.js';
+import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '../chains/coding/StaticCheckerChain.js';
+import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/coding/ControlBarTransformerAgent.js';
 import { createBackgroundCodeChain, CHAIN_STATUS as BACKGROUND_CODE_STATUS } from '../chains/coding/BackgroundCodeChain.js';
 // Token estimation no longer needed - handled automatically by chains
 import { ChatOpenAI } from '@langchain/openai';
