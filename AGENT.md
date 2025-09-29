@@ -44,7 +44,7 @@ npm run lint:fix
 ### Core Pipeline Flow
 ```
 GameInventorChain → GameDesignChain → PlayabilityValidatorChain → 
-PlannerChain → ContextStepBuilderChain (×N) → FeedbackChain → StaticCheckerChain
+PlannerChain → IncrementalCodingChain (×N) → FeedbackChain → StaticCheckerChain
 ```
 
 ### Key Architectural Patterns

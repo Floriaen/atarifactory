@@ -27,7 +27,7 @@ describe.skip('Token Count Modular Pipeline Integration', () => {
     ];
     // Inject mock factories so no real LLM is called
     const factories = {
-      createContextStepBuilderChain: async () => ({
+      createIncrementalCodingChain: async () => ({
         invoke: async () => '// mock code for test',
         pipe: function() { return this; }
       }),

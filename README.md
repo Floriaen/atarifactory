@@ -59,7 +59,7 @@ PlayabilityAutoFixChain (optional)
       ↓
 PlannerChain
       ↓
-ContextStepBuilderChain (×N)
+IncrementalCodingChain (×N)
       ↓
 FeedbackChain
       ↓
@@ -72,7 +72,7 @@ StaticCheckerChain
 - **PlayabilityHeuristicChain:** Provides a score for the game's playability.
 - **PlayabilityAutoFixChain:** Attempts to fix unplayable game designs.
 - **PlannerChain:** Breaks down the design into an ordered plan of implementation steps.
-- **ContextStepBuilderChain:** Iteratively implements each plan step, always working with the full game source code.
+- **IncrementalCodingChain:** Iteratively implements each plan step, always working with the full game source code.
 - **FeedbackChain:** Provides suggestions or triggers retries if issues are detected.
 - **StaticCheckerChain:** Lints and checks for forbidden patterns or errors.
 

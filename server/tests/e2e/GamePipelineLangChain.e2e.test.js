@@ -129,12 +129,12 @@ vi.mock('../../agents/chains/PlannerChain', () => ({
     category: 'planning'
   }
 }));
-vi.mock('../../agents/chains/ContextStepBuilderChain', () => ({
-  createContextStepBuilderChain: vi.fn().mockReturnValue({
+vi.mock('../../agents/chains/IncrementalCodingChain', () => ({
+  createIncrementalCodingChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ contextSteps: ['Set up environment', 'Initialize player state'] })
   }),
   CHAIN_STATUS: {
-    name: 'ContextStepBuilderChain',
+    name: 'IncrementalCodingChain',
     label: 'Context Step Builder',
     description: 'Building implementation steps',
     category: 'coding'

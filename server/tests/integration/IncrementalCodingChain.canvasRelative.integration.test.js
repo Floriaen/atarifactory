@@ -1,4 +1,4 @@
-import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
+import { createIncrementalCodingChain } from '../../agents/chains/IncrementalCodingChain.js';
 import { ChatOpenAI } from '@langchain/openai';
 
 // Only run if explicitly enabled and API key is present
@@ -11,7 +11,7 @@ maybeTest('StepBuilder generates complete game code', async () => {
     model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
     temperature: 0.1
   });
-  const chain = await createContextStepBuilderChain(llm);
+  const chain = await createIncrementalCodingChain(llm);
 
   const minimalPlan = [{ id: 1, description: 'Draw a player and an exit on the canvas' }];
   const minimalStep = { id: 1, description: 'Draw player at starting position and exit at opposite corner' };

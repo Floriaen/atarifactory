@@ -1,5 +1,5 @@
-// Coding Pipeline: runs ContextStepBuilder, Feedback, StaticChecker, SyntaxSanity, RuntimePlayability
-import { createContextStepBuilderChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } from '../chains/ContextStepBuilderChain.js';
+// Coding Pipeline: runs IncrementalCoding, Feedback, StaticChecker, SyntaxSanity, RuntimePlayability
+import { createIncrementalCodingChain, CHAIN_STATUS as CONTEXT_STEP_STATUS } from '../chains/IncrementalCodingChain.js';
 import { createFeedbackChain, CHAIN_STATUS as FEEDBACK_STATUS } from '../chains/FeedbackChain.js';
 import { run as staticCheckerRun, CHAIN_STATUS as STATIC_CHECKER_STATUS } from '../chains/StaticCheckerChain.js';
 import { transformGameCodeWithLLM, CHAIN_STATUS as CONTROL_BAR_STATUS } from '../chains/ControlBarTransformerAgent.js';
@@ -80,7 +80,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       invoke: async () => ({ code: sharedState.gameSource || '', contextSteps: [] })
     };
   } else {
-    contextStepBuilderChain = await createContextStepBuilderChain(llm, { sharedState });
+    contextStepBuilderChain = await createIncrementalCodingChain(llm, { sharedState });
   }
   
   // Seed with minimal scaffold for first step
@@ -111,7 +111,7 @@ async function runCodingPipeline(sharedState, onStatusUpdate) {
       const contextStepsOut = await contextStepBuilderChain.invoke(contextStepInput);
 
       // Log the raw LLM output for diagnosis
-      logger.debug('ContextStepBuilderChain invoke output', { contextStepsOut });
+      logger.debug('IncrementalCodingChain invoke output', { contextStepsOut });
       // If contextStepsOut is a string, treat as code; else look for .code property
       if (typeof contextStepsOut === 'string') {
         accumulatedCode = contextStepsOut;

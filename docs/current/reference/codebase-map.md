@@ -71,7 +71,7 @@ server/
 #### **Main Chains** (`server/agents/chains/`)
 - Idea generation handled by `design/IdeaGeneratorChain.js`
 - `PlannerChain.js` - Breaks design into implementation steps
-- `ContextStepBuilderChain.js` - Implements individual plan steps
+- `IncrementalCodingChain.js` - Implements individual plan steps
 - `FeedbackChain.js` - Provides improvement feedback
 - `PlayabilityValidatorChain.js` - Validates game playability
 - `ControlBarTransformerAgent.js` - Transforms input to control bar
@@ -119,7 +119,7 @@ server/tests/
 |------|---------|-------|--------|-------------------|
 | `design/IdeaGeneratorChain.js` | Creative ideas | Constraints | `{title, pitch}` | ✅ Safe |
 | `PlannerChain.js` | Implementation planning | Game definition | Array of plan steps | ✅ Safe |
-| `ContextStepBuilderChain.js` | Code generation | Plan step + context | Updated game code | ⚠️ Careful |
+| `IncrementalCodingChain.js` | Code generation | Plan step + context | Updated game code | ⚠️ Careful |
 | `FeedbackChain.js` | Improvement suggestions | Error/failure info | Feedback object | ✅ Safe |
 | `PlayabilityValidatorChain.js` | Playability validation | Game definition | Validation result | ✅ Safe |
 | `ControlBarTransformerAgent.js` | Input transformation | Game source code | Transformed code | ✅ Safe |
@@ -169,7 +169,7 @@ Prompt templates organized by chain category:
 → Look at `IdeaGeneratorChain.js`
 
 ### **Modify Game Logic Generation**
-→ Look at `ContextStepBuilderChain.js` and related tests
+→ Look at `IncrementalCodingChain.js` and related tests
 
 ### **Modify Sprite Generation**
 → Look at `agents/chains/art/SpriteMaskGenerator.js` and `agents/pipeline/artPipeline.js`

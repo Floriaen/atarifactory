@@ -1,4 +1,4 @@
-# Plan: Add Chat Prompt Support to `chainFactory` and Refactor ContextStepBuilderChain
+# Plan: Add Chat Prompt Support to `chainFactory` and Refactor IncrementalCodingChain
 
 Status: Proposal (precise plan)
 Owner: Game Agent Team
@@ -6,17 +6,17 @@ Target Branch: `feature/coding-llm-logging`
 
 ## Goal
 
-Add first‑class chat prompt support to `server/utils/chainFactory.js` via `createChatChain`, then refactor `ContextStepBuilderChain` to use it. Preserve system/human roles, keep uniform token counting + tracing (like all chains), and avoid breaking existing tests.
+Add first‑class chat prompt support to `server/utils/chainFactory.js` via `createChatChain`, then refactor `IncrementalCodingChain` to use it. Preserve system/human roles, keep uniform token counting + tracing (like all chains), and avoid breaking existing tests.
 
 ## Scope
 - New API: `createChatChain({ chainName, systemFile, humanFile, inputVariables, schema?, preset?, llm?, sharedState?, enableLogging? })`.
 - Instrumentation: token counting via `sharedState`, structured traces in dev (`ENABLE_DEV_TRACE=1`).
-- Refactor `ContextStepBuilderChain` to call `createChatChain` instead of manual `ChatPromptTemplate` composition.
+- Refactor `IncrementalCodingChain` to call `createChatChain` instead of manual `ChatPromptTemplate` composition.
 - No behavioral change to outputs (string code), only logging/telemetry improvements.
 
 ## Non‑Goals
 - No changes to other chains (they already use `createStandardChain`).
-- No schema for `ContextStepBuilderChain` (still raw string output).
+- No schema for `IncrementalCodingChain` (still raw string output).
 - No prompt content changes beyond wiring existing files.
 
 ## Design
@@ -40,12 +40,12 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
   - Return `{ invoke(input) }`, adding the same validation on `inputVariables` as `createStandardChain`.
   - Tracing: On invoke, capture hydrated prompt (best‑effort), start/end time, compute `tokenDelta` from `sharedState` (before/after) and call `addLlmTrace` when `ENABLE_DEV_TRACE=1`.
 
-### 2) ContextStepBuilderChain refactor
-- Change factory signature to `async function createContextStepBuilderChain(llm, options = {})` to align with other chains.
+### 2) IncrementalCodingChain refactor
+- Change factory signature to `async function createIncrementalCodingChain(llm, options = {})` to align with other chains.
 - Replace current `ChatPromptTemplate + StringOutputParser` with a call to `createChatChain`:
-  - `chainName: 'ContextStepBuilderChain'`
-  - `systemFile: 'ContextStepBuilderChain.system.prompt.md'`
-  - `humanFile: 'ContextStepBuilderChain.human.prompt.md'`
+  - `chainName: 'IncrementalCodingChain'`
+  - `systemFile: 'IncrementalCodingChain.system.prompt.md'`
+  - `humanFile: 'IncrementalCodingChain.human.prompt.md'`
   - `inputVariables: ['gameSource','plan','step','entities']`
   - `preset: 'creative'` (unchanged behavior; temp remains 0/explicitly set by caller if needed)
   - `sharedState: options.sharedState`
@@ -63,8 +63,8 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
    - Mirror structured output and callback hookup from `createStandardChain`.
    - Add guarded hydrated prompt capture (best‑effort `prompt.format(input)` on aggregated template where possible) and tracing.
 
-2) Refactor `server/agents/chains/ContextStepBuilderChain.js`:
-   - Export `async function createContextStepBuilderChain(llm, { sharedState } = {})`.
+2) Refactor `server/agents/chains/IncrementalCodingChain.js`:
+   - Export `async function createIncrementalCodingChain(llm, { sharedState } = {})`.
    - Internally call `createChatChain` with the current `.system.prompt.md` and `.human.prompt.md` files.
    - Keep the `entities` default to `'[]'` in `invoke` as a compatibility shim.
 
@@ -72,9 +72,9 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
    - `codingPipeline.js` already passes `{ sharedState }`. No change expected.
 
 4) Tests:
-   - Unit: `ContextStepBuilderChain` – mock LLM (MockLLM) and assert string output still returned; add one test that omits `entities` to ensure default path.
+   - Unit: `IncrementalCodingChain` – mock LLM (MockLLM) and assert string output still returned; add one test that omits `entities` to ensure default path.
    - Integration: Re‑run existing coding pipeline tests to ensure no regressions.
-   - E2E: Confirm `/debug/llm` contains traces for `ContextStepBuilderChain` when `ENABLE_DEBUG=1 ENABLE_DEV_TRACE=1`.
+   - E2E: Confirm `/debug/llm` contains traces for `IncrementalCodingChain` when `ENABLE_DEBUG=1 ENABLE_DEV_TRACE=1`.
 
 ## Rollout & Backward Compatibility
 - No schema changes or prompt content edits; only wiring.
@@ -82,7 +82,7 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
 - If unexpected in CI, fall back to previous factory temporarily by feature flag (optional).
 
 ## Acceptance Criteria
-- `ContextStepBuilderChain` LLM calls appear in `/debug/llm` with `phase: 'coding'` and `tokenDelta` > 0 when applicable.
+- `IncrementalCodingChain` LLM calls appear in `/debug/llm` with `phase: 'coding'` and `tokenDelta` > 0 when applicable.
 - All tests pass (`npm test`) with no changes to expected outputs.
 - `sharedState.tokenCount` increments during coding steps.
 - No change to generated `game.js` content attributable to the refactor.
@@ -97,4 +97,3 @@ Add first‑class chat prompt support to `server/utils/chainFactory.js` via `cre
 - Add a generic `phase` option to chainFactory for tracing (`'planning'|'art'|'coding'|'validation'`).
 - Introduce `createMultiMessageChain` for more than two roles (e.g., system → developer → user).
 - Consider a light schema for code fences to reduce accidental non‑code chatter in outputs.
-

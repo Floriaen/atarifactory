@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createContextStepBuilderChain } from '../../agents/chains/ContextStepBuilderChain.js';
+import { createIncrementalCodingChain } from '../../agents/chains/IncrementalCodingChain.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -15,11 +15,11 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Timeout handled by Vitest config
-describe('ContextStepBuilderChain', () => {
+describe('IncrementalCodingChain', () => {
   let systemPromptString, humanPromptString;
   beforeAll(async () => {
-    const systemPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.system.prompt.md');
-    const humanPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.human.prompt.md');
+    const systemPromptPath = path.join(__dirname, '../../agents/prompts/IncrementalCodingChain.system.prompt.md');
+    const humanPromptPath = path.join(__dirname, '../../agents/prompts/IncrementalCodingChain.human.prompt.md');
     systemPromptString = await fs.readFile(systemPromptPath, 'utf8');
     humanPromptString = await fs.readFile(humanPromptPath, 'utf8');
   });
@@ -49,7 +49,7 @@ describe('ContextStepBuilderChain', () => {
       withConfig() { return this; },
       async invoke() { return { content: 'function foo(){}' }; }
     };
-    const chain = await createContextStepBuilderChain(llm);
+    const chain = await createIncrementalCodingChain(llm);
     const result = await chain.invoke({ gameSource: '', plan: '[]', step: '{}' });
     expect(result).toBe('function foo(){}');
   });
@@ -61,7 +61,7 @@ describe('ContextStepBuilderChain', () => {
     }
     // ChatOpenAI is now imported at the top
     const modelName = process.env.OPENAI_MODEL;
-    const chain = await createContextStepBuilderChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
+    const chain = await createIncrementalCodingChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
     const result = await chain.invoke({
       gameSource: '// Minimal HTML5 Canvas Game Scaffold\nconst canvas = document.getElementById(\'game-canvas\');\nconst ctx = canvas.getContext(\'2d\');\nfunction gameLoop() { ctx.clearRect(0,0,canvas.width,canvas.height); }\ngameLoop();',
       plan: JSON.stringify([
