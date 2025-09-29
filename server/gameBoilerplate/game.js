@@ -26,6 +26,8 @@ function gameLoop() {
   const now = performance.now();
   const dt = Math.max(0, (now - __last) / 1000);
   __last = now;
+  // Boilerplate handles clearing so generated code shouldn't repaint the full canvas.
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   // Draw background first
   __bg.update(dt);
   __bg.draw(ctx);

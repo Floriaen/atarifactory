@@ -4,6 +4,7 @@ import { compileSpriteDSL } from '../../../utils/sprites/dsl/compiler.js';
 
 function normalizeEntity(name) {
   const n = String(name || '').toLowerCase();
+  /*
   const aliasGroups = [
     { key: 'plane', list: ['plane','airplane','aircraft','jet','glider'] },
     { key: 'person', list: ['person','human','man','woman','guard','hero','player'] },
@@ -14,6 +15,7 @@ function normalizeEntity(name) {
     { key: 'helicopter', list: ['helicopter','chopper','heli'] }
   ];
   for (const g of aliasGroups) if (g.list.includes(n)) return g.key;
+  */
   return n;
 }
 
