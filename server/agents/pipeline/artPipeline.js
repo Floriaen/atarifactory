@@ -1,6 +1,6 @@
 import logger from '../../utils/logger.js';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
-import { createEnhancedLLM, getPresetConfig } from '../../config/langchain.config.js';
+import { ChatOpenAI } from '@langchain/openai';
 import { createSpriteMaskGenerator } from '../chains/art/SpriteMaskGenerator.js';
 
 export const ART_PHASE = {
@@ -60,11 +60,7 @@ export async function runArtPipeline(sharedState, onStatusUpdate) {
     if (!openaiModel) {
       throw new Error('OPENAI_MODEL environment variable must be set');
     }
-    const llm = createEnhancedLLM({
-      ...getPresetConfig('structured'),
-      sharedState,
-      chainName: 'ArtPipeline.SpriteMask'
-    });
+    const llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
     spriteAgent = await createSpriteMaskGenerator(llm, { sharedState });
   }
 

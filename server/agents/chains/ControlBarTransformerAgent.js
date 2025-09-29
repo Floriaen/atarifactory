@@ -1,16 +1,16 @@
 import { createStandardChain } from '../../utils/chainFactory.js';
-import { createEnhancedLLM, getPresetConfig } from '../../config/langchain.config.js';
+import { createStandardLLM } from '../../config/langchain.config.js';
 import logger from '../../utils/logger.js';
 
 export const CHAIN_STATUS = {
-  name: 'ControlBarTransformerChain',
+  name: 'ControlBarTransformerAgent',
   label: 'Control Bar Transform',
   description: 'Adding mobile-friendly controls',
   category: 'coding'
 };
 
 /**
- * Create a ControlBarTransformerChain that converts game code to use control bar input
+ * Create a ControlBarTransformerAgent chain that converts game code to use control bar input
  * 
  * @param {object} llm - LLM instance (optional, will create default if not provided)
  * @param {object} options - Chain options
@@ -19,19 +19,13 @@ export const CHAIN_STATUS = {
  */
 async function createControlBarTransformerChain(llm, options = {}) {
   const { sharedState } = options;
-  const resolvedLLM = llm || createEnhancedLLM({
-    ...getPresetConfig('creative'),
-    sharedState,
-    chainName: CHAIN_STATUS.name,
-    timeout: 60000
-  });
-
+  
   return await createStandardChain({
-    chainName: CHAIN_STATUS.name,
-    promptFile: 'ControlBarTransformerChain.prompt.md',
+    chainName: 'ControlBarTransformerAgent',
+    promptFile: 'ControlBarTransformerAgent.prompt.md',
     inputVariables: ['gameSource'],
     preset: 'creative', // Use creative preset for code transformation
-    llm: resolvedLLM,
+    llm: llm || createStandardLLM(),
     sharedState,
     // No schema - we want raw text output for code transformation
     customInvoke: async (input, baseChain, { chainName, enableLogging }) => {
@@ -63,14 +57,15 @@ async function createControlBarTransformerChain(llm, options = {}) {
 
 /**
  * LLM-based transformer for game.js input code. Loads its prompt from
- * server/agents/prompts/ControlBarTransformerChain.prompt.md.
+ * server/agents/prompts/ControlBarTransformerAgent.prompt.md.
  *
  * @param {object} sharedState - The full pipeline shared context (must include gameSource as string)
- * @param {object} [llm] - Optional LLM instance for dependency injection
+ * @param {object} llm - An LLM instance (required)
  * @returns {Promise<string>} - The revised JS code as a string
- * @throws if sharedState.gameSource is invalid
+ * @throws if llm is missing or sharedState.gameSource is invalid
  */
 export async function transformGameCodeWithLLM(sharedState, llm) {
+  if (!llm) throw new Error('No LLM instance provided. Pass llm as the second argument.');
   if (!sharedState || typeof sharedState.gameSource !== 'string') {
     throw new Error('sharedState must be an object with a gameSource string');
   }
@@ -79,8 +74,9 @@ export async function transformGameCodeWithLLM(sharedState, llm) {
   const chain = await createControlBarTransformerChain(llm, { sharedState });
   const result = await chain.invoke({ gameSource: sharedState.gameSource });
   
-  logger.debug('ControlBarTransformerChain result', { result });
+  logger.debug('ControlBarTransformerAgent result', { result });
   return result;
 }
 
 export { createControlBarTransformerChain };
+

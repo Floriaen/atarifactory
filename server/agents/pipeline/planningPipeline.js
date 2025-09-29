@@ -5,7 +5,7 @@ import { createPlayabilityValidatorChain, CHAIN_STATUS as PLAYABILITY_VALIDATOR_
 import { createPlayabilityAutoFixChain } from '../chains/PlayabilityAutoFixChain.js';
 import { createPlayabilityHeuristicChain, CHAIN_STATUS as PLAYABILITY_HEURISTIC_STATUS } from '../chains/design/PlayabilityHeuristicChain.js';
 import { createPlannerChain, CHAIN_STATUS as PLANNER_STATUS } from '../chains/PlannerChain.js';
-import { createEnhancedLLM, getPresetConfig } from '../../config/langchain.config.js';
+import { ChatOpenAI } from '@langchain/openai';
 import { createPipelineTracker } from '../../utils/PipelineTracker.js';
 // Token estimation no longer needed - handled automatically by chains
 import logger from '../../utils/logger.js';
@@ -30,18 +30,9 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   if (!openaiModel) {
     throw new Error('OPENAI_MODEL environment variable must be set');
   }
-  // Use centralized config for LLM construction
-  const llmIdea = createEnhancedLLM({
-    ...getPresetConfig('creative'),
-    temperatureValue: IDEA_GENERATOR_LLM_TEMPERATURE,
-    sharedState,
-    chainName: 'PlanningPipeline.GameDesign'
-  });
-  const llm = createEnhancedLLM({
-    ...getPresetConfig('structured'),
-    sharedState,
-    chainName: 'PlanningPipeline.Core'
-  });
+  // Use centralized config for idea generator temperature
+  const llmIdea = new ChatOpenAI({ model: openaiModel, temperature: IDEA_GENERATOR_LLM_TEMPERATURE });
+  const llm = new ChatOpenAI({ model: openaiModel, temperature: 0 });
 
   // 1. Game Design
   const designOut = await tracker.executeStep(async () => {

@@ -223,7 +223,7 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
       description: 'Move left and right. Win by reaching the right edge.',
       mechanics: ['move left/right'],
       winCondition: 'Reach the right edge',
-      entities: ['player']
+      entities: ['player', 'background']
     };
     sharedState.plan = [
       { id: 1, description: 'Set up the HTML canvas and main game loop' },
