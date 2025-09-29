@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { transformGameCodeWithLLM } from '../../../server/agents/chains/ControlBarTransformerAgent.js';
+import { transformGameCodeWithLLM } from '../../../agents/chains/coding/ControlBarTransformerAgent.js';
 import { ChatOpenAI } from '@langchain/openai';
 import fs from 'fs';
 

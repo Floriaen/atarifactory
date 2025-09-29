@@ -43,7 +43,7 @@ All types are CPU-light and avoid gradients; visuals are chunky/pixelated.
 None. There is no baked-in `background.js`. Missing or empty code triggers a controller error (mock pipeline skips the check).
 
 ## Extending
-- Adjust `server/agents/prompts/coding/background-code.md` to encourage new styles or tune descriptions.
+- Adjust `server/agents/prompts/coding/BackgroundCodeChain.prompt.md` to encourage new styles or tune descriptions.
 - Keep rendering simple (rectangles/lines), deterministic (seeded RNG), and Atari-like.
 - Consider schema tweaks if we ever add extra metadata—update `backgroundCodeSchema` in lockstep.
 

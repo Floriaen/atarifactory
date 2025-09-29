@@ -20,7 +20,7 @@ ArtPipeline (Sprite generation)
       ↓
 PlannerChain
       ↓
-ContextStepBuilderChain (×N)
+IncrementalCodingChain (×N)
       ↓
 StaticCheckerChain
       ↓
@@ -80,7 +80,7 @@ FeedbackChain
 - **Purpose:** Ensures a per‑game sprite pack exists for all entities (LLM → DSL → compile → pack) using `SpriteMaskGenerator`.
 - **Output:** `sharedState.spritePack` populated; controller later persists `sprites.json` in the game folder.
 
-### 5. ContextStepBuilderChain
+### 5. IncrementalCodingChain
 - **Purpose:** Iteratively implements each plan step, always receiving and returning the full game source code.
 - **Input:**
   ```json

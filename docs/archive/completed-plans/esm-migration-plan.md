@@ -210,9 +210,9 @@ const configPath = path.join(__dirname, 'config', 'pipeline.config.mjs');
 4. `server/agents/langchain/chains/design/PlayabilityHeuristicChain.js`
 5. `server/agents/langchain/chains/design/PlayabilityAutoFixChain.js`
 6. `server/agents/langchain/chains/PlannerChain.js`
-7. `server/agents/langchain/chains/ContextStepBuilderChain.js`
-8. `server/agents/langchain/chains/FeedbackChain.js`
-9. `server/agents/langchain/chains/StaticCheckerChain.js`
+7. `server/agents/langchain/chains/coding/IncrementalCodingChain.js`
+8. `server/agents/langchain/chains/coding/FeedbackChain.js`
+9. `server/agents/langchain/chains/coding/StaticCheckerChain.js`
 
 ### 4.4 Wave 4: Pipeline & Controllers
 1. `server/controller.js`

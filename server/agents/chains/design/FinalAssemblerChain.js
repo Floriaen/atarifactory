@@ -4,7 +4,7 @@ import { finalAssemblerSchema } from '../../../schemas/langchain-schemas.js';
 async function createFinalAssemblerChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'FinalAssemblerChain',
-    promptFile: 'design/final-assembler.md',
+    promptFile: 'design/FinalAssemblerChain.prompt.md',
     inputVariables: ['context'],
     schema: finalAssemblerSchema,
     preset: 'structured',

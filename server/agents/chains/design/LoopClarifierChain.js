@@ -4,7 +4,7 @@ import { loopClarifierSchema } from '../../../schemas/langchain-schemas.js';
 async function createLoopClarifierChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'LoopClarifierChain',
-    promptFile: 'design/loop-clarifier.md',
+    promptFile: 'design/LoopClarifierChain.prompt.md',
     inputVariables: ['context'],
     schema: loopClarifierSchema,
     preset: 'structured',

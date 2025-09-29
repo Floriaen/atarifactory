@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createFeedbackChain } from '../../agents/chains/FeedbackChain.js';
+import { createFeedbackChain } from '../../../agents/chains/coding/FeedbackChain.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -7,18 +7,18 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { ChatOpenAI } from '@langchain/openai';
-import { extractJsonCodeBlock } from '../../utils/formatter.js';
+import { extractJsonCodeBlock } from '../../../utils/formatter.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 describe('FeedbackChain', () => {
   let promptString;
   beforeAll(async () => {
-    const promptPath = path.join(__dirname, '../../agents/prompts/FeedbackChain.prompt.md');
+    const promptPath = path.join(__dirname, '../../../agents/prompts/coding/FeedbackChain.prompt.md');
     promptString = await fs.readFile(promptPath, 'utf8');
   });
 

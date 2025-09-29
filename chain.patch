@@ -1,7 +1,7 @@
-diff --git a/server/agents/chains/ContextStepBuilderChain.js b/server/agents/chains/ContextStepBuilderChain.js
+diff --git a/server/agents/chains/coding/IncrementalCodingChain.js b/server/agents/chains/coding/IncrementalCodingChain.js
 index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a561491d2 100644
---- a/server/agents/chains/ContextStepBuilderChain.js
-+++ b/server/agents/chains/ContextStepBuilderChain.js
+--- a/server/agents/chains/coding/IncrementalCodingChain.js
++++ b/server/agents/chains/coding/IncrementalCodingChain.js
 @@ -1,55 +1,35 @@
 -// Modular LangChain chain for ContextStepBuilderAgent
 -// Receives: { gameSource, plan, step }
@@ -18,7 +18,7 @@ index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a
 +import { createChatChain } from '../../utils/chainFactory.js';
  
  export const CHAIN_STATUS = {
-   name: 'ContextStepBuilderChain',
+   name: 'IncrementalCodingChain',
    label: 'Code Generation',
    description: 'Implementing game logic',
 -  category: 'coding'
@@ -34,8 +34,8 @@ index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a
 -  return fs.readFileSync(path.join(__dirname, '../prompts', filename), 'utf8');
 -}
 -
--const systemTemplate = loadPromptTemplate('ContextStepBuilderChain.system.prompt.md');
--const humanTemplate = loadPromptTemplate('ContextStepBuilderChain.human.prompt.md');
+-const systemTemplate = loadPromptTemplate('IncrementalCodingChain.system.prompt.md');
+-const humanTemplate = loadPromptTemplate('IncrementalCodingChain.human.prompt.md');
 -
 -const prompt = ChatPromptTemplate.fromMessages([
 -  SystemMessagePromptTemplate.fromTemplate(systemTemplate),
@@ -43,15 +43,15 @@ index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a
 -]);
 -
  // Async factory for the chain
--async function createContextStepBuilderChain(llm) {
+-async function createIncrementalCodingChain(llm) {
 -  // Use the new JS prompt with system/human separation
 -  const parser = new StringOutputParser({
 -    parse: (text) => text.trim()
-+export async function createContextStepBuilderChain(llm, options = {}) {
++export async function createIncrementalCodingChain(llm, options = {}) {
 +  const chain = await createChatChain({
-+    chainName: 'ContextStepBuilderChain',
-+    systemFile: 'ContextStepBuilderChain.system.prompt.md',
-+    humanFile: 'ContextStepBuilderChain.human.prompt.md',
++    chainName: 'IncrementalCodingChain',
++    systemFile: 'IncrementalCodingChain.system.prompt.md',
++    humanFile: 'IncrementalCodingChain.human.prompt.md',
 +    inputVariables: ['gameSource', 'plan', 'step', 'entities'],
 +    preset: 'creative',
 +    llm,
@@ -73,14 +73,14 @@ index a103bd6213ffb757cfeb0f04502b11a59bbd52aa..3f0d1ad2e752eea13abae893552f4f9a
    };
  }
 -
--export { createContextStepBuilderChain };
-diff --git a/server/tests/unit/ContextStepBuilderChain.test.js b/server/tests/unit/ContextStepBuilderChain.test.js
+-export { createIncrementalCodingChain };
+diff --git a/server/tests/unit/IncrementalCodingChain.test.js b/server/tests/unit/IncrementalCodingChain.test.js
 index 6ed4160c2390321b2577cf6f4706a4204af040b2..3a2daa6405e37263a2b72b26906d248bfaebd578 100644
---- a/server/tests/unit/ContextStepBuilderChain.test.js
-+++ b/server/tests/unit/ContextStepBuilderChain.test.js
-@@ -21,50 +21,61 @@ describe('ContextStepBuilderChain', () => {
-     const systemPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.system.prompt.md');
-     const humanPromptPath = path.join(__dirname, '../../agents/prompts/ContextStepBuilderChain.human.prompt.md');
+--- a/server/tests/unit/IncrementalCodingChain.test.js
++++ b/server/tests/unit/IncrementalCodingChain.test.js
+@@ -21,50 +21,61 @@ describe('IncrementalCodingChain', () => {
+     const systemPromptPath = path.join(__dirname, '../../agents/prompts/coding/IncrementalCodingChain.system.prompt.md');
+     const humanPromptPath = path.join(__dirname, '../../agents/prompts/coding/IncrementalCodingChain.human.prompt.md');
      systemPromptString = await fs.readFile(systemPromptPath, 'utf8');
      humanPromptString = await fs.readFile(humanPromptPath, 'utf8');
    });
@@ -110,7 +110,7 @@ index 6ed4160c2390321b2577cf6f4706a4204af040b2..3a2daa6405e37263a2b72b26906d248b
 +      withConfig() { return this; },
 +      async invoke() { return { content: 'function foo(){}' }; }
 +    };
-+    const chain = await createContextStepBuilderChain(llm);
++    const chain = await createIncrementalCodingChain(llm);
 +    const result = await chain.invoke({ gameSource: '', plan: '[]', step: '{}' });
 +    expect(result).toBe('function foo(){}');
 +  });
@@ -122,7 +122,7 @@ index 6ed4160c2390321b2577cf6f4706a4204af040b2..3a2daa6405e37263a2b72b26906d248b
      }
      // ChatOpenAI is now imported at the top
      const modelName = process.env.OPENAI_MODEL;
-     const chain = await createContextStepBuilderChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
+     const chain = await createIncrementalCodingChain(new ChatOpenAI({ model: modelName, temperature: 0 }));
      const result = await chain.invoke({
        gameSource: '// Minimal HTML5 Canvas Game Scaffold\nconst canvas = document.getElementById(\'game-canvas\');\nconst ctx = canvas.getContext(\'2d\');\nfunction gameLoop() { ctx.clearRect(0,0,canvas.width,canvas.height); }\ngameLoop();',
        plan: JSON.stringify([

@@ -15,7 +15,7 @@ async function createBackgroundCodeChain(llm, options = {}) {
 
   return await createStandardChain({
     chainName: 'BackgroundCodeChain',
-    promptFile: 'coding/background-code.md',
+    promptFile: 'coding/BackgroundCodeChain.prompt.md',
     inputVariables: ['context'],
     schema: backgroundCodeSchema,
     preset: 'structured',

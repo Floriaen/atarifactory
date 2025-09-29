@@ -66,7 +66,7 @@ import { xxxSchema } from '../../../schemas/langchain-schemas.js';
 async function createXxxChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'XxxChain',
-    promptFile: 'design/xxx-prompt.md',
+    promptFile: 'design/YourChain.prompt.md',
     inputVariables: ['var1', 'var2'],
     schema: xxxSchema,
     llm: llm,

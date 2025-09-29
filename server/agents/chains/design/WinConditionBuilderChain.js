@@ -4,7 +4,7 @@ import { winConditionBuilderSchema } from '../../../schemas/langchain-schemas.js
 async function createWinConditionBuilderChain(llm, options = {}) {
   return createJSONChain({
     chainName: 'WinConditionBuilderChain',
-    promptFile: 'design/win-condition-builder.md',
+    promptFile: 'design/WinConditionBuilderChain.prompt.md',
     inputVariables: ['context'],
     schema: winConditionBuilderSchema,
     preset: 'structured',

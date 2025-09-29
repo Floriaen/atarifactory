@@ -44,7 +44,7 @@ npm run lint:fix
 ### Core Pipeline Flow
 ```
 GameInventorChain → GameDesignChain → PlayabilityValidatorChain → 
-PlannerChain → ContextStepBuilderChain (×N) → FeedbackChain → StaticCheckerChain
+PlannerChain → IncrementalCodingChain (×N) → FeedbackChain → StaticCheckerChain
 ```
 
 ### Key Architectural Patterns
@@ -76,6 +76,8 @@ PlannerChain → ContextStepBuilderChain (×N) → FeedbackChain → StaticCheck
 - Individual chain files in `server/agents/chains/`
 - Test files in `server/tests/`
 - Prompt files in `server/agents/prompts/`
+  - Name each file exactly after the chain (e.g., `MyChain.prompt.md`, `design/MyDesignChain.prompt.md`).
+  - Store prompts under the domain subfolders (`design/`, `coding/`, `art/`) when applicable.
 - Documentation files
 
 ### Chain Development Pattern
@@ -101,7 +103,7 @@ import { myChainSchema } from '../../../schemas/langchain-schemas.js';
 async function createMyChain(llm, options = {}) {
   return await createStandardChain({
     chainName: 'MyChain',
-    promptFile: 'my-chain.md',
+    promptFile: 'MyChain.prompt.md',
     inputVariables: ['input'],
     schema: myChainSchema,
     preset: 'structured', // or 'creative', 'planning', 'validation'

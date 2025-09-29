@@ -1,22 +1,22 @@
-// Modular chain built via chainFactory for ContextStepBuilderAgent
+// Modular chain built via chainFactory for the incremental coding agent
 // Receives: { gameSource, plan, step, entities }
 // Returns: revised JavaScript source as a string
 
-import { createChatChain } from '../../utils/chainFactory.js';
+import { createChatChain } from '../../../utils/chainFactory.js';
 
 export const CHAIN_STATUS = {
-  name: 'ContextStepBuilderChain',
+  name: 'IncrementalCodingChain',
   label: 'Code Generation',
   description: 'Implementing game logic',
   category: 'coding',
 };
 
 // Async factory for the chain
-export async function createContextStepBuilderChain(llm, options = {}) {
+export async function createIncrementalCodingChain(llm, options = {}) {
   const chain = await createChatChain({
-    chainName: 'ContextStepBuilderChain',
-    systemFile: 'ContextStepBuilderChain.system.prompt.md',
-    humanFile: 'ContextStepBuilderChain.human.prompt.md',
+    chainName: 'IncrementalCodingChain',
+    systemFile: 'coding/IncrementalCodingChain.system.prompt.md',
+    humanFile: 'coding/IncrementalCodingChain.human.prompt.md',
     inputVariables: ['gameSource', 'plan', 'step', 'entities'],
     preset: 'creative',
     llm,
@@ -33,3 +33,6 @@ export async function createContextStepBuilderChain(llm, options = {}) {
     },
   };
 }
+
+// Temporary backwards compatibility export; remove after callers migrate.
+export const createContextStepBuilderChain = createIncrementalCodingChain;

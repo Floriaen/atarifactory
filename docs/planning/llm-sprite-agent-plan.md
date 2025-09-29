@@ -23,7 +23,7 @@ Owner: Game Agent Team
 - Create chain: `server/agents/chains/art/SpriteDesignChain.js`
   - Input: `{ context: { entity, gridSize=12 } }`
   - Output: SpriteDSL JSON (validated)
-- Prompt: `server/agents/prompts/art/sprite-dsl-generator.md` (few‑shot)
+- Prompt: `server/agents/prompts/art/SpriteDesignChain.prompt.md` (few‑shot)
 - Compiler: `server/utils/sprites/dsl/compiler.js` (finalize normalization + guards)
 - Renderer: `server/utils/sprites/renderer.js` (mono, nearest‑neighbor)
 - Registry entry: `server/utils/sprites/index.js` (exports compile/render helpers)

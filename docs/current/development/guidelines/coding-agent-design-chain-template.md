@@ -11,7 +11,7 @@ This guide standardizes the implementation of all *design chain agents* in the c
 ### 1.1. File Structure
 
 - Chain file: `server/agents/chains/design/<chain-name>.js`
-- Prompt file: `server/agents/prompts/design/<chain-name>.md`
+- Prompt file: `server/agents/prompts/design/<ChainName>.prompt.md`
 - Unit test: `server/tests/unit/design/<chain-name>.test.js`
 - Integration test: `server/tests/integration/design/<chain-name>.openai.test.js` (if needed)
 
@@ -28,7 +28,7 @@ async function create<ChainName>(llm, options = {}) {
   
   return await createStandardChain({
     chainName: '<ChainName>',
-    promptFile: 'design/<chain-name>.md',
+    promptFile: 'design/<ChainName>.prompt.md',
     inputVariables: ['input1', 'input2'], // e.g., ['loop']
     schema: <chainName>Schema, // Zod schema for structured output
     preset: 'structured', // or 'creative', 'planning', 'validation'

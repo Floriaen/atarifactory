@@ -56,6 +56,8 @@ async function createMyChain(llm, options = {}) {
 }
 ```
 
+> **Naming convention:** Keep prompt filenames aligned with the chain name (`<ChainName>.prompt.md`) and store them under the corresponding domain directory (`design/`, `coding/`, `art/`, etc.).
+
 **❌ NEVER use deprecated patterns:**
 - Manual LCEL composition without chainFactory
 - Direct LLM calls without structured output

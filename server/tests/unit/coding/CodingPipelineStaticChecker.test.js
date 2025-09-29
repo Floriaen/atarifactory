@@ -3,7 +3,7 @@ import { createSharedState } from '../../../types/SharedState.js';
 
 const staticCheckerRunMock = vi.fn().mockResolvedValue({ staticCheckPassed: true, errors: [] });
 
-vi.mock('../../../agents/chains/StaticCheckerChain.js', () => ({
+vi.mock('../../../agents/chains/coding/StaticCheckerChain.js', () => ({
   CHAIN_STATUS: {
     name: 'StaticCheckerChain',
     label: 'Static Checker',
@@ -15,7 +15,7 @@ vi.mock('../../../agents/chains/StaticCheckerChain.js', () => ({
 
 const transformGameCodeWithLLMMock = vi.fn(async (sharedState) => sharedState.gameSource);
 
-vi.mock('../../../agents/chains/ControlBarTransformerAgent.js', () => ({
+vi.mock('../../../agents/chains/coding/ControlBarTransformerAgent.js', () => ({
   CHAIN_STATUS: {
     name: 'ControlBarTransformerChain',
     label: 'Control Bar Transform',

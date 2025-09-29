@@ -43,7 +43,7 @@ export const difficultyAnalyzerSchema = z.object({
 
 ## Step 2: Create the Prompt Template
 
-**File**: `server/agents/prompts/design/difficulty-analyzer.md`
+**File**: `server/agents/prompts/design/DifficultyAnalyzerChain.prompt.md`
 
 ```markdown
 You are a game difficulty analysis expert. Analyze the provided game definition and assign an appropriate difficulty rating.
@@ -87,7 +87,7 @@ async function createDifficultyAnalyzerChain(llm, options = {}) {
 
   return await createStandardChain({
     chainName: 'DifficultyAnalyzerChain',
-    promptFile: 'design/difficulty-analyzer.md',
+    promptFile: 'design/DifficultyAnalyzerChain.prompt.md',
     inputVariables: ['gameDef'],
     schema: difficultyAnalyzerSchema,
     preset: 'structured', // Use structured preset for analytical tasks

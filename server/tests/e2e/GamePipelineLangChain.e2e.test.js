@@ -129,18 +129,18 @@ vi.mock('../../agents/chains/PlannerChain', () => ({
     category: 'planning'
   }
 }));
-vi.mock('../../agents/chains/ContextStepBuilderChain', () => ({
-  createContextStepBuilderChain: vi.fn().mockReturnValue({
+vi.mock('../../agents/chains/coding/IncrementalCodingChain', () => ({
+  createIncrementalCodingChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ contextSteps: ['Set up environment', 'Initialize player state'] })
   }),
   CHAIN_STATUS: {
-    name: 'ContextStepBuilderChain',
+    name: 'IncrementalCodingChain',
     label: 'Context Step Builder',
     description: 'Building implementation steps',
     category: 'coding'
   }
 }));
-vi.mock('../../agents/chains/FeedbackChain', () => ({
+vi.mock('../../agents/chains/coding/FeedbackChain', () => ({
   createFeedbackChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ retryTarget: 'fixer', suggestion: 'Try adding more levels.' })
   }),
@@ -151,12 +151,12 @@ vi.mock('../../agents/chains/FeedbackChain', () => ({
     category: 'coding'
   }
 }));
-vi.mock('../../agents/chains/SyntaxSanityChain', () => ({
+vi.mock('../../agents/chains/coding/SyntaxSanityChain', () => ({
   createSyntaxSanityChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ syntaxOk: true })
   })
 }));
-vi.mock('../../agents/chains/RuntimePlayabilityChain', () => ({
+vi.mock('../../agents/chains/coding/RuntimePlayabilityChain', () => ({
   createRuntimePlayabilityChain: vi.fn().mockReturnValue({
     invoke: vi.fn().mockResolvedValue({ runtimePlayable: true })
   })

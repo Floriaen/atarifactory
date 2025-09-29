@@ -28,7 +28,7 @@ We use the LLM as a designer that outputs a tiny DSL describing the silhouette; 
 - Agent: `SpriteMaskGenerator`
 - Location: `server/agents/chains/art/SpriteMaskGenerator.js`
 - Internals: constructs a `SpriteDesignChain` via chainFactory with centralized schema
-- Prompt: `server/agents/prompts/art/sprite-dsl-generator.md`
+- Prompt: `server/agents/prompts/art/SpriteDesignChain.prompt.md`
 - Input (`context`):
   - `entity`: string (e.g., "plane", "lantern", "person")
   - `gridSize`: 12 (default) or 16
