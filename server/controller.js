@@ -11,6 +11,7 @@ import { runArtPipeline } from './agents/pipeline/artPipeline.js';
 import { loadPack, savePack } from './utils/sprites/packStore.js';
 import { runModularGameSpecPipeline } from './agents/pipeline/pipeline.js';
 import { computeCostTotals } from './utils/costing.js';
+import { captureAndUpdateThumbnail } from './utils/thumbnailCapture.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -64,6 +65,7 @@ async function runPipeline(title, onStatusUpdate) {
     // Get code and game design info (with env var fallback logic)
     const sharedState = await generateGameSourceCode(title, logger, wrappedOnStatusUpdate);
     sharedState.traceId = sharedState.traceId || traceId;
+    sharedState.gameId = gameId; // Make gameId available for thumbnail capture
     const code = sharedState.gameSource;
     const gameDef = sharedState.gameDef;
     const gameName = gameDef?.title || gameDef?.name || title;
@@ -166,6 +168,15 @@ async function runPipeline(title, onStatusUpdate) {
       } catch (e) {
         logger.warn('Failed to write build meta.json', { error: e?.message });
       }
+
+      // Thumbnail capture (skip in MOCK_PIPELINE)
+      try {
+        if (process.env.MOCK_PIPELINE !== '1') {
+          await captureAndUpdateThumbnail(gameId, gameFolder);
+        }
+      } catch (thumbErr) {
+        logger.warn('Thumbnail capture failed', { error: thumbErr?.message });
+      }
     } catch (err) {
       logger.error('Failed to write game files', { gameId, gameFolder, error: err.message, stack: err.stack });
       throw err;
@@ -173,7 +184,14 @@ async function runPipeline(title, onStatusUpdate) {
 
     // Update manifest
     if (!global.gamesManifest) global.gamesManifest = [];
-    const gameMeta = { id: gameId, name: gameName, date: gameDate, url: `/games/${gameId}/` };
+    const thumbExists = fs.existsSync(path.join(GAMES_DIR, gameId, 'thumb.png'));
+    const gameMeta = { 
+      id: gameId, 
+      name: gameName, 
+      date: gameDate, 
+      url: `/games/${gameId}/`,
+      thumbnail: thumbExists ? `/games/${gameId}/thumb.png` : null
+    };
     global.gamesManifest.unshift(gameMeta);
     // Emit final SSE event if callback
     onStatusUpdate && onStatusUpdate('Done', { game: gameMeta });
@@ -243,4 +261,4 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     return sharedState;
   }
 }
-export { runPipeline, generateGameSourceCode }; 
+export { runPipeline, generateGameSourceCode };

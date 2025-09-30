@@ -260,8 +260,11 @@ function renderGallery(games) {
     const thumb = document.createElement('div');
     thumb.className = 'thumb';
     thumb.title = game.name;
+    const imageHtml = game.thumbnail
+      ? `<img src="${API_BASE}${game.thumbnail}" alt="${game.name} thumbnail" loading="lazy" />`
+      : `<div class="thumb-bg"></div>`;
     thumb.innerHTML = `
-      <div class="thumb-bg"></div>
+      ${imageHtml}
       <div class="thumb-label">
         <div class="thumb-title">${game.name}</div>
         <div class="thumb-date">${new Date(game.date).toLocaleDateString()}</div>
