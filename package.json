@@ -41,6 +41,7 @@
     "@google/gemini-cli": "^0.1.4",
     "@langchain/openai": "^0.5.13",
     "cors": "^2.8.5",
+    "dat.gui": "^0.7.9",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "langchain": "^0.3.29",

@@ -11,7 +11,7 @@ This directory contains the next-generation, agent-based, LLM-driven game genera
 ## Environment Variables
 
 - `OPENAI_API_KEY`: Required to use the real OpenAI LLM pipeline.
-- `MOCK_PIPELINE`: If set to `1`, runs the pipeline in mock mode using static mock game code (bypasses LLM calls).
+- `MOCK_PIPELINE`: If set to `1`, **skips ALL LLM calls** and uses static fixture data. Use this to test the entire pipeline infrastructure (file operations, sprite generation, static checking, thumbnail capture, server endpoints) without making expensive API calls.
 - `MINIMAL_GAME`: If set to `1`, runs the pipeline with a hardcoded minimal game prompt for testing. This generates a very simple game (player moves left/right, wins by reaching the right edge, no coins, no spikes, no score). Useful for fast/small test runs or debugging. When unset or `0`, the normal prompt/title is used.
 
 ### Usage
@@ -28,12 +28,13 @@ You can combine this with other environment variables as needed. Only one specia
 
 You can run the pipeline in a fast, robust mock mode for end-to-end testing and development.
 
-- **Enable mock mode:**
+- **Enable mock mode (skip ALL LLM calls):**
   ```sh
   MOCK_PIPELINE=1 npm run start:server
   ```
-- In mock mode, the pipeline skips all agent/LLM logic and uses the static mock game code from `server/tests/fixtures/bouncing-square-game.js`.
-- All generated files (`game.js`, `gameBoilerplate/controlBar/controlBar.js`, `gameBoilerplate/controlBar/controlBar.css`, `index.html`) are written directly into `/server/games/<gameId>/` (no `assets/` directory).
+- In mock mode, the pipeline **bypasses all LLM chains** and uses static fixture game code from `server/tests/fixtures/bouncing-square-game.js`.
+- This allows you to test the complete infrastructure (file operations, sprite generation, static checking, thumbnail capture, server endpoints) without making expensive API calls.
+- All generated files (`game.js`, `controlBar.js`, `controlBar.css`, `index.html`, `thumb.png`) are written to `/server/games/<gameId>/`.
 - The frontend and server behave as if a real game was generated, allowing you to test serving, loading, and playing the game.
 
 ## Integration Testing

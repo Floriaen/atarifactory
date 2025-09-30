@@ -276,11 +276,20 @@ Notes:
 ```bash
 # Required for LLM functionality
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4o-mini              # Optional, defaults to gpt-3.5-turbo
 
-# Optional testing
+# Testing & Development
+MOCK_PIPELINE=1      # Skip ALL LLM calls, test infrastructure only (file ops, sprites, thumbnails)
+MINIMAL_GAME=1       # Skip design phase, only run coding pipeline
 TEST_LOGS=1          # Enable verbose test logging
-OPENAI_MODEL=gpt-4   # Specify model for real LLM tests
+
+# Debug & Tracing
+ENABLE_DEBUG=1       # Enable /debug endpoints and detailed event logging
+ENABLE_DEV_TRACE=1   # Capture full LLM prompts/responses for analysis
+LOG_LEVEL=info       # Logging verbosity (debug/info/warn/error)
 ```
+
+**Note:** `MOCK_PIPELINE=1` is specifically for testing pipeline infrastructure without API costs - it validates file operations, sprite generation, static checking, thumbnail capture, and server endpoints using fixture data.
 
 **Key Features:**
 - **Token Counting**: Built-in cost tracking for all LLM calls

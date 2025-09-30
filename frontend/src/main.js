@@ -10,6 +10,90 @@
  * - Ensures robust error handling and user feedback throughout
  */
 
+import * as dat from '../../node_modules/dat.gui/build/dat.gui.module.js';
+
+// Generation settings with defaults
+const settings = {
+  // Pipeline control
+  enableDebug: true,
+  enableDevTrace: true,
+  mockPipeline: false,
+  minimalGame: false,
+
+  // LLM settings
+  model: 'gpt-4o-mini',
+
+  // Logging
+  logLevel: 'info',
+
+  // Reset to defaults
+  resetDefaults: function() {
+    this.enableDebug = true;
+    this.enableDevTrace = true;
+    this.mockPipeline = false;
+    this.minimalGame = false;
+    this.model = 'gpt-4o-mini';
+    this.logLevel = 'info';
+    saveSettings();
+    gui.updateDisplay();
+  }
+};
+
+// Load settings from localStorage
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('gameGenerationSettings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.assign(settings, parsed);
+    }
+  } catch (e) {
+    console.warn('Failed to load settings from localStorage:', e);
+  }
+}
+
+// Save settings to localStorage
+function saveSettings() {
+  try {
+    const toSave = { ...settings };
+    delete toSave.resetDefaults;
+    localStorage.setItem('gameGenerationSettings', JSON.stringify(toSave));
+  } catch (e) {
+    console.warn('Failed to save settings to localStorage:', e);
+  }
+}
+
+// Initialize dat.GUI
+loadSettings();
+const gui = new dat.GUI({ width: 300 });
+gui.domElement.style.position = 'fixed';
+gui.domElement.style.top = '10px';
+gui.domElement.style.right = '10px';
+gui.domElement.style.zIndex = '10000';
+gui.domElement.style.transform = 'scale(1.5)';
+gui.domElement.style.transformOrigin = 'top right';
+
+// Pipeline folder
+const pipelineFolder = gui.addFolder('Pipeline');
+pipelineFolder.add(settings, 'mockPipeline').name('Mock Pipeline').onChange(saveSettings);
+pipelineFolder.add(settings, 'minimalGame').name('Minimal Game').onChange(saveSettings);
+pipelineFolder.open();
+
+// LLM folder
+const llmFolder = gui.addFolder('LLM');
+llmFolder.add(settings, 'model', ['gpt-4o-mini', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo']).name('Model').onChange(saveSettings);
+llmFolder.open();
+
+// Debug folder
+const debugFolder = gui.addFolder('Debug');
+debugFolder.add(settings, 'enableDebug').name('Enable Debug').onChange(saveSettings);
+debugFolder.add(settings, 'enableDevTrace').name('Enable Dev Trace').onChange(saveSettings);
+debugFolder.add(settings, 'logLevel', ['debug', 'info', 'warn', 'error']).name('Log Level').onChange(saveSettings);
+debugFolder.open();
+
+// Reset button
+gui.add(settings, 'resetDefaults').name('Reset to Defaults');
+
 // Centralized DOM queries for static elements
 const DOM = {
   header: document.querySelector('.header'),
@@ -454,11 +538,23 @@ DOM.generateBtn.onclick = async function () {
   btn.disabled = true;
   let reader;
   try {
+    // Prepare settings to send to server
+    const generationSettings = {
+      enableDebug: settings.enableDebug,
+      enableDevTrace: settings.enableDevTrace,
+      mockPipeline: settings.mockPipeline,
+      minimalGame: settings.minimalGame,
+      model: settings.model,
+      logLevel: settings.logLevel
+    };
+
     const response = await fetch(`${API_BASE}/generate-stream`, {
       method: 'POST',
       headers: {
-        'Accept': 'text/event-stream'
-      }
+        'Accept': 'text/event-stream',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ settings: generationSettings })
     });
     if (!response.body) throw new Error('No response body');
     reader = response.body.getReader();
