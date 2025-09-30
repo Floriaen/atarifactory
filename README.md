@@ -4,6 +4,8 @@
 
 **AI-powered game development platform that generates playable mobile Atari-like games**
 
+![AtariFactory Screenshot](assets/Screenshot%202025-09-30.png)
+
 AtariFactory uses advanced AI chains to automatically generate complete, playable browser games from simple concepts. Built with modern LangChain patterns, structured output validation, and comprehensive testing.
 
 ## 🚀 Quick Start
