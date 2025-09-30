@@ -21,12 +21,40 @@ const __dirname = dirname(__filename);
  * Orchestrates the agent pipeline for game generation.
  * @param {string} title - The game title
  * @param {function} [onStatusUpdate] - Optional callback for status updates: (step, data) => void
+ * @param {object} [settings] - Generation settings from frontend
  * @returns {Promise<object>} - The final pipeline result
  */
-async function runPipeline(title, onStatusUpdate) {
+async function runPipeline(title, onStatusUpdate, settings = {}) {
   const traceId = uuidv4();
-  logger.info('Pipeline started', { traceId, title });
-  
+  logger.info('Pipeline started', { traceId, title, settings });
+
+  // Apply settings to environment (temporarily for this request)
+  const originalEnv = {};
+  if (settings.enableDebug !== undefined) {
+    originalEnv.ENABLE_DEBUG = process.env.ENABLE_DEBUG;
+    process.env.ENABLE_DEBUG = settings.enableDebug ? '1' : '0';
+  }
+  if (settings.enableDevTrace !== undefined) {
+    originalEnv.ENABLE_DEV_TRACE = process.env.ENABLE_DEV_TRACE;
+    process.env.ENABLE_DEV_TRACE = settings.enableDevTrace ? '1' : '0';
+  }
+  if (settings.mockPipeline !== undefined) {
+    originalEnv.MOCK_PIPELINE = process.env.MOCK_PIPELINE;
+    process.env.MOCK_PIPELINE = settings.mockPipeline ? '1' : '0';
+  }
+  if (settings.minimalGame !== undefined) {
+    originalEnv.MINIMAL_GAME = process.env.MINIMAL_GAME;
+    process.env.MINIMAL_GAME = settings.minimalGame ? '1' : '0';
+  }
+  if (settings.model) {
+    originalEnv.OPENAI_MODEL = process.env.OPENAI_MODEL;
+    process.env.OPENAI_MODEL = settings.model;
+  }
+  if (settings.logLevel) {
+    originalEnv.LOG_LEVEL = process.env.LOG_LEVEL;
+    process.env.LOG_LEVEL = settings.logLevel;
+  }
+
   // Wrap onStatusUpdate to log all events
   const wrappedOnStatusUpdate = onStatusUpdate ? (type, payload) => {
     statusLogger.info('Controller status event', {
@@ -169,11 +197,9 @@ async function runPipeline(title, onStatusUpdate) {
         logger.warn('Failed to write build meta.json', { error: e?.message });
       }
 
-      // Thumbnail capture (skip in MOCK_PIPELINE)
+      // Thumbnail capture
       try {
-        if (process.env.MOCK_PIPELINE !== '1') {
-          await captureAndUpdateThumbnail(gameId, gameFolder);
-        }
+        await captureAndUpdateThumbnail(gameId, gameFolder);
       } catch (thumbErr) {
         logger.warn('Thumbnail capture failed', { error: thumbErr?.message });
       }
@@ -195,12 +221,32 @@ async function runPipeline(title, onStatusUpdate) {
     global.gamesManifest.unshift(gameMeta);
     // Emit final SSE event if callback
     onStatusUpdate && onStatusUpdate('Done', { game: gameMeta });
+
+    // Restore original environment variables
+    Object.keys(originalEnv).forEach(key => {
+      if (originalEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalEnv[key];
+      }
+    });
+
     return {
       game: gameMeta
     };
   } catch (err) {
     logger.error('Pipeline error', { traceId, error: err, errorMessage: err && err.message, errorStack: err && err.stack });
     onStatusUpdate && onStatusUpdate('Error', { error: err.message, stack: err.stack });
+
+    // Restore original environment variables even on error
+    Object.keys(originalEnv).forEach(key => {
+      if (originalEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalEnv[key];
+      }
+    });
+
     throw err;
   }
 }

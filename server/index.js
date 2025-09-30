@@ -89,8 +89,12 @@ app.post('/generate-stream', async (req, res) => {
   if (!title) {
     title = 'Game-' + uuidv4().slice(0, 8);
   }
+
+  // Extract settings from request body
+  const generationSettings = req.body && req.body.settings || {};
+
   try {
-    await runPipeline(title, (step, data) => sendStep(step, data));
+    await runPipeline(title, (step, data) => sendStep(step, data), generationSettings);
     res.end();
   } catch (err) {
     logger.error('Error in /generate-stream', { error: err.message, stack: err.stack });

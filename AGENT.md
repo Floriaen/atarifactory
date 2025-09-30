@@ -136,10 +136,28 @@ Uses **MockLLM** for fast, deterministic testing with structured output support.
 Required in `server/.env`:
 ```bash
 OPENAI_API_KEY=your-openai-api-key    # Required for LLM functionality
-OPENAI_MODEL=gpt-4                    # Optional, defaults to gpt-3.5-turbo
+OPENAI_MODEL=gpt-4o-mini              # Optional, defaults to gpt-3.5-turbo
 TEST_LOGS=1                           # Optional, enables verbose test logging
 LOG_LEVEL=info                        # Optional, controls Winston logging verbosity
 ```
+
+**Testing & Development Variables:**
+```bash
+# MOCK_PIPELINE: Skip ALL LLM calls and use fixture data
+# Use this to test the entire pipeline infrastructure (file writing, art generation,
+# thumbnail capture, etc.) without making expensive LLM API calls
+MOCK_PIPELINE=1                       # Loads static fixture game, bypasses all LLM chains
+
+# MINIMAL_GAME: Skip design phase, only run coding pipeline
+# Use this to test the coding pipeline specifically with a predefined simple game
+MINIMAL_GAME=1                        # Generates minimal platformer, skips design phase
+
+# Debug and tracing
+ENABLE_DEBUG=1                        # Enables /debug endpoints and detailed event logging
+ENABLE_DEV_TRACE=1                    # Captures full LLM prompts/responses for analysis
+```
+
+**Note:** `MOCK_PIPELINE` is specifically designed for integration testing - it validates that all non-LLM systems (file operations, sprite generation, static checking, thumbnail capture, server endpoints) work correctly without incurring API costs.
 
 ### Logging System
 
