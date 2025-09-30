@@ -24,7 +24,18 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/games', express.static(path.join(__dirname, 'games')));
+// Serve games directory with optimized cache headers for thumbnails
+app.use('/games', express.static(path.join(__dirname, 'games'), {
+  setHeaders: (res, filePath) => {
+    // Cache thumbnails aggressively since they're immutable per build
+    if (filePath.endsWith('thumb.png')) {
+      res.set({
+        'Cache-Control': 'public, max-age=31536000, immutable', // 1 year cache
+        'ETag': false // Disable ETag since we use immutable
+      });
+    }
+  }
+}));
 if (process.env.ENABLE_DEBUG === '1') {
   app.use('/debug', debugRouter);
 }
