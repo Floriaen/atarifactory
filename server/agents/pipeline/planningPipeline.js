@@ -15,6 +15,15 @@ async function runPlanningPipeline(sharedState, onStatusUpdate) {
   const statusUpdate = onStatusUpdate || (() => { });
   // Token counting is handled automatically by individual chains
 
+  // Skip planning if gameDef and plan are already populated (e.g., MINIMAL_GAME mode)
+  if (sharedState.gameDef && sharedState.plan && Array.isArray(sharedState.plan) && sharedState.plan.length > 0) {
+    logger.info('Planning pipeline skipped: gameDef and plan already populated', {
+      gameDef: sharedState.gameDef,
+      planLength: sharedState.plan.length
+    });
+    return;
+  }
+
   // Create pipeline tracker with defined steps
   const tracker = createPipelineTracker('planning', 'Planning', 'Designing game', statusUpdate);
   

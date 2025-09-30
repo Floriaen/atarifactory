@@ -1,8 +1,4 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { createPlanningChain } from '../../utils/chainFactory.js';
 import { plannerSchema } from '../../schemas/langchain-schemas.js';
 import logger from '../../utils/logger.js';
 
@@ -13,47 +9,50 @@ export const CHAIN_STATUS = {
   category: 'planning'
 };
 
-// ESM equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/**
+ * Creates a PlannerChain using standardized factory
+ * @param {Object} llm - Optional custom LLM instance
+ * @param {Object} options - Chain options
+ * @param {Object} options.sharedState - Shared state for token counting
+ * @returns {Promise<Object>} Configured chain instance
+ */
+async function createPlannerChain(llm, options = {}) {
+  const { sharedState } = options;
 
-// Async factory for PlannerChain with structured output
-async function createPlannerChain(llm) {
-  const promptPath = path.join(__dirname, '../prompts/PlannerChain.prompt.md');
-  const promptString = await fs.readFile(promptPath, 'utf8');
-  logger.debug('PlannerChain prompt template', { promptString });
-  const plannerPrompt = new PromptTemplate({
-    template: promptString,
-    inputVariables: ['gameDefinition']
-  });
-
-  // Use structured output instead of manual JSON parsing
-  const structuredLLM = llm.withStructuredOutput(plannerSchema);
-
-  // Return a custom chain that logs the hydrated prompt before invoking the LLM
-  return {
-    async invoke(input) {
+  return createPlanningChain({
+    chainName: 'PlannerChain',
+    promptFile: 'PlannerChain.prompt.md',
+    inputVariables: ['gameDefinition'],
+    schema: plannerSchema,
+    llm,
+    sharedState,
+    customInvoke: async (input, baseChain, { chainName }) => {
       // Ensure gameDefinition is stringified for prompt injection
       const formattedInput = {
         ...input,
-        gameDefinition: typeof input.gameDefinition === 'string' ? input.gameDefinition : JSON.stringify(input.gameDefinition, null, 2)
+        gameDefinition: typeof input.gameDefinition === 'string'
+          ? input.gameDefinition
+          : JSON.stringify(input.gameDefinition, null, 2)
       };
+
       logger.debug('PlannerChain input to prompt', { formattedInput });
-      const hydratedPrompt = await plannerPrompt.format(formattedInput);
-      // logger.debug('PlannerChain hydrated prompt', { hydratedPrompt });
-      
+
       try {
-        const result = await structuredLLM.invoke(hydratedPrompt);
+        const result = await baseChain.invoke(formattedInput);
         logger.debug('PlannerChain structured output', { result });
+
         // Extract the plan array from the wrapped object
+        // The schema wraps the plan in { plan: [...] }
         return result.plan || result;
       } catch (err) {
-        logger.error('PlannerChain failed to get structured output', { error: err.message, stack: err.stack });
+        logger.error('PlannerChain failed to get structured output', {
+          error: err.message,
+          stack: err.stack
+        });
         throw err;
       }
     }
-  };
-
+  });
 }
 
 export { createPlannerChain };

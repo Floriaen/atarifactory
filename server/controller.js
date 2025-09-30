@@ -278,10 +278,11 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
     logger.info('Mock pipeline step', { step: 'finished_coding_pipeline' });
     return sharedState;
   } else if (process.env.MINIMAL_GAME === '1') {
-    // MINIMAL_GAME: only run coding pipeline with minimal gameDef/plan/code
-    logger && logger.info && logger.info('MINIMAL_GAME is active: running coding pipeline only');
+    // MINIMAL_GAME: use orchestrator with pre-populated gameDef/plan (planning phase will be skipped)
+    logger && logger.info && logger.info('MINIMAL_GAME is active: using orchestrator with pre-populated gameDef and plan');
     const sharedState = createSharedState();
     sharedState.title = 'Minimal Platformer';
+    sharedState.onStatusUpdate = onStatusUpdate;
     sharedState.gameDef = {
       title: 'Minimal Platformer',
       description: 'Move left and right. Win by reaching the right edge.',
@@ -294,8 +295,8 @@ async function generateGameSourceCode(title, logger, onStatusUpdate) {
       { id: 2, description: 'Create the player entity and implement left/right movement' },
       { id: 3, description: 'Implement win condition when player reaches the right edge' }
     ];
-    // Do not pre-set code in MINIMAL_GAME; let the coding pipeline generate it.
-    await runCodingPipeline(sharedState, onStatusUpdate);
+    // Use orchestrator for unified progress/events (planning will be skipped automatically)
+    await runModularGameSpecPipeline(sharedState, {});
     return sharedState;
   } else {
     // Normal: run full orchestrator pipeline for unified progress/events
