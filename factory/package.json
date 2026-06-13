@@ -1,0 +1,32 @@
+{
+  "name": "game-factory",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:e2e": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "view-run": "tsx bin/view-run.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "pino": "^9.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^22.8.0",
+    "eslint": "^9.13.0",
+    "pino-pretty": "^11.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.11.0",
+    "vitest": "^2.1.0"
+  }
+}
