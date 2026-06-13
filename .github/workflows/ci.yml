@@ -7,18 +7,19 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-test:
+  factory:
     runs-on: ubuntu-latest
-    environment: Testing
+    defaults:
+      run:
+        working-directory: factory
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: factory/package-lock.json
       - run: npm ci
-      - name: Create .env from secrets
-        run: |
-          echo "OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}" >> .env
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-      - run: npx eslint .
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
