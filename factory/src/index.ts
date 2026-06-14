@@ -1,7 +1,7 @@
 // Dev entry: run the fully autonomous design phase and print the GameDefinition.
 //   make run
 import { existsSync } from 'node:fs';
-import { ClaudeProvider } from './llm/providers/claude.js';
+import { selectProvider } from './llm/selectProvider.js';
 
 // Load factory/.env (Node's built-in dotenv) so ANTHROPIC_API_KEY is available.
 if (existsSync('.env')) process.loadEnvFile('.env');
@@ -14,9 +14,10 @@ import { createRunContext } from './observability/runContext.js';
 import { RunStore } from './observability/runStore.js';
 import { DEFAULT_MODEL } from './llm/models.js';
 
-if (!process.env.ANTHROPIC_API_KEY) {
+// PROVIDER=claude-code uses the subscription CLI (no key); otherwise the metered API needs a key.
+if (process.env.PROVIDER !== 'claude-code' && !process.env.ANTHROPIC_API_KEY) {
   console.error(
-    '[game-factory] ANTHROPIC_API_KEY is not set. Add it to factory/.env, then re-run `make run`.',
+    '[game-factory] ANTHROPIC_API_KEY is not set. Add it to factory/.env (or set PROVIDER=claude-code), then re-run `make run`.',
   );
   process.exit(1);
 }
@@ -32,7 +33,7 @@ const observer = new Observer({
   store,
 });
 
-const result = await runDesignPhase({ provider: new ClaudeProvider(), observer });
+const result = await runDesignPhase({ provider: selectProvider(), observer });
 
 const totals = usage.totals();
 await store.finalize({
