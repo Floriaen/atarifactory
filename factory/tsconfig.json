@@ -15,5 +15,5 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "test", "bin"]
+  "include": ["src", "test", "bin", "admin/server"]
 }

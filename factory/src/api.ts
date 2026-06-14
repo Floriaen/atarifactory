@@ -43,6 +43,7 @@ export { RunStore } from './observability/runStore.js';
 export { ProgressTracker } from './observability/progress.js';
 export { createRunContext } from './observability/runContext.js';
 export { createLogger, withTrace } from './observability/logger.js';
+export type { Logger } from './observability/logger.js';
 export type { FactoryEvent, FactorySink } from './observability/events.js';
 export type { ProgressEvent } from './observability/progress.js';
 export type { UsageTotals } from './observability/usage.js';
