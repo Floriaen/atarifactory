@@ -17,6 +17,11 @@ const cases: Record<string, Record<string, unknown>> = {
   'prompts/design/critic.prompt.md': {
     draft: draftFixture,
   },
+  'prompts/art/sprite.prompt.md': {
+    entity: { id: 'player', role: 'player', description: 'the placement cursor' },
+    gameTitle: 'Upstack',
+    orientation: 'portrait',
+  },
 };
 
 describe('prompt rendering', () => {

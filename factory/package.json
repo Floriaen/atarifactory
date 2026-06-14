@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "view-run": "tsx bin/view-run.ts",
-    "batch": "tsx bin/batch-design.ts"
+    "batch": "tsx bin/batch-design.ts",
+    "art": "tsx bin/art.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

@@ -1,5 +1,8 @@
 import type { Critique, GameDraft, Seed, Selection } from '../../src/contracts/phaseSchemas.js';
 import type { GameDefinition } from '../../src/contracts/gameDefinition.js';
+import type { SpriteDsl } from '../../src/contracts/artSchemas.js';
+import type { SpritePack } from '../../src/contracts/spritePack.js';
+import { compileSprite } from '../../src/art/compiler.js';
 
 export const validGame: GameDefinition = {
   schemaVersion: 'gamedef/v1',
@@ -53,4 +56,22 @@ export const reviseMedium: Critique = {
   resembles: 'Tetris',
   funNote: 'too familiar',
   issues: [{ target: 'hook', severity: 'medium', note: 'too close to Tetris — push the inversion further' }],
+};
+
+/** A valid SpriteDsl: a single connected, symmetric blob. */
+export const spriteDslFixture: SpriteDsl = {
+  gridSize: 12,
+  frames: [{ ops: ['rect 4 4 4 4', 'mirror H'] }],
+};
+
+/** A valid SpritePack, with frames compiled from the DSL fixture (so dims/pixels are real). */
+const spriteItemFixture = (() => {
+  const compiled = compileSprite(spriteDslFixture);
+  return { gridSize: compiled.gridSize, frames: compiled.frames, dsl: spriteDslFixture };
+})();
+
+export const spritePackFixture: SpritePack = {
+  schemaVersion: 'spritepack/v1',
+  generatedAt: '2026-01-01T00:00:00.000Z',
+  items: { player: spriteItemFixture },
 };

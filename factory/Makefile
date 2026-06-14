@@ -21,6 +21,9 @@ start: setup run ## ONE COMMAND: setup then run
 batch: ## run the design phase N times and cache results:  make batch N=10 C=3
 	npm run batch -- N=$(or $(N),10) C=$(or $(C),3)
 
+art: ## generate sprites for a cached design:  make art [I=0 | TRACE=<id>]
+	npm run art -- I=$(or $(I),0) $(if $(TRACE),TRACE=$(TRACE),)
+
 test: ## tiers 1–3 (deterministic, no network)
 	npm test
 
@@ -36,4 +39,4 @@ lint: ## eslint
 clean: ## remove build + run artifacts + deps
 	rm -rf dist runs node_modules
 
-.PHONY: help setup run start test test-e2e view lint clean
+.PHONY: help setup run start batch art test test-e2e view lint clean
