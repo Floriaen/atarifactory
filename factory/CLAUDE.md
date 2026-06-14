@@ -18,16 +18,16 @@ An autonomous factory that invents small Atari-like browser games from scratch �
 
 ## TDD (mandatory)
 Red → green → refactor. **Write the failing test first.** Four tiers, MockProvider-first:
-1. **Contract** — pure Zod (canonical fields, `EntityId` regex, mechanics≤2/entities≤3 caps).
+1. **Contract** — pure Zod (canonical fields, `EntityId` regex, mechanics≤2/entities≤3 caps, gamepad-only `controls`).
 2. **Prompt-render** — variables sync, no unreplaced placeholders.
-3. **Mock chain/orchestrator** — full design phase, refinement count, bounded termination, observability emission. Deterministic, zero network. Refinement via `scriptedHeuristic([3,7])` ⇒ `iterations===1`.
+3. **Mock chain/orchestrator** — full design phase, refinement count, bounded termination, reseed fallback, observability emission. Deterministic, zero network. Refinement via scripted critic verdicts (`[revise, pass]`) ⇒ `iterations===1`.
 4. **Live e2e** — ONE, gated by `RUN_REAL_LLM=1`; assert structural invariants only, never exact text.
 
-CI runs tiers 1–3. Mock only at the provider + heuristic boundary, never the orchestrator.
+CI runs tiers 1–3. Mock only at the provider boundary, never the orchestrator.
 
 ## Non-negotiable architectural rules
 - **No LangChain, no LangGraph.** Thin SDK + the ~100-line `defineChain` helper. Timing/status live in `withNode`; fan-out in `Observer` — keep `defineChain` small.
-- **One versioned contract**: `GameDefinitionV1`, `.strict()`. Canonical `title`/`description` — **never** `name`/`pitch`. Single writer; `parseGameDefinition` is the read guard.
+- **One versioned contract**: `GameDefinitionV1`, `.strict()`. Canonical `title`/`description` — **never** `name`/`pitch`. `controls` is the fixed virtual gamepad only (D-pad + `btn1`/`btn2`, no tap/swipe). Single writer; `parseGameDefinition` is the read guard.
 - **Import Zod from `zod/v4`**, not `zod`. The Anthropic structured-output helper (`zodOutputFormat` → `z.toJSONSchema`) requires v4 schemas; mixing plain `zod` (v3) schemas breaks `ClaudeProvider` at runtime and fails typecheck.
 - **Immutable phase outputs.** Each chain returns a typed delta folded into a **new frozen** `DesignState`. **No mutable shared-state bag.** Never re-import the prototype's `SharedState`/`designContext`/`mergeContext`.
 - **Structured objects across boundaries.** Never `JSON.stringify` a gameDef into a prompt — use `toPromptCapsule`.

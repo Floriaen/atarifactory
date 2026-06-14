@@ -16,7 +16,7 @@ Coding/codegen, sprites/art, headless game execution, server, frontend, human re
 - **TypeScript** (strict, ESM) + **Zod** as source of types (`z.infer`) and runtime validation.
 - **No LangChain, no LangGraph.** Thin provider SDK + one in-house `defineChain` helper (~100 lines). Explicit `format → invoke → parse`.
 - **Provider-agnostic** behind `LLMProvider`; tune against **Claude first** (`claude-opus-4-8`). Model/preset parameterized, not env-only.
-- **Bounded agentic refinement loop**: a playability heuristic can send the design back to refine. `acceptScore=7`, `maxIterations=3`, run-overridable.
+- **Bounded agentic refinement loop**: the adversarial critic (verdict, not a numeric score) can send the design back to refine. `maxIterations=2` per seed, then `maxSeeds=2` reseed fallback to the next-best seed; run-overridable.
 - **Observability is a first-class requirement**: per-run trace, full LLM capture, token+cost from `response.usage`, per-node timing, progress events, **fail-loud**.
 
 ## 5. GameDefinition contract
@@ -27,7 +27,8 @@ Coding/codegen, sprites/art, headless game execution, server, frontend, human re
 - `loop` — the 10-second core loop
 - `mechanics` (1–2), `entities` (1–3, unique `EntityId` `/^[a-z]+$/`, role enum)
 - **`goal`** — discriminated union replacing mandatory win+fail: `{ type: 'survive' | 'score' | 'reach' | 'clear', ... }`
-- `controls`, `spatial:{usesFullScreen:true, orientation}`, `estimatedPlaytimeSec`
+- **`controls`** — fixed virtual gamepad ONLY: `{ scheme:'gamepad', bindings:[{ input, action }] }`, `input ∈ {up,down,left,right,btn1,btn2}` (unique). Discrete press/release; **no tap/swipe/drag/aim/pointer**. The constraint lives at the design boundary so the factory can't propose touch-native mechanics it can't build.
+- `spatial:{usesFullScreen:true, orientation}`, `estimatedPlaytimeSec`
 
 Single writer + `.strict()` ⇒ drift structurally impossible. `parseGameDefinition` is the READ guard. The critic verdict (fun/novelty/anti-clone) is **not** in the contract — it rides the run artifact so coding never depends on a design-time score. **Litmus test:** the design phase must be swappable without breaking the contract.
 
@@ -36,9 +37,9 @@ Optimized for **fun / new / simple**, not just "valid". Diversity comes from par
 
 `runDesignPhase(seed, deps, runContext)`:
 1. **Diverge** — fire N **seed generators in parallel**, each a distinct designer persona/lens (speedrunner, toy-maker, troll, minimalist, one-button purist), sampled from a larger pool per run so personas don't become their own clichés. Each → `{ coreVerb, hook, goalMode, whyFun }`.
-2. **Select (rank, don't score)** — the selector **compares the N seeds against each other** and picks the most `fun × novel × feasible-under-constraints`. Relative ranking, never absolute "7/10 fun" (LLMs are reliable at comparison, unreliable at absolute fun ratings).
+2. **Select (rank, don't score)** — the selector **compares the N seeds against each other** and returns a **best-first `ranking`** of all of them (most `fun × novel × feasible-under-constraints` first). Relative ranking, never absolute "7/10 fun" (LLMs are reliable at comparison, unreliable at absolute fun ratings). The head is the winner; the tail is the reseed fallback order.
 3. **Elaborate** — expand the chosen seed into `loop`, `mechanics` (1–2), `entities` (1–3), `goal`, all **anchored to the hook**.
-4. **Critic (adversarial, bounded)** — a skeptic prompted to **reject by default**: "cliché? which classic is this? fun in 10s? clear in one sentence?". Merged with deterministic **hard rules** (caps; **anti-clone** = names the closest classic and requires ≥1 core-dimension difference in `coreVerb`/`goal`/`hook`). Verdict → PASS or REVISE(target). On REVISE, re-run **only** the weak step with feedback, then re-assess. Force-accept at `maxIterations` (≤2).
+4. **Critic (adversarial, bounded)** — a skeptic prompted to **reject by default**: "cliché? which classic is this? fun in 10s? clear in one sentence?". Merged with deterministic **hard rules** (caps; **anti-clone** = names the closest classic and requires ≥1 core-dimension difference in `coreVerb`/`goal`/`hook`). Verdict → PASS or REVISE(target). On REVISE, **re-elaborate the chosen seed carrying the prior draft + targeted feedback** (a revision that keeps what works, not a regeneration), then re-assess. After `maxIterations` (≤2) without a pass, **reseed** to the next-best seed in the ranking (up to `maxSeeds`); if none passes, force-accept the **least-bad** candidate (fewest high-severity issues).
 5. **Assemble** — `assembleGameDefinition(state)`, **deterministic, no LLM**. All normalization happens once, here.
 
 Each step returns a typed delta folded into a **new frozen `DesignState`** — no mutable bag. Structured objects cross every boundary via `toPromptCapsule`. **Never `JSON.stringify` a gameDef into a prompt.**

@@ -11,8 +11,8 @@ This is a ground-up rebuild of the `AtariFactory` prototype, fixing its core fla
 - **TypeScript** (strict) + **Zod** as the single source of types and runtime validation.
 - **No LangChain / no LangGraph** — a thin provider SDK plus one ~100-line `defineChain` helper. Explicit `format → invoke → parse`.
 - **Provider-agnostic** (`LLMProvider`); tuned against **Claude** first, swappable.
-- **One versioned contract** (`GameDefinitionV1`), validated on write by design and on read by coding.
-- **Bounded refinement loop**: a playability heuristic can send the design back to refine, capped at `maxIterations`.
+- **One versioned contract** (`GameDefinitionV1`), validated on write by design and on read by coding. Input is constrained to a **fixed virtual gamepad** (D-pad + 2 buttons, no tap/swipe) at the design boundary.
+- **Bounded refinement loop**: an adversarial critic can send the design back to refine (`maxIterations`); if a seed still can't pass it **reseeds** to the next-best one (`maxSeeds`), then force-accepts the least-bad.
 - **Observability is first-class**: per-run trace, full LLM capture, token+cost from `response.usage`, per-node timing, fail-loud.
 
 ## Project structure
@@ -31,6 +31,7 @@ make start            # ONE COMMAND: setup (install + .env) then run the design 
 make help             # list all targets
 make test             # tiers 1–3 (deterministic, no network)
 make test-e2e         # one live Claude run (needs ANTHROPIC_API_KEY)
+make batch N=10 C=3   # run the design phase N times, cache results to runs/cache/
 make view TRACE=<id>  # inspect a run's full trace
 ```
 

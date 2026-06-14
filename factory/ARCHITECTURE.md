@@ -19,12 +19,13 @@ flowchart TD
     end
 
     diverge -->|"N × {coreVerb, hook, goalMode, whyFun}"| select
-    select["2 · SELECT — rank seeds against each other<br/>(fun × novel × feasible) — no absolute score"] --> elaborate
-    elaborate["3 · ELABORATE — loop, mechanics(1–2),<br/>entities(1–3), goal — anchored to the hook"] --> critic
+    select["2 · SELECT — rank seeds against each other<br/>(fun × novel × feasible) — best-first ranking, no absolute score"] --> elaborate
+    elaborate["3 · ELABORATE — loop, mechanics(1–2),<br/>entities(1–3), goal, gamepad controls — anchored to the hook"] --> critic
     critic{"4 · CRITIC (adversarial, reject-by-default)<br/>+ hard rules: caps, anti-clone"}
-    critic -->|"REVISE(target) — re-run weak step only, ≤2"| elaborate
-    critic -->|"PASS / force-accept at maxIterations"| assemble
-    assemble["5 · ASSEMBLE — deterministic, no LLM<br/>normalize once (write boundary)"] --> gd["GameDefinitionV1 (.strict)"]
+    critic -->|"REVISE(target) — re-elaborate revising prior draft, ≤maxIterations"| elaborate
+    critic -->|"still REVISE after maxIterations — reseed next-best (≤maxSeeds)"| elaborate
+    critic -->|"PASS / force-accept least-bad after maxSeeds"| assemble
+    assemble["5 · ASSEMBLE — deterministic, no LLM<br/>normalize once (write boundary)"] --> gd["GameDefinitionV1 (.strict, gamepad-only controls)"]
 
     style critic fill:#fde,stroke:#c39
     style assemble fill:#dfe,stroke:#3c9
