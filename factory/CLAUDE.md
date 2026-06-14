@@ -35,6 +35,7 @@ CI runs tiers 1–3. Mock only at the provider boundary, never the orchestrator.
 - **Usage from the response.** Read tokens from `response.usage` — never estimate.
 - **RunContext + Observer are required params** on every node (the type system enforces threading).
 - **Claude params**: depth via `output_config.effort`. **Never** send `temperature`/`top_p`/`budget_tokens` (400 on 4.8). Prefer `messages.parse()` (json_schema) and re-validate through the same Zod schema.
+- **The factory depends on NO consumer.** Hosts (CLIs, the admin UI, tests) import the factory **only** through `src/api.ts` and drive it through its **generic seams** — `selectProvider`/`LLMProvider` (which backend), phase `…Deps.modelOverride` (model tier), `Observer` + `FactorySink` (live progress/logs/cost), and the contracts. There must be **no consumer-specific (admin/UI/CLI) type, parameter, import, or branch anywhere under `src/`**; a host adapts to the factory, never the reverse. See [docs/consumer-boundary.md](./docs/consumer-boundary.md).
 
 ## Commands
 ```bash

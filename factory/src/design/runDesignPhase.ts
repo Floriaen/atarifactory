@@ -5,7 +5,7 @@ import { type GameDefinition } from '../contracts/gameDefinition.js';
 import type { Critique, GameDraft, Seed } from '../contracts/phaseSchemas.js';
 import { PERSONAS, samplePersonas, type Persona } from './personas.js';
 import { criticChain, elaborateChain, seedGeneratorChain, seedSelectorChain } from './chains/index.js';
-import { OPUS_MODEL } from '../llm/models.js';
+import { OPUS_MODEL, type ModelConfig } from '../llm/models.js';
 import { mergeVerdict } from './critic.js';
 import { assembleGameDefinition } from './assembleGameDefinition.js';
 import { DEFAULT_LOOP, candidateScore, decide, formatFeedback, formatSeeds, normalizeRanking, type LoopConfig } from './refinementRouter.js';
@@ -17,6 +17,8 @@ export interface DesignDeps {
   personas?: Persona[];
   numSeeds?: number;
   loop?: Partial<LoopConfig>;
+  /** Generic, host-driven model override applied to every chain (e.g. force a tier). */
+  modelOverride?: Partial<ModelConfig>;
 }
 
 export interface DesignResult {
@@ -31,11 +33,13 @@ export async function runDesignPhase(deps: DesignDeps): Promise<DesignResult> {
   const personas = deps.personas ?? samplePersonas(deps.numSeeds ?? 5, PERSONAS);
   const loop: LoopConfig = { ...DEFAULT_LOOP, ...deps.loop };
 
-  const seedGen = seedGeneratorChain({ provider, observer });
-  const selector = seedSelectorChain({ provider, observer });
-  const elaborate = elaborateChain({ provider, observer });
-  // Judgment quality matters most here — override the (Sonnet) validation preset to Opus.
-  const critic = criticChain({ provider, observer, modelOverride: { model: OPUS_MODEL, effort: 'medium' } });
+  const mo = deps.modelOverride;
+  const seedGen = seedGeneratorChain({ provider, observer, modelOverride: mo });
+  const selector = seedSelectorChain({ provider, observer, modelOverride: mo });
+  const elaborate = elaborateChain({ provider, observer, modelOverride: mo });
+  // Judgment quality matters most here — default the (Sonnet) validation preset to Opus,
+  // unless the host has explicitly chosen a model tier (its choice wins).
+  const critic = criticChain({ provider, observer, modelOverride: mo ?? { model: OPUS_MODEL, effort: 'medium' } });
 
   // 1 — DIVERGE (parallel persona generators)
   const seeds: Seed[] = await withNode(observer, 'diverge', () =>

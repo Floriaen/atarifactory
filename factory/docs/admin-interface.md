@@ -8,10 +8,12 @@ those phases, pick a model/provider, watch progress + logs live, and preview the
 (a formatted design summary and the rendered sprites).
 
 This is a **dev/operator tool**, not part of the shipped pipeline. It lives in its own
-`admin/` area and depends on the core factory **only through the existing phase entry
-points and contracts** — it adds no logic to the pipeline, so the KISS/DRY/YAGNI rules
-the factory enforces stay intact. The one small, OCP-friendly change to core is an
-optional `modelOverride` on the two phase deps (below).
+`admin/` area and depends on the core factory **only through `src/api.ts` and its generic
+seams** (provider, `modelOverride`, `FactorySink`, contracts) — see
+[consumer-boundary.md](./consumer-boundary.md). It adds **nothing** to `src/`: the seams it
+needs already exist (`FactorySink` for live events, `modelOverride` on the phase deps,
+`selectProvider(name)`). The factory never imports from `admin/`; if the admin is deleted,
+the factory is untouched.
 
 **Decisions (locked):** Express backend + Vite/React frontend; **run-and-preview only**
 (no run-history browser); the art phase **chains from the design run** just produced (and
@@ -30,14 +32,13 @@ browser (Vite/React :5173)  ──HTTP /api──►  Express (:8787)  ──in-
         └──────────── SSE /api/stream/:id ◄──────┴── per-run EventBus ◄──────────────┘ (logger + progress)
 ```
 - **In-process, not shelling out to the CLI.** The server imports `runDesignPhase` /
-  `runArtPhase` and builds the same `Observer`/`UsageAggregator`/`RunStore` the CLIs do,
-  so file traces under `runs/<traceId>/` are still written exactly as today.
-- **Live signal without touching core.** The `Observer` already fans out to an injected
-  `logger` and an optional `ProgressTracker` listener. The server injects:
-  - a **`ProgressTracker` with an SSE listener** → progress events (free; built-in).
-  - a **pino logger writing to a custom `Writable`** at `debug` level that parses each
-    JSON log line and forwards it to the run's EventBus → log lines, per-call model, and
-    `costUsd`/`usage` (logged by `Observer.llmCall`). No core change needed.
+  `runArtPhase` (from `src/api.ts`) and builds the same `Observer`/`UsageAggregator`/
+  `RunStore` the CLIs do, so file traces under `runs/<traceId>/` are still written today.
+- **Live signal via the `FactorySink` seam (no core change).** The server passes a `sink`
+  to the `Observer`; the factory emits typed `FactoryEvent`s (`node_start`/`node_end`/
+  `node_error`/`llm_call`/`progress`, carrying `model`/`usage`/`costUsd`). The sink pushes
+  each into the run's EventBus → progress, logs, and cost, all structured, no log-scraping.
+  (pino still prints to stdout for humans, separately.)
 - **EventBus per run**: a tiny in-memory emitter keyed by `traceId`; the SSE endpoint
   subscribes, replays buffered events on connect (so a slightly-late client misses
   nothing), and closes on `done`/`error`.
@@ -47,9 +48,9 @@ New dir **`admin/server/`**:
 - **`bus.ts`** — `RunBus`: `emit(event)`, `subscribe(fn)`, a bounded replay buffer,
   `close()`. A `Map<traceId, RunBus>` registry with TTL cleanup.
 - **`observer.ts`** — `buildStreamingObserver(ctx, bus)`: wires `UsageAggregator`,
-  `RunStore`, the SSE `ProgressTracker` listener, and the pino→bus stream. Returns
+  `RunStore`, and a **`sink` that forwards `FactoryEvent`s to the bus**. Returns
   `{ observer, usage, store }`. This is the only place that adapts core observability to
-  the stream.
+  the stream — and it consumes the public seam, not internals.
 - **`runs.ts`** — `startDesign(opts)` / `startArt(opts)`: mint `RunContext`, build the
   streaming observer, kick off the phase **without awaiting** (returns `traceId`
   immediately), and on settle emit `done` (artifact + `usage.totals()`) or `error`, then
@@ -69,30 +70,38 @@ New dir **`admin/server/`**:
 | `GET`  | `/api/result/:traceId` | final artifact JSON (for reload/late-join). |
 
 ### SSE event shapes
+The bus forwards the factory's `FactoryEvent`s verbatim, plus two server-minted
+terminals (`done`/`error`). The admin derives progress, logs, and cost from these — no
+new event vocabulary in core:
 ```ts
-{ type:'progress', phase, completed, total, fraction, label? }
-{ type:'log', t, level, node?, msg, ms?, model?, costUsd?, usage? }
-{ type:'done', traceId, kind:'design'|'art', artifact, usage:{ inputTokens, outputTokens, costUsd, calls } }
+// from the factory (FactoryEvent), forwarded as-is:
+{ type:'node_start', node }
+{ type:'node_end',   node, ms }
+{ type:'node_error', node, ms, error }
+{ type:'llm_call',   node, model, usage, costUsd, latencyMs }
+{ type:'progress',   name, label? }
+// server-minted on settle:
+{ type:'done',  traceId, kind:'design'|'art', artifact, usage:{ inputTokens, outputTokens, costUsd, calls } }
 { type:'error', message }
 ```
 
-### Model selection (small core change)
-Expose a **provider** toggle (`claude` API vs `claude-code` subscription — reuse
-`selectProvider`'s switch, parameterised) and a **model tier**:
-- `default` (the tuned per-chain tiering — no override),
-- `opus` (force `claude-opus-4-8` on every chain),
-- `sonnet` (force `claude-sonnet-4-6`).
+### Model selection (uses existing seams — no core change)
+The seams already exist in `src/api.ts`:
+- **Provider** toggle → `selectProvider(name)` with `'claude'` (API) or `'claude-code'`
+  (subscription).
+- **Model tier** → the phase deps' `modelOverride?: Partial<ModelConfig>`:
+  - `default` → omit it (the tuned per-chain tiering),
+  - `opus` → `{ model: OPUS_MODEL }`, `sonnet` → `{ model: SONNET_MODEL }`.
+  The design critic's Opus default already yields to an explicit tier. Tier metadata for
+  the picker comes from `PRESETS` / `*_MODEL` (also exported from `api.ts`).
 
-To apply a tier, add an optional `modelOverride?: Partial<ModelConfig>` to **`DesignDeps`**
-and **`ArtDeps`**, threaded into each `defineChain({ provider, observer, modelOverride })`
-call. In `runDesignPhase` the critic keeps its Opus override **unless** a UI tier is set,
-in which case the explicit tier wins (`modelOverride ?? { model: OPUS_MODEL, effort:'medium' }`).
-This is additive (OCP) — existing callers pass nothing and behave exactly as now.
+The server maps `{ provider, modelTier }` from the request onto these seams; the factory
+stays unaware a UI exists.
 
 ## Frontend (Vite + React, TS)
 New dir **`admin/web/`** — `index.html`, `vite.config.ts` (dev proxy `/api` → `:8787`),
 `src/`:
-- **`lib/api.ts`** — `postRun()`, `openStream(traceId, onEvent)` (EventSource), `getDesigns()`, `getModels()`.
+- **`lib/api.ts`** — `postRun()`, `openStream(traceId, onEvent)` (EventSource), `getDesigns()`, `getModels()`. Note: this is the *host's own* client; it is unrelated to the factory's `src/api.ts`.
 - **`lib/sprite.ts`** — `drawSprite(canvas, frames, gridSize)`: the boolean-mask → canvas
   renderer (port of the throwaway PNG script — scaled cells, on/off colours, per-frame).
 - **`components/PhasePanel.tsx`** — shared shell: selector row + Run button + `ProgressBar`
@@ -120,14 +129,16 @@ New dir **`admin/web/`** — `index.html`, `vite.config.ts` (dev proxy `/api` �
   provider, or pick `claude-code`.
 - **`tsconfig`** — include `admin/server`; the web app uses its own Vite/React TS config so
   DOM types don't leak into the Node-typed core.
-- **Isolation:** core `src/` gains nothing but the optional `modelOverride`; all server/UI
-  code stays under `admin/`.
+- **Isolation:** core `src/` gains **nothing** for the admin — the seams it uses
+  (`api.ts`, `FactorySink`, `modelOverride`, `selectProvider(name)`) already exist as
+  generic capabilities. All server/UI code stays under `admin/` and imports only `api.ts`.
 
 ## Files
 **New (backend):** `admin/server/index.ts`, `admin/server/runs.ts`, `admin/server/observer.ts`, `admin/server/bus.ts`.
 **New (frontend):** `admin/web/index.html`, `admin/web/vite.config.ts`, `admin/web/src/main.tsx`, `admin/web/src/App.tsx`, `admin/web/src/lib/{api,sprite}.ts`, `admin/web/src/components/{PhasePanel,ModelSelect,ProgressBar,LogView,DesignPreview,ArtPreview}.tsx`, styles.
-**Modified:** `src/design/runDesignPhase.ts` + `src/art/runArtPhase.ts` (optional `modelOverride`), `src/llm/selectProvider.ts` (accept a provider name arg), `package.json`, `Makefile`, `tsconfig.json`.
-**Untouched:** all contracts, `defineChain`, `Observer`/`ProgressTracker` (consumed as-is), the compiler, every existing CLI.
+**Modified (admin wiring only):** `package.json`, `Makefile`, `tsconfig.json` (include `admin/server`).
+**Already in place (generic seams, landed separately):** `src/api.ts`, `FactorySink` in `Observer`, `modelOverride` on the phase deps, `selectProvider(name)`.
+**Untouched by the admin:** all contracts, `defineChain`, the compiler, every existing CLI, and `src/` generally.
 
 ## TDD
 Core change is test-first per the factory rules; the UI is covered lightly.
@@ -152,9 +163,10 @@ Core change is test-first per the factory rules; the UI is covered lightly.
 6. Cheap path: provider `claude-code` to validate end-to-end via the subscription.
 
 ## Risks
-- **Live signal via the log stream**: derives logs/cost from pino JSON lines — keep the
-  bus stream at `debug` so `node_start` is captured; pretty-print stays on stdout
-  separately. If a log field is renamed in core, the adapter (one file) updates with it.
+- **Boundary discipline**: the whole point — the admin must import only `src/api.ts` and
+  the seams, never internal paths, and `src/` must never import from `admin/`. A lint rule
+  (`no-restricted-imports`) can enforce both directions. See
+  [consumer-boundary.md](./consumer-boundary.md).
 - **New dependencies**: Express/Vite/React are dev-only and confined to `admin/`; the
   shipped factory and its CLIs gain none. Call this out so the no-deps rule isn't read as
   violated.

@@ -1,6 +1,7 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { Observer } from '../observability/observer.js';
 import { withNode } from '../observability/withNode.js';
+import type { ModelConfig } from '../llm/models.js';
 import { parseGameDefinition, type GameDefinition } from '../contracts/gameDefinition.js';
 import type { SpriteItem, SpritePack } from '../contracts/spritePack.js';
 import { spriteChain } from './chains/index.js';
@@ -10,6 +11,8 @@ import { assembleSpritePack } from './assembleSpritePack.js';
 export interface ArtDeps {
   provider: LLMProvider;
   observer: Observer;
+  /** Generic, host-driven model override applied to the sprite chain (e.g. force a tier). */
+  modelOverride?: Partial<ModelConfig>;
 }
 
 export interface ArtResult {
@@ -25,7 +28,7 @@ export interface ArtResult {
 export async function runArtPhase(game: GameDefinition, deps: ArtDeps): Promise<ArtResult> {
   const { provider, observer } = deps;
   const def = parseGameDefinition(game); // read guard
-  const sprite = spriteChain({ provider, observer });
+  const sprite = spriteChain({ provider, observer, modelOverride: deps.modelOverride });
 
   const entries = await Promise.all(
     def.entities.map((entity) =>

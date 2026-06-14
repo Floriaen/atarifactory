@@ -4,6 +4,7 @@ import type { RunStore } from './runStore.js';
 import type { ProgressTracker } from './progress.js';
 import type { LlmCallRecord, NodeTiming } from './llmCall.js';
 import type { RunContext } from './runContext.js';
+import type { FactorySink } from './events.js';
 
 export interface ObserverDeps {
   ctx: RunContext;
@@ -11,6 +12,12 @@ export interface ObserverDeps {
   usage: UsageAggregator;
   store?: RunStore;
   progress?: ProgressTracker;
+  /**
+   * Optional host subscription to the generic event stream (see {@link FactorySink}).
+   * The factory emits; it never knows who listens. This is how a CLI/admin/test gets
+   * live signal without the core depending on the consumer.
+   */
+  sink?: FactorySink;
 }
 
 /**
@@ -44,17 +51,27 @@ export class Observer {
         ? { system: rec.system, messages: rec.messages, output: rec.output }
         : {}),
     });
+    this.deps.sink?.({
+      type: 'llm_call',
+      node: rec.node,
+      model: rec.model,
+      usage: rec.usage,
+      costUsd: rec.costUsd,
+      latencyMs: rec.latencyMs,
+    });
   }
 
   nodeStart(node: string): void {
     this.deps.logger.debug({ node }, 'node_start');
     void this.deps.store?.event({ t: Date.now(), type: 'node_start', node });
+    this.deps.sink?.({ type: 'node_start', node });
   }
 
   nodeEnd(node: string, ms: number): void {
     this.timings.push({ node, ms, status: 'ok' });
     this.deps.logger.info({ node, ms }, 'node_end');
     void this.deps.store?.event({ t: Date.now(), type: 'node_end', node, ms });
+    this.deps.sink?.({ type: 'node_end', node, ms });
   }
 
   nodeError(node: string, err: unknown, ms: number): void {
@@ -70,9 +87,11 @@ export class Observer {
       ms,
       error: err instanceof Error ? err.message : String(err),
     });
+    this.deps.sink?.({ type: 'node_error', node, ms, error: err instanceof Error ? err.message : String(err) });
   }
 
   progress(name: string, label?: string): void {
     this.deps.progress?.complete(name, label);
+    this.deps.sink?.({ type: 'progress', name, ...(label !== undefined ? { label } : {}) });
   }
 }
