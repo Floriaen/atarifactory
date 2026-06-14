@@ -12,7 +12,8 @@
     "test:e2e": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "view-run": "tsx bin/view-run.ts"
+    "view-run": "tsx bin/view-run.ts",
+    "batch": "tsx bin/batch-design.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

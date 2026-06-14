@@ -18,6 +18,9 @@ run: ## generate a game design (fully autonomous — no input)
 
 start: setup run ## ONE COMMAND: setup then run
 
+batch: ## run the design phase N times and cache results:  make batch N=10 C=3
+	npm run batch -- N=$(or $(N),10) C=$(or $(C),3)
+
 test: ## tiers 1–3 (deterministic, no network)
 	npm test
 
