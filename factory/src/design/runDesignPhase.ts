@@ -8,7 +8,7 @@ import { criticChain, elaborateChain, seedGeneratorChain, seedSelectorChain } fr
 import { OPUS_MODEL } from '../llm/models.js';
 import { mergeVerdict } from './critic.js';
 import { assembleGameDefinition } from './assembleGameDefinition.js';
-import { DEFAULT_LOOP, decide, formatFeedback, formatSeeds, type LoopConfig } from './refinementRouter.js';
+import { DEFAULT_LOOP, candidateScore, decide, formatFeedback, formatSeeds, normalizeRanking, type LoopConfig } from './refinementRouter.js';
 
 export interface DesignDeps {
   provider: LLMProvider;
@@ -50,34 +50,46 @@ export async function runDesignPhase(deps: DesignDeps): Promise<DesignResult> {
   const selection = await withNode(observer, 'select', () =>
     selector.run({ seedsList: formatSeeds(seeds) }).then((r) => r.data),
   );
-  const chosen = seeds[Math.min(selection.chosenIndex, seeds.length - 1)] ?? seeds[0];
-  if (!chosen) throw new Error('runDesignPhase: no seeds were generated');
+  const ranking = normalizeRanking(selection.ranking, seeds.length);
 
-  // 3 — ELABORATE + 4 — CRITIC (bounded refinement loop)
-  let draft: GameDraft = await withNode(observer, 'elaborate', () =>
-    elaborate.run({ seed: chosen, feedbackBlock: '' }).then((r) => r.data),
-  );
+  // 3 — ELABORATE + 4 — CRITIC, per seed. Refine a seed up to maxIterations; if it
+  // still can't pass, fall back to the next-best seed. Keep the least-bad candidate.
+  type Candidate = { draft: GameDraft; critique: Critique; iterations: number; chosen: Seed };
 
-  let critique: Critique;
-  let iteration = 0;
-  for (;;) {
-    const node = iteration === 0 ? 'critic' : `critic#${iteration}`;
-    const llm = await withNode(observer, node, () => critic.run({ draft }).then((r) => r.data));
-    critique = mergeVerdict(draft, llm);
-
-    const decision = decide(critique, iteration, loop);
-    if (decision.action === 'accept') break;
-
-    iteration += 1;
-    const feedback = formatFeedback(critique);
-    draft = await withNode(observer, `elaborate#${iteration}`, () =>
-      elaborate.run({ seed: chosen, feedbackBlock: feedback }).then((r) => r.data),
+  const refineSeed = async (chosen: Seed, tag: string): Promise<Candidate> => {
+    let draft = await withNode(observer, `elaborate${tag}`, () =>
+      elaborate.run({ seed: chosen, feedbackBlock: '' }).then((r) => r.data),
     );
+    let iteration = 0;
+    for (;;) {
+      const node = `critic${tag}${iteration === 0 ? '' : `#${iteration}`}`;
+      const llm = await withNode(observer, node, () => critic.run({ draft }).then((r) => r.data));
+      const critique = mergeVerdict(draft, llm);
+
+      if (decide(critique, iteration, loop).action === 'accept') {
+        return { draft, critique, iterations: iteration, chosen };
+      }
+      iteration += 1;
+      const feedback = formatFeedback(critique, draft);
+      draft = await withNode(observer, `elaborate${tag}#${iteration}`, () =>
+        elaborate.run({ seed: chosen, feedbackBlock: feedback }).then((r) => r.data),
+      );
+    }
+  };
+
+  let best: Candidate | undefined;
+  const seedBudget = Math.min(loop.maxSeeds, ranking.length);
+  for (let s = 0; s < seedBudget; s++) {
+    const seedIdx = ranking[s]!;
+    const candidate = await refineSeed(seeds[seedIdx]!, s === 0 ? '' : `@s${s}`);
+    if (!best || candidateScore(candidate.critique) < candidateScore(best.critique)) best = candidate;
+    if (candidate.critique.verdict === 'pass') break; // a clean pass ends the search
   }
+  if (!best) throw new Error('runDesignPhase: no candidate produced');
 
   // 5 — ASSEMBLE (deterministic write boundary)
-  const game = assembleGameDefinition(draft);
+  const game = assembleGameDefinition(best.draft);
   observer.progress('done', game.title);
 
-  return { game, critique, iterations: iteration, chosen };
+  return { game, critique: best.critique, iterations: best.iterations, chosen: best.chosen };
 }

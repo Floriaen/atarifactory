@@ -37,6 +37,31 @@ export const Goal = z.discriminatedUnion('type', [
   z.object({ type: z.literal('clear'), description: z.string().min(1) }).strict(),
 ]);
 
+/**
+ * The fixed virtual gamepad — the ONLY input surface. Discrete press/release on a
+ * 4-way D-pad plus two buttons. No tap, swipe, drag, aim, or pointer: those are not
+ * expressible here, so the design phase must not invent mechanics that need them.
+ */
+export const GamepadInput = z.enum(['up', 'down', 'left', 'right', 'btn1', 'btn2']);
+
+export const ControlBinding = z
+  .object({
+    input: GamepadInput,
+    action: z.string().min(1),
+  })
+  .strict();
+
+export const Controls = z
+  .object({
+    scheme: z.literal('gamepad'),
+    bindings: z.array(ControlBinding).min(1).max(6),
+  })
+  .strict()
+  .refine((c) => new Set(c.bindings.map((b) => b.input)).size === c.bindings.length, {
+    message: 'gamepad inputs must be unique',
+    path: ['bindings'],
+  });
+
 export const Orientation = z.enum(['portrait', 'landscape']);
 
 export const Spatial = z
@@ -58,7 +83,7 @@ export const GameDefinitionV1 = z
     mechanics: z.array(Mechanic).min(1).max(2),
     entities: z.array(Entity).min(1).max(3),
     goal: Goal,
-    controls: z.string().min(1),
+    controls: Controls,
     spatial: Spatial,
     estimatedPlaytimeSec: z.number().int().positive(),
   })

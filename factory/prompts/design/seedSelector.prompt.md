@@ -9,5 +9,5 @@ Compare them **against each other** — do not score them individually. Pick the
 3. feasible as a tiny, full-screen, one-button-ish game.
 
 Return:
-- `chosenIndex`: the 0-based index of the winner
-- `reason`: one sentence on why it beat the others
+- `ranking`: ALL candidate indices, 0-based, ordered best-first (the winner, then the order to fall back to if the winner can't be made fun)
+- `reason`: one sentence on why the winner beat the others

@@ -64,4 +64,32 @@ describe('GameDefinitionV1 contract', () => {
       parseGameDefinition({ ...validGame, spatial: { usesFullScreen: false, orientation: 'portrait' } }),
     ).toThrow();
   });
+
+  it('rejects legacy free-text controls', () => {
+    expect(() => parseGameDefinition({ ...validGame, controls: 'tap to drop' })).toThrow();
+  });
+
+  it('rejects a non-gamepad input (e.g. swipe/tap)', () => {
+    expect(() =>
+      parseGameDefinition({
+        ...validGame,
+        controls: { scheme: 'gamepad', bindings: [{ input: 'swipe', action: 'aim' }] },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects duplicate gamepad inputs', () => {
+    expect(() =>
+      parseGameDefinition({
+        ...validGame,
+        controls: {
+          scheme: 'gamepad',
+          bindings: [
+            { input: 'btn1', action: 'jump' },
+            { input: 'btn1', action: 'shoot' },
+          ],
+        },
+      }),
+    ).toThrow();
+  });
 });

@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { Entity, Goal, Mechanic, Orientation } from './gameDefinition.js';
+import { Controls, Entity, Goal, Mechanic, Orientation } from './gameDefinition.js';
 
 /** Maps 1:1 to Goal.type — chosen at seed time before the full goal is fleshed out. */
 export const GoalMode = z.enum(['survive', 'score', 'reach', 'clear']);
@@ -17,10 +17,11 @@ export const Seed = z
   .strict();
 export type Seed = z.infer<typeof Seed>;
 
-/** Output of the selector (step 2, rank). */
+/** Output of the selector (step 2, rank). `ranking` is best-first; head is the winner,
+ *  the tail is the fallback order when a seed can't be refined into a pass. */
 export const Selection = z
   .object({
-    chosenIndex: z.number().int().min(0),
+    ranking: z.array(z.number().int().min(0)).min(1),
     reason: z.string().min(1),
   })
   .strict();
@@ -37,14 +38,14 @@ export const GameDraft = z
     mechanics: z.array(Mechanic).min(1).max(2),
     entities: z.array(Entity).min(1).max(3),
     goal: Goal,
-    controls: z.string().min(1),
+    controls: Controls,
     orientation: Orientation,
     estimatedPlaytimeSec: z.number().int().positive(),
   })
   .strict();
 export type GameDraft = z.infer<typeof GameDraft>;
 
-export const IssueTarget = z.enum(['hook', 'loop', 'mechanics', 'entities', 'goal', 'title']);
+export const IssueTarget = z.enum(['hook', 'loop', 'mechanics', 'entities', 'goal', 'title', 'controls']);
 
 /** Output of the critic (step 4, LLM part). Merged with deterministic hard rules. */
 export const Critique = z

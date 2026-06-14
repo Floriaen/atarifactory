@@ -4,7 +4,7 @@ Invent ONE tiny, Atari-like browser-game seed from scratch. There is no set them
 
 Rules:
 - Small and simple: a single core verb and ONE surprising hook.
-- Full-screen, gamepad / one-button friendly.
+- Full-screen. The ONLY input is a fixed virtual gamepad: a 4-way D-pad (up/down/left/right) plus two buttons (btn1, btn2), discrete press/release only. NO tap, swipe, drag, aim, pointer, or analog input — the verb and hook MUST be playable with those buttons alone.
 - Lean hard into your lens — make a choice only **{{persona}}** would make. Avoid the obvious first idea.
 
 Return:

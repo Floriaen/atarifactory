@@ -65,6 +65,29 @@ describe('runDesignPhase (mock)', () => {
     expect(game.schemaVersion).toBe('gamedef/v1');
   });
 
+  it('reseeds to the next-best seed when the first never passes, and lands a pass', async () => {
+    // maxIterations=2 → 3 critic calls exhaust seed 0 (all revise); seed 1 passes immediately.
+    let criticCalls = 0;
+    const provider = fromMap({
+      seedGenerator: seedFixture,
+      seedSelector: selectionFixture,
+      elaborate: draftFixture,
+      critic: () => (criticCalls++ < 3 ? reviseMedium : passCritique),
+    });
+    const { observer } = testObserver();
+
+    const { critique, iterations } = await runDesignPhase({
+      provider,
+      observer,
+      personas,
+      loop: { maxIterations: 2, maxSeeds: 2 },
+    });
+
+    expect(critique.verdict).toBe('pass');
+    expect(iterations).toBe(0); // the winning (second) seed passed on its first critic
+    expect(observer.timings.map((t) => t.node)).toContain('elaborate@s1');
+  });
+
   it('records node timings in the observer', async () => {
     const provider = fromMap({
       seedGenerator: seedFixture,

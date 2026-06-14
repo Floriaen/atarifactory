@@ -14,7 +14,7 @@ export const validGame: GameDefinition = {
     { id: 'player', role: 'player', description: 'the placement cursor' },
   ],
   goal: { type: 'score', description: 'score points by completing rows' },
-  controls: 'one button to drop',
+  controls: { scheme: 'gamepad', bindings: [{ input: 'btn1', action: 'drop the block' }] },
   spatial: { usesFullScreen: true, orientation: 'portrait' },
   estimatedPlaytimeSec: 90,
 };
@@ -27,7 +27,7 @@ export const seedFixture: Seed = {
   persona: 'minimalist',
 };
 
-export const selectionFixture: Selection = { chosenIndex: 0, reason: 'tightest hook' };
+export const selectionFixture: Selection = { ranking: [0, 1], reason: 'tightest hook' };
 
 export const draftFixture: GameDraft = {
   title: 'Upstack',
@@ -41,7 +41,7 @@ export const draftFixture: GameDraft = {
     { id: 'player', role: 'player', description: 'the placement cursor' },
   ],
   goal: { type: 'score', description: 'score points by completing rows' },
-  controls: 'one button to drop',
+  controls: { scheme: 'gamepad', bindings: [{ input: 'btn1', action: 'drop the block' }] },
   orientation: 'portrait',
   estimatedPlaytimeSec: 90,
 };
