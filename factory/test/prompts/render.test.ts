@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { loadPrompt, renderPrompt } from '../../src/llm/prompts.js';
-import { draftFixture, seedFixture } from '../helpers/fixtures.js';
+import { RUNTIME_CONTRACT } from '../../src/coding/runtimeContract.js';
+import { draftFixture, gameCodeFixture, seedFixture, validGame } from '../helpers/fixtures.js';
 
 const cases: Record<string, Record<string, unknown>> = {
   'prompts/design/seedGenerator.prompt.md': {
@@ -21,6 +22,20 @@ const cases: Record<string, Record<string, unknown>> = {
     entity: { id: 'player', role: 'player', description: 'the placement cursor' },
     gameTitle: 'Upstack',
     orientation: 'portrait',
+  },
+  'prompts/coding/codeGen.prompt.md': {
+    game: validGame,
+    spriteNames: validGame.entities.map((e) => e.id).join(', '),
+    runtimeContract: RUNTIME_CONTRACT,
+  },
+  'prompts/coding/codeFix.prompt.md': {
+    game: validGame,
+    priorJs: gameCodeFixture.js,
+    issues: '- interaction: input does not change the draw output',
+  },
+  'prompts/coding/codeReview.prompt.md': {
+    game: validGame,
+    js: gameCodeFixture.js,
   },
 };
 

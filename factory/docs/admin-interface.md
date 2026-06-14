@@ -1,5 +1,19 @@
 # Admin Interface — Run the Factory Phases from a Browser
 
+> **Update (M3 landed):** the admin now has a **third panel, Code** (`runCodePhase` →
+> `GameBundle` + gate `report`), so the full **design → art → code** pipeline runs from the
+> browser. Each phase runs off a fresh result **or a previously cached/persisted one**: art from a
+> session design run or a `runs/cache/design-games.json` entry; **code from a session art run, a
+> persisted art trace on disk** (`runs/<id>/trace.json`, which now carries both `game` and `pack`),
+> **or directly from a design** (session run or cached) — in which case the art phase runs **inline
+> first** and streams into the same observer, so a cached game with no art yet is still a one-click
+> playable game. The Code panel renders the gate report (the 6 checks + issues + a pass/sub-bar
+> verdict) and the playable bundle in a **sandboxed `<iframe srcdoc sandbox="allow-scripts">`** (the
+> multi-file bundle is inlined into one document, since srcdoc has no base URL). New endpoints:
+> `GET /api/arts`, `POST /api/run/code` (`source = {kind:'art-run'|'art-trace'|'design-run'|'design-cache', traceId}`);
+> the `done` event gains `kind:'code'` with `artifact:{ report, bundle }`. Still consumes only
+> `src/api.ts` seams — no core change. The rest of this doc describes the original Design + Art panels.
+
 ## Context
 The factory now has two autonomous phases — **design** (`runDesignPhase` → `GameDefinition`)
 and **art** (`runArtPhase` → `SpritePack`) — each driven today only from CLIs

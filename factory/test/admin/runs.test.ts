@@ -1,16 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { fromMap } from '../../src/llm/providers/mock.js';
-import { createLogger, parseGameDefinition, parseSpritePack } from '../../src/api.js';
-import { startArt, startDesign } from '../../admin/server/runs.js';
+import { createLogger, parseGameBundle, parseGameDefinition, parseSpritePack } from '../../src/api.js';
+import { startArt, startCode, startDesign } from '../../admin/server/runs.js';
 import type { RunBus, BusEvent } from '../../admin/server/bus.js';
 import {
+  codeReviewPass,
   draftFixture,
+  gameCodeFixture,
   passCritique,
   seedFixture,
   selectionFixture,
   spriteDslFixture,
   validGame,
+  validSpritePack,
 } from '../helpers/fixtures.js';
+import { chromiumAvailable } from '../coding/chromium.js';
 
 const logger = createLogger({ level: 'silent' });
 
@@ -70,4 +74,46 @@ describe('admin run orchestration (mock, in-process)', () => {
 
     expect(events.at(-1)!.type).toBe('error');
   });
+});
+
+const hasChromium = await chromiumAvailable();
+const browser = hasChromium ? describe : describe.skip;
+
+browser('admin code orchestration (mock LLM, real gate)', () => {
+  it('code: runs the coding phase off an art {game, pack} and ends in a passing bundle', async () => {
+    const provider = fromMap({ codeGen: gameCodeFixture, codeReview: codeReviewPass });
+
+    const { bus } = startCode({ provider, logger, now: 0, game: validGame, pack: validSpritePack });
+    const events = await drain(bus);
+
+    const done = events.at(-1)!;
+    expect(done.type).toBe('done');
+    if (done.type !== 'done') throw new Error('not done');
+    expect(done.kind).toBe('code');
+
+    const artifact = done.artifact as { report: { passed: boolean }; bundle: unknown };
+    expect(artifact.report.passed).toBe(true);
+    expect(() => parseGameBundle(artifact.bundle)).not.toThrow();
+    expect(events.some((e) => e.type === 'node_start' && e.node === 'code:generate')).toBe(true);
+  }, 60000);
+
+  it('code from a design (no pack): runs art inline first, then code, into one stream', async () => {
+    const provider = fromMap({
+      sprite: spriteDslFixture, // art phase, one call per entity
+      codeGen: gameCodeFixture,
+      codeReview: codeReviewPass,
+    });
+
+    const { bus } = startCode({ provider, logger, now: 0, game: validGame }); // no pack → art runs inline
+    const events = await drain(bus);
+
+    const done = events.at(-1)!;
+    expect(done.type).toBe('done');
+    if (done.type !== 'done') throw new Error('not done');
+    expect(done.kind).toBe('code');
+    expect((done.artifact as { report: { passed: boolean } }).report.passed).toBe(true);
+    // both phases streamed through the same observer:
+    expect(events.some((e) => e.type === 'node_start' && e.node === 'sprite:player')).toBe(true);
+    expect(events.some((e) => e.type === 'node_start' && e.node === 'code:generate')).toBe(true);
+  }, 60000);
 });

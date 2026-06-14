@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { ClaudeProvider } from '../../src/llm/providers/claude.js';
 import { runDesignPhase } from '../../src/design/runDesignPhase.js';
 import { runArtPhase } from '../../src/art/runArtPhase.js';
+import { runCodePhase } from '../../src/coding/runCodePhase.js';
 import { parseSpritePack } from '../../src/contracts/spritePack.js';
+import { parseGameBundle } from '../../src/contracts/gameBundle.js';
 import { Observer } from '../../src/observability/observer.js';
 import { UsageAggregator } from '../../src/observability/usage.js';
 import { createLogger } from '../../src/observability/logger.js';
@@ -69,4 +71,18 @@ live('live art phase (sprite generation)', () => {
     }
     expect(usage.totals().costUsd).toBeGreaterThan(0);
   }, 120_000);
+});
+
+live('live code phase (game generation, real headless browser)', () => {
+  it('produces a contract-valid, passing GameBundle and bills cost', async () => {
+    const provider = new ClaudeProvider();
+    const { observer, usage } = liveObserver();
+
+    const { pack } = await runArtPhase(validGame, { provider, observer });
+    const { bundle, report } = await runCodePhase(validGame, pack, { provider, observer });
+
+    expect(() => parseGameBundle(bundle)).not.toThrow();
+    expect(report.passed).toBe(true); // every check — the real bar for a shippable game
+    expect(usage.totals().costUsd).toBeGreaterThan(0);
+  }, 300_000);
 });

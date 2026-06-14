@@ -1,4 +1,4 @@
-import type { DesignSource, Models, StreamEvent } from './types';
+import type { ArtSource, DesignSource, Models, StreamEvent } from './types';
 
 export async function getModels(): Promise<Models> {
   const r = await fetch('/api/models');
@@ -7,6 +7,11 @@ export async function getModels(): Promise<Models> {
 
 export async function getDesigns(): Promise<DesignSource[]> {
   const r = await fetch('/api/designs');
+  return r.json();
+}
+
+export async function getArts(): Promise<ArtSource[]> {
+  const r = await fetch('/api/arts');
   return r.json();
 }
 

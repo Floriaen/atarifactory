@@ -19,6 +19,8 @@ export type { DesignDeps, DesignResult } from './design/runDesignPhase.js';
 export { runArtPhase } from './art/runArtPhase.js';
 export type { ArtDeps, ArtResult } from './art/runArtPhase.js';
 export { maskToAscii } from './art/asciiPreview.js';
+export { runCodePhase } from './coding/runCodePhase.js';
+export type { CodeDeps, CodeResult } from './coding/runCodePhase.js';
 
 // ── Contracts (the data crossing boundaries) ────────────────────────────────
 export { GameDefinitionV1, parseGameDefinition } from './contracts/gameDefinition.js';
@@ -26,6 +28,9 @@ export type { GameDefinition } from './contracts/gameDefinition.js';
 export { SpritePackV1, parseSpritePack } from './contracts/spritePack.js';
 export type { SpritePack, SpriteItem, SpriteMask } from './contracts/spritePack.js';
 export type { SpriteDsl } from './contracts/artSchemas.js';
+export { GameBundleV1, parseGameBundle } from './contracts/gameBundle.js';
+export type { GameBundle, GameFile } from './contracts/gameBundle.js';
+export type { CodeReport, CodeChecks } from './contracts/codeSchemas.js';
 
 // ── Provider seam (which backend runs) ──────────────────────────────────────
 export { selectProvider } from './llm/selectProvider.js';

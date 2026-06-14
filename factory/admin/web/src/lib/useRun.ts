@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { openStream, postRun } from './api';
-import type { StreamEvent, UsageTotals } from './types';
+import type { PhaseKind, StreamEvent, UsageTotals } from './types';
 
 export interface LogLine {
   text: string;
@@ -13,7 +13,7 @@ export interface RunState {
   stepsDone: number;
   logs: LogLine[];
   costUsd: number;
-  result?: { kind: 'design' | 'art'; artifact: unknown; usage: UsageTotals };
+  result?: { kind: PhaseKind; artifact: unknown; usage: UsageTotals };
   error?: string;
 }
 

@@ -2,7 +2,7 @@ import type { FactoryEvent } from '../../src/api.js';
 
 /** A server-minted terminal event, added on top of the factory's stream. */
 export type TerminalEvent =
-  | { type: 'done'; traceId: string; kind: 'design' | 'art'; artifact: unknown; usage: unknown }
+  | { type: 'done'; traceId: string; kind: 'design' | 'art' | 'code'; artifact: unknown; usage: unknown }
   | { type: 'error'; message: string };
 
 export type BusEvent = FactoryEvent | TerminalEvent;

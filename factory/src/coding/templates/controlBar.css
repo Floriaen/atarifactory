@@ -1,0 +1,68 @@
+#control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: #15151f;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gp-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(2, 46px);
+  gap: 4px;
+}
+
+.gp-btns {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gp-key {
+  border: 0;
+  background: #2a2a3a;
+  color: #e8e8f0;
+  font-size: 20px;
+  border-radius: 8px;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.gp-key.on {
+  background: #4a4aff;
+  color: #fff;
+}
+
+.gp-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+.gp-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+.gp-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+.gp-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.gp-btn1,
+.gp-btn2 {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  font-weight: 700;
+  background: #b04040;
+}
+
+.gp-btn2 {
+  background: #4060b0;
+}

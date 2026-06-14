@@ -15,6 +15,8 @@
     "view-run": "tsx bin/view-run.ts",
     "batch": "tsx bin/batch-design.ts",
     "art": "tsx bin/art.ts",
+    "code": "tsx bin/code.ts",
+    "play": "tsx bin/play.ts",
     "admin:server": "tsx admin/server/index.ts",
     "admin:web": "vite admin/web",
     "admin:build": "vite build admin/web"
@@ -34,6 +36,7 @@
     "eslint": "^9.13.0",
     "express": "^4.22.2",
     "pino-pretty": "^11.3.0",
+    "playwright": "^1.60.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tsx": "^4.19.0",

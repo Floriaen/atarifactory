@@ -2,6 +2,8 @@ import type { Critique, GameDraft, Seed, Selection } from '../../src/contracts/p
 import type { GameDefinition } from '../../src/contracts/gameDefinition.js';
 import type { SpriteDsl } from '../../src/contracts/artSchemas.js';
 import type { SpritePack } from '../../src/contracts/spritePack.js';
+import type { GameCode, CodeReview } from '../../src/contracts/codeSchemas.js';
+import type { GameBundle } from '../../src/contracts/gameBundle.js';
 import { compileSprite } from '../../src/art/compiler.js';
 
 export const validGame: GameDefinition = {
@@ -74,4 +76,80 @@ export const spritePackFixture: SpritePack = {
   schemaVersion: 'spritepack/v1',
   generatedAt: '2026-01-01T00:00:00.000Z',
   items: { player: spriteItemFixture },
+};
+
+/** A pack covering every entity in `validGame` (block, player) — what M3 consumes. */
+export const validSpritePack: SpritePack = {
+  schemaVersion: 'spritepack/v1',
+  generatedAt: '2026-01-01T00:00:00.000Z',
+  items: { player: spriteItemFixture, block: spriteItemFixture },
+};
+
+/**
+ * A good, contract-respecting `game.js` for `validGame`: reads `window.gamepadState`,
+ * renders the canonical entity ids, moves the player under left/right input, drives the
+ * loop with rAF, paints via `drawBackground` (no full-canvas clear of its own), and has a
+ * win state for the `score` goal. Runs/responds/progresses — the gate's happy path.
+ */
+export const gameCodeFixture: GameCode = {
+  summary: 'move the cursor under falling blocks; score 5 to win',
+  js: `const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+const scale = 3;
+const player = { x: Math.floor(W / 2), y: H - 40 };
+const blocks = [{ x: 40, y: 0 }, { x: 120, y: 60 }];
+let score = 0;
+let won = false;
+
+function update() {
+  const gp = window.gamepadState;
+  if (gp.left) player.x -= 4;
+  if (gp.right) player.x += 4;
+  if (gp.btn1) player.y -= 2;
+  if (player.x < 0) player.x = 0;
+  if (player.x > W) player.x = W;
+  for (const b of blocks) {
+    b.y += 2;
+    if (b.y > H) { b.y = 0; score += 1; }
+  }
+  if (score >= 5) won = true;
+}
+
+function render() {
+  drawBackground(ctx);
+  for (const b of blocks) renderEntity(ctx, 'block', b.x, b.y, scale, '#ff4040', 0);
+  renderEntity(ctx, 'player', player.x, player.y, scale, '#ffffff', 0);
+}
+
+function loop() {
+  if (!won) { update(); render(); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+`,
+};
+
+/** The faithfulness reviewer's happy verdict. */
+export const codeReviewPass: CodeReview = { verdict: 'pass', issues: [] };
+
+/** The faithfulness reviewer asking for one change. */
+export const codeReviewRevise: CodeReview = {
+  verdict: 'revise',
+  issues: [{ target: 'goal', note: 'no win condition is implemented for the score goal' }],
+};
+
+/** A structurally valid GameBundle (hand-built — exercises the contract directly). */
+export const gameBundleFixture: GameBundle = {
+  schemaVersion: 'gamebundle/v1',
+  generatedAt: '2026-01-01T00:00:00.000Z',
+  gameId: 'upstack',
+  entry: 'index.html',
+  files: [
+    { path: 'index.html', contents: '<!doctype html><title>Upstack</title>' },
+    { path: 'controlBar.js', contents: '// control bar' },
+    { path: 'sprites.data.js', contents: 'window.spritePack = {};' },
+    { path: 'game.js', contents: gameCodeFixture.js },
+  ],
 };

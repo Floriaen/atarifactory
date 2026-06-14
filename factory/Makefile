@@ -24,6 +24,12 @@ batch: ## run the design phase N times and cache results:  make batch N=10 C=3
 art: ## generate sprites for a cached design:  make art [I=0 | TRACE=<id>]
 	npm run art -- I=$(or $(I),0) $(if $(TRACE),TRACE=$(TRACE),)
 
+code: ## build a playable game from a cached design:  make code [I=0 | TRACE=<id>] [ART=<artId>]
+	npm run code -- I=$(or $(I),0) $(if $(TRACE),TRACE=$(TRACE),) $(if $(ART),ART=$(ART),)
+
+play: ## serve a built bundle in the browser:  make play TRACE=<id>
+	npm run play -- TRACE=$(TRACE)
+
 admin: ## run the admin UI (API :8787 + web :5173)
 	@echo "[admin] API http://127.0.0.1:8787  ·  web http://127.0.0.1:5173"
 	npm run admin:server & SVR=$$!; trap 'kill $$SVR 2>/dev/null' INT TERM EXIT; npm run admin:web
@@ -43,4 +49,4 @@ lint: ## eslint
 clean: ## remove build + run artifacts + deps
 	rm -rf dist runs node_modules
 
-.PHONY: help setup run start batch art admin test test-e2e view lint clean
+.PHONY: help setup run start batch art code play admin test test-e2e view lint clean

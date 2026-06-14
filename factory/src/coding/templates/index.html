@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="controlBar.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+      #game-canvas {
+        flex: 1 1 auto;
+        display: block;
+        width: 100%;
+        background: #0a0a14;
+        touch-action: none;
+      }
+      #control-bar {
+        flex: 0 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game-canvas"></canvas>
+    <div id="control-bar"></div>
+
+    <!-- Deterministic runtime (no LLM): inlined sprite data, sprite renderer, gamepad bar, backdrop. -->
+    <script src="sprites.data.js"></script>
+    <script src="spriteRuntime.js"></script>
+    <script src="controlBar.js"></script>
+    <script src="background.js"></script>
+
+    <!-- The shell owns canvas sizing; game.js only reads canvas.width/height. -->
+    <script>
+      (function () {
+        var canvas = document.getElementById('game-canvas');
+        function resize() {
+          var bar = document.getElementById('control-bar');
+          var barH = bar ? bar.offsetHeight : 0;
+          canvas.width = Math.max(1, window.innerWidth);
+          canvas.height = Math.max(1, window.innerHeight - barH);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('load', resize);
+      })();
+    </script>
+
+    <!-- The only LLM-authored file. -->
+    <script src="game.js"></script>
+  </body>
+</html>

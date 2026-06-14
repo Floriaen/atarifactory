@@ -73,6 +73,7 @@ const totals = usage.totals();
 await store.finalize({
   traceId: ctx.traceId,
   source: { traceId: picked.traceId, title: game.title },
+  game, // persisted so the coding phase (and the admin) can chain off this trace on disk
   pack,
   timings,
   usage: { totals, perModel: usage.perModel() },

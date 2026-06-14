@@ -9,13 +9,15 @@ export interface UsageTotals {
   calls: number;
 }
 
+export type PhaseKind = 'design' | 'art' | 'code';
+
 export type StreamEvent =
   | { type: 'node_start'; node: string }
   | { type: 'node_end'; node: string; ms: number }
   | { type: 'node_error'; node: string; ms: number; error: string }
   | { type: 'llm_call'; node: string; model: string; costUsd: number; latencyMs: number }
   | { type: 'progress'; name: string; label?: string }
-  | { type: 'done'; traceId: string; kind: 'design' | 'art'; artifact: unknown; usage: UsageTotals }
+  | { type: 'done'; traceId: string; kind: PhaseKind; artifact: unknown; usage: UsageTotals }
   | { type: 'error'; message: string };
 
 export interface GameDefinition {
@@ -46,3 +48,33 @@ export interface Models {
 }
 
 export type DesignSource = { kind: 'run' | 'cache'; traceId: string; title: string };
+export type ArtSource = { kind: 'run' | 'trace'; traceId: string; title: string };
+
+// ── M3 (coding phase) ────────────────────────────────────────────────────────
+export interface CodeChecks {
+  syntax: boolean;
+  lint: boolean;
+  smoke: boolean;
+  interaction: boolean;
+  progression: boolean;
+  faithful: boolean;
+}
+export interface CodeReport {
+  passed: boolean;
+  checks: CodeChecks;
+  issues: string[];
+}
+export interface GameFile {
+  path: string;
+  contents: string;
+}
+export interface GameBundle {
+  entry: string;
+  gameId: string;
+  files: GameFile[];
+}
+/** The code phase's `done` artifact. */
+export interface CodeArtifact {
+  report: CodeReport;
+  bundle: GameBundle;
+}
