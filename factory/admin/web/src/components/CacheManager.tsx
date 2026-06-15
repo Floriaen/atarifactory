@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { deleteRun, getRun, listRuns } from '../lib/api';
-import type { CachedRunMeta, RunArtifacts } from '../lib/types';
+import type { GameArtifacts, GameMeta } from '../lib/types';
 import { DesignPreview } from './DesignPreview';
 import { ArtPreview } from './ArtPreview';
 import { CodePreview } from './CodePreview';
@@ -8,43 +8,42 @@ import { CodePreview } from './CodePreview';
 const fmtDate = (ms?: number) => (ms ? new Date(ms).toLocaleString() : '');
 
 /**
- * The Cache Manager: browse every persisted run (disk runs + the batch design cache) and
- * review its design, review its art, play the generated game, or delete it. Reuses the same
- * preview components the live phase panels use.
+ * The Library: one card per game (its design, art, and playable build live in one runs/<gameId>/
+ * directory). Open a game to review its design, view its sprites, and play the built game; delete
+ * removes the whole game. Reuses the same preview components the live phase panels use.
  */
 export function CacheManager({ reloadSignal }: { reloadSignal: number }) {
-  const [runs, setRuns] = useState<CachedRunMeta[]>([]);
+  const [games, setGames] = useState<GameMeta[]>([]);
   const [openId, setOpenId] = useState<string>();
-  const [artifacts, setArtifacts] = useState<RunArtifacts>();
+  const [artifacts, setArtifacts] = useState<GameArtifacts>();
   const [error, setError] = useState<string>();
 
-  const refresh = useCallback(() => listRuns().then(setRuns).catch((e) => setError(String(e))), []);
+  const refresh = useCallback(() => listRuns().then(setGames).catch((e) => setError(String(e))), []);
 
   useEffect(() => {
     void refresh();
   }, [refresh, reloadSignal]);
 
-  const open = async (meta: CachedRunMeta) => {
+  const open = async (g: GameMeta) => {
     setError(undefined);
-    if (openId === meta.traceId) {
+    if (openId === g.gameId) {
       setOpenId(undefined);
       setArtifacts(undefined);
       return;
     }
     try {
-      const run = await getRun(meta.traceId);
-      setArtifacts(run);
-      setOpenId(meta.traceId);
+      setArtifacts(await getRun(g.gameId));
+      setOpenId(g.gameId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
-  const remove = async (meta: CachedRunMeta) => {
-    if (!window.confirm(`Delete "${meta.title}" (${meta.traceId})? This removes it from disk.`)) return;
+  const remove = async (g: GameMeta) => {
+    if (!window.confirm(`Delete "${g.title}" (${g.gameId})? This removes its whole directory.`)) return;
     try {
-      await deleteRun(meta.traceId);
-      if (openId === meta.traceId) {
+      await deleteRun(g.gameId);
+      if (openId === g.gameId) {
         setOpenId(undefined);
         setArtifacts(undefined);
       }
@@ -57,7 +56,7 @@ export function CacheManager({ reloadSignal }: { reloadSignal: number }) {
   return (
     <div className="panel cache-manager">
       <div className="panel-head">
-        <h2>Library ({runs.length})</h2>
+        <h2>Library ({games.length})</h2>
         <button className="run" onClick={() => void refresh()}>
           Refresh
         </button>
@@ -65,40 +64,47 @@ export function CacheManager({ reloadSignal }: { reloadSignal: number }) {
 
       {error && <div className="log-line error">{error}</div>}
 
-      {runs.length === 0 ? (
-        <div className="muted">No saved runs yet. Generate a design, art, or game below.</div>
+      {games.length === 0 ? (
+        <div className="muted">No saved games yet. Generate a design, art, or game below.</div>
       ) : (
         <ul className="cache-list">
-          {runs.map((r) => {
-            const isOpen = openId === r.traceId;
-            const action = r.kind === 'code' ? 'Play' : 'Review';
+          {games.map((g) => {
+            const isOpen = openId === g.gameId;
             return (
-              <li key={r.traceId} className={`cache-row ${isOpen ? 'open' : ''}`}>
+              <li key={g.gameId} className={`cache-row ${isOpen ? 'open' : ''}`}>
                 <div className="cache-meta">
-                  <b className="cache-title">{r.title}</b>
-                  <span className={`tag kind-${r.kind}`}>{r.kind}</span>
-                  <span className="tag source">{r.source}</span>
-                  {r.kind === 'code' && (
-                    <span className={`tag ${r.passed ? 'ok' : 'bad'}`}>{r.passed ? 'passed' : 'sub-bar'}</span>
-                  )}
-                  <span className="muted cache-date">{fmtDate(r.createdAt)}</span>
+                  <b className="cache-title">{g.title}</b>
+                  <span className="tag">design</span>
+                  {g.hasArt && <span className="tag">art</span>}
+                  {g.hasGame && <span className={`tag ${g.passed ? 'ok' : 'bad'}`}>{g.passed ? 'game ✓' : 'game · sub-bar'}</span>}
+                  <span className="tag source">{g.source}</span>
+                  <span className="muted cache-date">{fmtDate(g.updatedAt)}</span>
                 </div>
                 <div className="cache-actions">
-                  <button onClick={() => void open(r)}>{isOpen ? 'Close' : action}</button>
-                  <button className="danger" onClick={() => void remove(r)}>
+                  <button onClick={() => void open(g)}>{isOpen ? 'Close' : g.hasGame ? 'Open / Play' : 'Open'}</button>
+                  <button className="danger" onClick={() => void remove(g)}>
                     Delete
                   </button>
                 </div>
 
-                {isOpen && artifacts?.traceId === r.traceId && (
+                {isOpen && artifacts?.gameId === g.gameId && (
                   <div className="cache-detail">
-                    {artifacts.bundle && artifacts.report ? (
-                      <CodePreview artifact={{ report: artifacts.report, bundle: artifacts.bundle }} />
-                    ) : artifacts.pack ? (
-                      <ArtPreview pack={artifacts.pack} />
-                    ) : (
-                      <DesignPreview game={artifacts.game} />
+                    {artifacts.bundle && artifacts.report && (
+                      <section>
+                        <h3>Game</h3>
+                        <CodePreview artifact={{ report: artifacts.report, bundle: artifacts.bundle }} />
+                      </section>
                     )}
+                    {artifacts.pack && (
+                      <section>
+                        <h3>Art</h3>
+                        <ArtPreview pack={artifacts.pack} />
+                      </section>
+                    )}
+                    <section>
+                      <h3>Design</h3>
+                      <DesignPreview game={artifacts.game} />
+                    </section>
                   </div>
                 )}
               </li>

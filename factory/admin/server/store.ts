@@ -1,10 +1,14 @@
 /**
- * Admin-side persistence. The pipeline is stateless and writes nothing; the admin
- * owns the on-disk record. Mirrors what the factory's old `RunStore.finalize` wrote —
- * `runs/<id>/trace.json` (and `runs/<id>/game/` for a code run) — so `make view`,
- * `make play`, and the admin's own disk source-resolution keep working unchanged.
+ * Admin-side persistence. The pipeline is stateless and writes nothing; the admin owns the on-disk
+ * record. A game's phases share ONE directory — `runs/<gameId>/` — so design + art + the playable
+ * build live together:
  *
- * Imports ONLY `@game-factory/contracts` (types). No factory `src/` dependency.
+ *   runs/<gameId>/game.json     the GameDefinition (the game's identity; written by design)
+ *   runs/<gameId>/art.json      the SpritePack     (written by art)
+ *   runs/<gameId>/report.json   the gate CodeReport (written by code)
+ *   runs/<gameId>/game/         the playable bundle (written by code) — make play TRACE=<gameId>
+ *
+ * Re-running a phase overwrites its file (latest wins). Imports ONLY `@game-factory/contracts`.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -15,42 +19,33 @@ export function runsDir(): string {
   return process.env.RUNS_DIR ?? 'runs';
 }
 
-async function writeTrace(traceId: string, trace: unknown): Promise<void> {
-  const dir = join(runsDir(), traceId);
+async function writeJson(gameId: string, file: string, value: unknown): Promise<void> {
+  const dir = join(runsDir(), gameId);
   await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, 'trace.json'), JSON.stringify(trace, null, 2));
+  await writeFile(join(dir, file), JSON.stringify(value, null, 2));
 }
 
-export async function persistDesign(traceId: string, game: GameDefinition, usage: unknown): Promise<void> {
-  await writeTrace(traceId, { traceId, game, usage });
+/** The design establishes the game's identity: write the GameDefinition as game.json. */
+export async function persistDesign(gameId: string, game: GameDefinition): Promise<void> {
+  await writeJson(gameId, 'game.json', game);
 }
 
-/** Art traces carry both `game` and `pack` so a later code run can chain off this trace on disk. */
-export async function persistArt(traceId: string, game: GameDefinition, pack: SpritePack, usage: unknown): Promise<void> {
-  await writeTrace(traceId, { traceId, source: { title: game.title }, game, pack, usage });
+/** Art writes into the SAME game dir (re-affirming game.json so an art-first run is still complete). */
+export async function persistArt(gameId: string, game: GameDefinition, pack: SpritePack): Promise<void> {
+  await writeJson(gameId, 'game.json', game);
+  await writeJson(gameId, 'art.json', pack);
 }
 
-/**
- * A code run: write the bundle under `runs/<id>/game/` (so `make play TRACE=<id>` works) and a
- * trace carrying the game + report. The report rides the trace, NOT the bundle's `files[]`.
- */
+/** Code writes the report + the playable bundle under the same game dir. */
 export async function persistCode(
-  traceId: string,
+  gameId: string,
   game: GameDefinition,
   artifact: { report: unknown; bundle: GameBundle },
-  usage: unknown,
 ): Promise<void> {
   const { bundle, report } = artifact;
-  const gameDir = join(runsDir(), traceId, 'game');
+  await writeJson(gameId, 'game.json', game);
+  await writeJson(gameId, 'report.json', report);
+  const gameDir = join(runsDir(), gameId, 'game');
   await mkdir(gameDir, { recursive: true });
   await Promise.all(bundle.files.map((f) => writeFile(join(gameDir, f.path), f.contents)));
-  await writeTrace(traceId, {
-    traceId,
-    source: { title: game.title },
-    game,
-    gameId: bundle.gameId,
-    entry: bundle.entry,
-    report,
-    usage,
-  });
 }

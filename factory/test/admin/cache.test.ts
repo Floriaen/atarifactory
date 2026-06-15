@@ -7,37 +7,34 @@ import { listRuns, readRun, deleteRun } from '../../admin/server/cache.js';
 import { validGame, validSpritePack } from '../helpers/fixtures.js';
 
 /**
- * The cache manager reads/deletes from disk + the batch cache. Drive it against a temp
- * RUNS_DIR so it never touches the real runs/.
+ * A game's phases now share ONE directory: runs/<gameId>/{game.json, art.json, report.json, game/}.
+ * Drive the cache manager against a temp RUNS_DIR so it never touches the real runs/.
  */
 let dir: string;
 const prev = process.env.RUNS_DIR;
 
-function writeTrace(id: string, trace: unknown): void {
-  mkdirSync(join(dir, id), { recursive: true });
-  writeFileSync(join(dir, id, 'trace.json'), JSON.stringify(trace));
+function seedGame(id: string, parts: { art?: boolean; code?: boolean }): void {
+  const gameDir = join(dir, id);
+  mkdirSync(gameDir, { recursive: true });
+  writeFileSync(join(gameDir, 'game.json'), JSON.stringify(validGame));
+  if (parts.art) writeFileSync(join(gameDir, 'art.json'), JSON.stringify(validSpritePack));
+  if (parts.code) {
+    writeFileSync(join(gameDir, 'report.json'), JSON.stringify({ passed: true, checks: {}, issues: [] }));
+    const bundleDir = join(gameDir, 'game');
+    mkdirSync(bundleDir, { recursive: true });
+    writeFileSync(join(bundleDir, 'index.html'), '<!doctype html><script src="game.js"></script>');
+    writeFileSync(join(bundleDir, 'game.js'), 'window.gamepadState; renderEntity(0,"player");');
+    writeFileSync(join(bundleDir, 'sprites.data.js'), 'window.spritePack = {};');
+  }
 }
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'gf-runs-'));
   process.env.RUNS_DIR = dir;
 
-  writeTrace('run_d_0', { traceId: 'run_d_0', game: validGame, usage: { costUsd: 0.01 } });
-  writeTrace('run_a_0', { traceId: 'run_a_0', source: { title: validGame.title }, game: validGame, pack: validSpritePack, usage: {} });
-  writeTrace('run_c_0', {
-    traceId: 'run_c_0',
-    source: { title: validGame.title },
-    game: validGame,
-    gameId: 'upstack',
-    entry: 'index.html',
-    report: { passed: true, checks: {}, issues: [] },
-    usage: { totals: { costUsd: 0.02 } },
-  });
-  const gameDir = join(dir, 'run_c_0', 'game');
-  mkdirSync(gameDir, { recursive: true });
-  writeFileSync(join(gameDir, 'index.html'), '<!doctype html><script src="game.js"></script>');
-  writeFileSync(join(gameDir, 'game.js'), 'window.gamepadState; renderEntity(0,"player");');
-  writeFileSync(join(gameDir, 'sprites.data.js'), 'window.spritePack = {};');
+  seedGame('game_d', {}); // design only
+  seedGame('game_a', { art: true }); // design + art
+  seedGame('game_c', { art: true, code: true }); // full: design + art + built game
 
   mkdirSync(join(dir, 'cache'), { recursive: true });
   writeFileSync(join(dir, 'cache', 'design-games.json'), JSON.stringify([{ traceId: 'cache_1', game: validGame }]));
@@ -49,39 +46,41 @@ afterEach(() => {
   else process.env.RUNS_DIR = prev;
 });
 
-describe('admin cache manager', () => {
-  it('listRuns classifies disk runs by kind and includes batch-cache designs', () => {
-    const runs = listRuns();
-    const byId = Object.fromEntries(runs.map((r) => [r.traceId, r]));
+describe('admin cache manager (one directory per game)', () => {
+  it('listRuns reports one entry per game with phase-progression flags + batch-cache designs', () => {
+    const games = listRuns();
+    const byId = Object.fromEntries(games.map((g) => [g.gameId, g]));
 
-    expect(byId['run_d_0']).toMatchObject({ kind: 'design', source: 'disk' });
-    expect(byId['run_a_0']).toMatchObject({ kind: 'art', source: 'disk' });
-    expect(byId['run_c_0']).toMatchObject({ kind: 'code', source: 'disk', passed: true });
-    expect(byId['cache_1']).toMatchObject({ kind: 'design', source: 'cache' });
-    expect(runs.every((r) => r.title === validGame.title)).toBe(true);
+    expect(byId['game_d']).toMatchObject({ source: 'disk', hasArt: false, hasGame: false, title: validGame.title });
+    expect(byId['game_a']).toMatchObject({ source: 'disk', hasArt: true, hasGame: false });
+    expect(byId['game_c']).toMatchObject({ source: 'disk', hasArt: true, hasGame: true, passed: true });
+    expect(byId['cache_1']).toMatchObject({ source: 'cache', hasArt: false, hasGame: false });
+    expect(games).toHaveLength(4);
   });
 
-  it('readRun returns a contract-valid bundle + report for a code run', () => {
-    const run = readRun('run_c_0');
-    expect(run?.kind).toBe('code');
-    expect((run as { report: { passed: boolean } }).report.passed).toBe(true);
-    expect(() => parseGameBundle((run as { bundle: unknown }).bundle)).not.toThrow();
-  });
+  it('readRun returns the combined artifacts; a built game yields a contract-valid bundle', () => {
+    const full = readRun('game_c');
+    expect(full).toMatchObject({ source: 'disk' });
+    expect(full?.pack).toBeTruthy();
+    expect((full as { report: { passed: boolean } }).report.passed).toBe(true);
+    expect(() => parseGameBundle((full as { bundle: unknown }).bundle)).not.toThrow();
 
-  it('readRun returns the pack for an art run and the game for a cache design', () => {
-    expect(readRun('run_a_0')).toMatchObject({ kind: 'art' });
-    expect(readRun('run_a_0')?.pack).toBeTruthy();
-    expect(readRun('cache_1')).toMatchObject({ kind: 'design', source: 'cache' });
+    const art = readRun('game_a');
+    expect(art?.pack).toBeTruthy();
+    expect(art?.bundle).toBeUndefined();
+
+    expect(readRun('cache_1')).toMatchObject({ source: 'cache' });
+    expect(readRun('cache_1')?.game.title).toBe(validGame.title);
     expect(readRun('nope')).toBeUndefined();
   });
 
-  it('deleteRun removes a disk run and a cache entry; rejects traversal and unknowns', () => {
-    expect(deleteRun('run_c_0')).toBe(true);
-    expect(existsSync(join(dir, 'run_c_0'))).toBe(false);
-    expect(listRuns().some((r) => r.traceId === 'run_c_0')).toBe(false);
+  it('deleteRun removes the whole game dir and cache entries; rejects traversal/unknowns', () => {
+    expect(deleteRun('game_c')).toBe(true);
+    expect(existsSync(join(dir, 'game_c'))).toBe(false);
+    expect(listRuns().some((g) => g.gameId === 'game_c')).toBe(false);
 
     expect(deleteRun('cache_1')).toBe(true);
-    expect(listRuns().some((r) => r.traceId === 'cache_1')).toBe(false);
+    expect(listRuns().some((g) => g.gameId === 'cache_1')).toBe(false);
 
     expect(deleteRun('nope')).toBe(false);
     expect(deleteRun('../evil')).toBe(false);

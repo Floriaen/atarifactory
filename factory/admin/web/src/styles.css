@@ -183,3 +183,5 @@ button.run:disabled { opacity: 0.5; cursor: default; }
 .tag.source { color: var(--muted); }
 .tag.ok { color: var(--ok); }
 .tag.bad { color: var(--error); }
+.cache-detail section { margin-bottom: 14px; }
+.cache-detail h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }

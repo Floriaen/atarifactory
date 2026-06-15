@@ -79,25 +79,24 @@ export interface CodeArtifact {
   bundle: GameBundle;
 }
 
-// ── Cache Manager (persisted runs: disk + batch cache) ─────────────────────────
-export type RunKind = 'design' | 'art' | 'code';
+// ── Cache Manager (one entry per game: design + art + build in one dir) ────────
 export type RunSource = 'disk' | 'cache';
 
-/** A list entry in the Cache Manager (from GET /api/runs). */
-export interface CachedRunMeta {
-  traceId: string;
+/** A game in the Library (from GET /api/runs). Flags say how far the game got. */
+export interface GameMeta {
+  gameId: string;
   source: RunSource;
-  kind: RunKind;
   title: string;
+  hasArt: boolean;
+  hasGame: boolean;
   passed?: boolean;
-  createdAt?: number;
+  updatedAt?: number;
 }
 
-/** A run's artifacts for review/play (from GET /api/runs/:traceId). */
-export interface RunArtifacts {
-  traceId: string;
+/** A game's combined artifacts for review/play (from GET /api/runs/:gameId). */
+export interface GameArtifacts {
+  gameId: string;
   source: RunSource;
-  kind: RunKind;
   game: GameDefinition;
   pack?: SpritePack;
   report?: CodeReport;

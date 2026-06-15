@@ -1,4 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { fromMap } from '../../src/llm/providers/mock.js';
@@ -42,6 +45,8 @@ let emptyServer: Server;
 let fixturesBase: string;
 let emptyBase: string;
 const prevPipelineUrl = process.env.PIPELINE_URL;
+const prevRunsDir = process.env.RUNS_DIR;
+let runsDir: string;
 
 const serve = (provider: ReturnType<typeof fromMap>): Promise<Server> =>
   new Promise((resolve) => {
@@ -49,6 +54,8 @@ const serve = (provider: ReturnType<typeof fromMap>): Promise<Server> =>
   });
 
 beforeAll(async () => {
+  runsDir = mkdtempSync(join(tmpdir(), 'gf-runs-')); // persistence writes here, not the real runs/
+  process.env.RUNS_DIR = runsDir;
   fixturesServer = await serve(allFixtures);
   emptyServer = await serve(fromMap({}));
   fixturesBase = `http://127.0.0.1:${(fixturesServer.address() as AddressInfo).port}`;
@@ -59,6 +66,9 @@ beforeAll(async () => {
 afterAll(async () => {
   if (prevPipelineUrl === undefined) delete process.env.PIPELINE_URL;
   else process.env.PIPELINE_URL = prevPipelineUrl;
+  if (prevRunsDir === undefined) delete process.env.RUNS_DIR;
+  else process.env.RUNS_DIR = prevRunsDir;
+  rmSync(runsDir, { recursive: true, force: true });
   await Promise.all([fixturesServer, emptyServer].map((s) => new Promise<void>((r) => s.close(() => r()))));
 });
 
@@ -91,7 +101,7 @@ describe('admin run orchestration (REST client over a mock pipeline)', () => {
   });
 
   it('art: ends in a valid SpritePack, one item per entity', async () => {
-    const { bus } = startArt({ now: 0, game: validGame });
+    const { bus } = startArt({ now: 0, game: validGame, gameId: 'game_art' });
     const events = await drain(bus);
 
     const done = events.at(-1)!;
@@ -150,7 +160,7 @@ const browser = hasChromium ? describe : describe.skip;
 
 browser('admin code orchestration (mock LLM pipeline, real gate)', () => {
   it('code: runs the coding phase off an art {game, pack} and ends in a passing bundle', async () => {
-    const { bus } = startCode({ now: 0, game: validGame, pack: validSpritePack });
+    const { bus } = startCode({ now: 0, game: validGame, pack: validSpritePack, gameId: 'game_code1' });
     const events = await drain(bus);
 
     const done = events.at(-1)!;
@@ -165,7 +175,7 @@ browser('admin code orchestration (mock LLM pipeline, real gate)', () => {
   }, 60000);
 
   it('code from a design (no pack): runs art inline first, then code, into one stream', async () => {
-    const { bus } = startCode({ now: 0, game: validGame }); // no pack → art runs inline in the pipeline
+    const { bus } = startCode({ now: 0, game: validGame, gameId: 'game_code2' }); // no pack → art runs inline in the pipeline
     const events = await drain(bus);
 
     const done = events.at(-1)!;

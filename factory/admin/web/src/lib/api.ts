@@ -1,4 +1,4 @@
-import type { ArtSource, CachedRunMeta, DesignSource, Models, RunArtifacts, StreamEvent } from './types';
+import type { ArtSource, DesignSource, GameArtifacts, GameMeta, Models, StreamEvent } from './types';
 
 export async function getModels(): Promise<Models> {
   const r = await fetch('/api/models');
@@ -28,20 +28,20 @@ export async function postRun(path: string, body: unknown): Promise<{ traceId: s
   return r.json();
 }
 
-// ── Cache Manager ──────────────────────────────────────────────────────────
-export async function listRuns(): Promise<CachedRunMeta[]> {
+// ── Cache Manager (one entry per game) ─────────────────────────────────────
+export async function listRuns(): Promise<GameMeta[]> {
   const r = await fetch('/api/runs');
   return r.json();
 }
 
-export async function getRun(traceId: string): Promise<RunArtifacts> {
-  const r = await fetch(`/api/runs/${traceId}`);
+export async function getRun(gameId: string): Promise<GameArtifacts> {
+  const r = await fetch(`/api/runs/${gameId}`);
   if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? r.statusText);
   return r.json();
 }
 
-export async function deleteRun(traceId: string): Promise<void> {
-  const r = await fetch(`/api/runs/${traceId}`, { method: 'DELETE' });
+export async function deleteRun(gameId: string): Promise<void> {
+  const r = await fetch(`/api/runs/${gameId}`, { method: 'DELETE' });
   if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? r.statusText);
 }
 

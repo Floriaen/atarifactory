@@ -3,35 +3,19 @@
 // billable phase to the pipeline service over HTTP. It imports the factory ONLY through
 // `@game-factory/contracts` (the wire shapes); it never links the factory in-process.
 //   make admin   (runs the pipeline service + this + the Vite dev server)
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import express, { type Request, type Response } from 'express';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 
-import {
-  parseGameDefinition,
-  parseSpritePack,
-  type GameDefinition,
-  type SpritePack,
-} from '@game-factory/contracts';
+import type { GameDefinition, SpritePack } from '@game-factory/contracts';
 import { getBus } from './bus.js';
 import { deleteRun, listRuns, readRun } from './cache.js';
-import {
-  getArt,
-  getDesignGame,
-  getResult,
-  listArts,
-  listDesigns,
-  startArt,
-  startCode,
-  startDesign,
-  type ModelTier,
-} from './runs.js';
+import { getResult, startArt, startCode, startDesign, type ModelTier } from './runs.js';
 
 const PORT = Number(process.env.ADMIN_PORT ?? 8787);
 const PIPELINE_URL = (process.env.PIPELINE_URL ?? 'http://127.0.0.1:8910').replace(/\/$/, '');
-const CACHE_FILE = 'runs/cache/design-games.json';
 const log = (msg: string, extra?: unknown) => console.log(`[admin] ${msg}`, extra ?? '');
 
 const app = express();
@@ -62,10 +46,11 @@ app.get('/api/models', async (_req, res) => {
   }
 });
 
+// Every game carries a design — offer them all as a design source (disk games + batch-cache designs).
 app.get('/api/designs', (_req, res) => {
-  const session = listDesigns().map((d) => ({ kind: 'run' as const, traceId: d.traceId, title: d.title }));
-  const cache = readCacheDesigns().map((d) => ({ kind: 'cache' as const, traceId: d.traceId, title: d.title }));
-  res.json([...session, ...cache]);
+  res.json(
+    listRuns().map((g) => ({ kind: g.source === 'cache' ? ('cache' as const) : ('run' as const), traceId: g.gameId, title: g.title })),
+  );
 });
 
 app.post('/api/run/design', (req: Request, res: Response) => {
@@ -79,55 +64,43 @@ app.post('/api/run/design', (req: Request, res: Response) => {
   res.json({ traceId });
 });
 
+// Art runs off a game's design; it persists into that SAME game dir (source.traceId is the gameId).
 app.post('/api/run/art', (req: Request, res: Response) => {
-  const body = req.body as RunBody & { source?: { kind: 'run' | 'cache'; traceId: string } };
-  const source = body.source;
-  if (!source?.traceId) return res.status(400).json({ error: 'source.traceId is required' });
+  const body = req.body as RunBody & { source?: { kind?: string; traceId?: string } };
+  const gameId = body.source?.traceId;
+  if (!gameId) return res.status(400).json({ error: 'source.traceId is required' });
 
   let game: GameDefinition | undefined;
   try {
-    game = source.kind === 'cache' ? readCacheGame(source.traceId) : getDesignGame(source.traceId);
+    game = readRun(gameId)?.game;
   } catch (err) {
     return res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
   }
-  if (!game) return res.status(404).json({ error: `no design found for ${source.kind} ${source.traceId}` });
+  if (!game) return res.status(404).json({ error: `no design found for ${gameId}` });
 
-  const { traceId } = startArt({ provider: body.provider, modelTier: body.modelTier, now: Date.now(), game });
+  const { traceId } = startArt({ provider: body.provider, modelTier: body.modelTier, now: Date.now(), game, gameId });
   return res.json({ traceId });
 });
 
-// Selectable code inputs: this session's art runs + persisted art traces on disk (design→art→code).
+// Selectable code inputs: games that already have art (sprites ready).
 app.get('/api/arts', (_req, res) => {
-  const session = listArts().map((a) => ({ kind: 'run' as const, traceId: a.traceId, title: a.title }));
-  const sessionIds = new Set(session.map((s) => s.traceId));
-  const disk = readArtTraces()
-    .filter((a) => !sessionIds.has(a.traceId))
-    .map((a) => ({ kind: 'trace' as const, traceId: a.traceId, title: a.title }));
-  res.json([...session, ...disk]);
+  res.json(listRuns().filter((g) => g.hasArt).map((g) => ({ kind: 'run' as const, traceId: g.gameId, title: g.title })));
 });
-
-// Code runs off an art result (sprites ready) OR a design (sprites generated inline first).
-// Resolve by traceId across session + disk so it's robust to the source's `kind` hint being stale
-// (e.g. a session art run that vanished on restart and now lives on disk as a trace).
-function resolveCodeInput(traceId: string): { game: GameDefinition; pack?: SpritePack } | undefined {
-  const art = getArt(traceId) ?? readArtTrace(traceId); // {game, pack} — sprites ready
-  if (art) return art;
-  const game = getDesignGame(traceId) ?? readCacheGame(traceId) ?? readTraceGame(traceId); // design → art runs inline
-  return game ? { game } : undefined;
-}
 
 app.post('/api/run/code', (req: Request, res: Response) => {
   const body = req.body as RunBody & { source?: { kind?: string; traceId?: string } };
-  const traceId = body.source?.traceId;
-  if (!traceId) return res.status(400).json({ error: 'source.traceId is required' });
+  const gameId = body.source?.traceId;
+  if (!gameId) return res.status(400).json({ error: 'source.traceId is required' });
 
+  // Code runs off a game: its art if present (sprites ready), else its design (art runs inline first).
   let input: { game: GameDefinition; pack?: SpritePack } | undefined;
   try {
-    input = resolveCodeInput(traceId);
+    const run = readRun(gameId);
+    input = run ? { game: run.game, ...(run.pack ? { pack: run.pack } : {}) } : undefined;
   } catch (err) {
     return res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
   }
-  if (!input) return res.status(404).json({ error: `no design or art source found for ${traceId}` });
+  if (!input) return res.status(404).json({ error: `no design or art source found for ${gameId}` });
 
   const run = startCode({
     provider: body.provider,
@@ -135,6 +108,7 @@ app.post('/api/run/code', (req: Request, res: Response) => {
     now: Date.now(),
     game: input.game,
     ...(input.pack ? { pack: input.pack } : {}),
+    gameId,
   });
   return res.json({ traceId: run.traceId });
 });
@@ -206,72 +180,3 @@ if (existsSync(DIST)) {
 app.listen(PORT, '127.0.0.1', () => {
   log(`API on http://127.0.0.1:${PORT}  ·  pipeline ${PIPELINE_URL}`);
 });
-
-// ── cache helpers ───────────────────────────────────────────────────────────
-interface CacheEntry {
-  traceId: string;
-  game: unknown;
-}
-
-function readCache(): CacheEntry[] {
-  if (!existsSync(CACHE_FILE)) return [];
-  const parsed = JSON.parse(readFileSync(CACHE_FILE, 'utf8')) as CacheEntry[];
-  return Array.isArray(parsed) ? parsed : [];
-}
-
-function readCacheDesigns(): Array<{ traceId: string; title: string }> {
-  return readCache().map((e) => {
-    const title = (e.game as { title?: string })?.title ?? e.traceId;
-    return { traceId: e.traceId, title };
-  });
-}
-
-function readCacheGame(traceId: string): GameDefinition | undefined {
-  const entry = readCache().find((e) => e.traceId === traceId);
-  return entry ? parseGameDefinition(entry.game) : undefined;
-}
-
-// ── persisted art-trace helpers (run code on a previous art result) ──────────
-interface ArtTrace {
-  game?: { title?: string };
-  pack?: unknown;
-}
-
-/** Art traces on disk carry both a `game` and a `pack` (written by the admin's `store.ts`). */
-function readArtTraces(): Array<{ traceId: string; title: string }> {
-  const root = 'runs';
-  if (!existsSync(root)) return [];
-  const out: Array<{ traceId: string; title: string }> = [];
-  for (const id of readdirSync(root)) {
-    if (id === 'cache') continue;
-    const file = path.join(root, id, 'trace.json');
-    if (!existsSync(file)) continue;
-    try {
-      const trace = JSON.parse(readFileSync(file, 'utf8')) as ArtTrace;
-      if (trace.pack && trace.game) out.push({ traceId: id, title: trace.game.title ?? id });
-    } catch {
-      // skip an unreadable/partial trace
-    }
-  }
-  return out;
-}
-
-function readArtTrace(traceId: string): { game: GameDefinition; pack: SpritePack } | undefined {
-  const file = path.join('runs', traceId, 'trace.json');
-  if (!existsSync(file)) return undefined;
-  const trace = JSON.parse(readFileSync(file, 'utf8')) as { game?: unknown; pack?: unknown };
-  if (!trace.game || !trace.pack) return undefined;
-  return { game: parseGameDefinition(trace.game), pack: parseSpritePack(trace.pack) };
-}
-
-/** A design's game from any on-disk trace that carries one (design, art, or code run). */
-function readTraceGame(traceId: string): GameDefinition | undefined {
-  const file = path.join('runs', traceId, 'trace.json');
-  if (!existsSync(file)) return undefined;
-  try {
-    const trace = JSON.parse(readFileSync(file, 'utf8')) as { game?: unknown };
-    return trace.game ? parseGameDefinition(trace.game) : undefined;
-  } catch {
-    return undefined;
-  }
-}

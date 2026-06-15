@@ -34,26 +34,12 @@ function mintRunId(now: number): string {
 }
 
 /**
- * Session registries so each phase can chain off the one before it: the art phase off a design
- * run, the code phase off an art run. (Cached/persisted results are resolved from disk separately.)
+ * Live results of this session's runs, keyed by the run's stream id (what the web subscribed to),
+ * so `/api/result/:traceId` can serve the just-finished artifact. Listing + cross-phase chaining
+ * are disk-backed per game (see `cache.ts`), not held here.
  */
-const designs = new Map<string, { traceId: string; title: string; game: GameDefinition }>();
-const arts = new Map<string, { traceId: string; title: string; game: GameDefinition; pack: SpritePack }>();
 const results = new Map<string, { kind: 'design' | 'art' | 'code'; artifact: unknown; usage: unknown }>();
 
-export function listDesigns(): Array<{ traceId: string; title: string }> {
-  return [...designs.values()].map((d) => ({ traceId: d.traceId, title: d.title }));
-}
-export function getDesignGame(traceId: string): GameDefinition | undefined {
-  return designs.get(traceId)?.game;
-}
-export function listArts(): Array<{ traceId: string; title: string }> {
-  return [...arts.values()].map((a) => ({ traceId: a.traceId, title: a.title }));
-}
-export function getArt(traceId: string): { game: GameDefinition; pack: SpritePack } | undefined {
-  const a = arts.get(traceId);
-  return a ? { game: a.game, pack: a.pack } : undefined;
-}
 export function getResult(traceId: string) {
   return results.get(traceId);
 }
@@ -148,31 +134,35 @@ function launch(
   })();
 }
 
+/**
+ * A run has two ids: the ephemeral **stream id** (returned to the web as `traceId`, used as the
+ * `RunBus` key + the pipeline `x-run-id`) and the persistent **gameId** (the directory the artifact
+ * lands in). Design mints a new game; art/code persist into the design's gameId so a game's phases
+ * share one `runs/<gameId>/` directory.
+ */
 export function startDesign(opts: BaseOpts & { numSeeds?: number }): { traceId: string; bus: RunBus } {
-  const traceId = mintRunId(opts.now);
+  const traceId = mintRunId(opts.now); // a fresh design IS a new game
   const bus = createBus(traceId, opts.now);
   const body = { ...selectors(opts), ...(opts.numSeeds ? { numSeeds: opts.numSeeds } : {}) };
 
   launch(traceId, bus, '/v1/design', body, async (event) => {
     const game = parseGameDefinition(event.artifact);
-    designs.set(traceId, { traceId, title: game.title, game });
     results.set(traceId, { kind: 'design', artifact: game, usage: event.usage });
-    await persistDesign(traceId, game, event.usage);
+    await persistDesign(traceId, game); // gameId = traceId
   });
 
   return { traceId, bus };
 }
 
-export function startArt(opts: BaseOpts & { game: GameDefinition }): { traceId: string; bus: RunBus } {
+export function startArt(opts: BaseOpts & { game: GameDefinition; gameId: string }): { traceId: string; bus: RunBus } {
   const traceId = mintRunId(opts.now);
   const bus = createBus(traceId, opts.now);
   const body = { ...selectors(opts), game: opts.game };
 
   launch(traceId, bus, '/v1/art', body, async (event) => {
     const pack = parseSpritePack(event.artifact);
-    arts.set(traceId, { traceId, title: opts.game.title, game: opts.game, pack });
     results.set(traceId, { kind: 'art', artifact: pack, usage: event.usage });
-    await persistArt(traceId, opts.game, pack, event.usage);
+    await persistArt(opts.gameId, opts.game, pack); // into the design's game dir
   });
 
   return { traceId, bus };
@@ -181,10 +171,10 @@ export function startArt(opts: BaseOpts & { game: GameDefinition }): { traceId: 
 /**
  * The coding phase (M3): the `pack` may be supplied (chaining off an art result) OR omitted
  * (chaining straight off a design — the pipeline runs the art phase inline first, into the same
- * stream). The `done` artifact is `{ report, bundle }`; the admin writes the bundle to disk so
- * `make play TRACE=<id>` works on admin runs too.
+ * stream). The `done` artifact is `{ report, bundle }`, persisted into the game's dir so
+ * `make play TRACE=<gameId>` works on admin runs too.
  */
-export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: SpritePack }): { traceId: string; bus: RunBus } {
+export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: SpritePack; gameId: string }): { traceId: string; bus: RunBus } {
   const traceId = mintRunId(opts.now);
   const bus = createBus(traceId, opts.now);
   const body = { ...selectors(opts), game: opts.game, ...(opts.pack ? { pack: opts.pack } : {}) };
@@ -192,7 +182,7 @@ export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: Sprite
   launch(traceId, bus, '/v1/code', body, async (event) => {
     const artifact = event.artifact as { report: unknown; bundle: GameBundle };
     results.set(traceId, { kind: 'code', artifact, usage: event.usage });
-    await persistCode(traceId, opts.game, artifact, event.usage);
+    await persistCode(opts.gameId, opts.game, artifact); // into the game's dir
   });
 
   return { traceId, bus };
