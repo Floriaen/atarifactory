@@ -16,6 +16,7 @@ import {
   type SpritePack,
 } from '@game-factory/contracts';
 import { getBus } from './bus.js';
+import { deleteRun, listRuns, readRun } from './cache.js';
 import {
   getArt,
   getDesignGame,
@@ -171,6 +172,28 @@ app.get('/api/result/:traceId', (req: Request, res: Response) => {
   const result = req.params.traceId ? getResult(req.params.traceId) : undefined;
   if (!result) return res.status(404).json({ error: 'not found' });
   return res.json(result);
+});
+
+// ── Cache Manager: browse / review / play / delete persisted runs (disk + batch cache) ──
+app.get('/api/runs', (_req, res) => {
+  res.json(listRuns());
+});
+
+app.get('/api/runs/:traceId', (req: Request, res: Response) => {
+  let run;
+  try {
+    run = req.params.traceId ? readRun(req.params.traceId) : undefined;
+  } catch (err) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+  if (!run) return res.status(404).json({ error: 'not found' });
+  return res.json(run);
+});
+
+app.delete('/api/runs/:traceId', (req: Request, res: Response) => {
+  const ok = req.params.traceId ? deleteRun(req.params.traceId) : false;
+  if (!ok) return res.status(404).json({ error: 'not found' });
+  return res.json({ ok: true });
 });
 
 // Serve the built web app in production (dev uses the Vite server + proxy).

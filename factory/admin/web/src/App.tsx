@@ -7,6 +7,7 @@ import { PhasePanel } from './components/PhasePanel';
 import { DesignPreview } from './components/DesignPreview';
 import { ArtPreview } from './components/ArtPreview';
 import { CodePreview } from './components/CodePreview';
+import { CacheManager } from './components/CacheManager';
 
 export default function App() {
   const [models, setModels] = useState<Models>();
@@ -101,10 +102,18 @@ export default function App() {
   const artPack = art.state.result?.artifact as SpritePack | undefined;
   const codeArtifact = code.state.result?.kind === 'code' ? (code.state.result.artifact as CodeArtifact) : undefined;
 
+  // Refresh the Library whenever a phase finishes, so freshly generated runs appear.
+  const [libReload, setLibReload] = useState(0);
+  useEffect(() => {
+    setLibReload((n) => n + 1);
+  }, [design.state.result, art.state.result, code.state.result]);
+
   return (
     <div className="app">
       <h1>Game Factory — Admin</h1>
       <p className="muted pipeline">design → art → code · each phase runs from a fresh result or a previously cached one</p>
+
+      <CacheManager reloadSignal={libReload} />
 
       <PhasePanel
         title="Design"

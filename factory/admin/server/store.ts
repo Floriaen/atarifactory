@@ -10,10 +10,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { GameBundle, GameDefinition, SpritePack } from '@game-factory/contracts';
 
-const RUNS_ROOT = 'runs';
+/** The on-disk run root. Configurable (tests point it at a temp dir); shared with cache.ts. */
+export function runsDir(): string {
+  return process.env.RUNS_DIR ?? 'runs';
+}
 
 async function writeTrace(traceId: string, trace: unknown): Promise<void> {
-  const dir = join(RUNS_ROOT, traceId);
+  const dir = join(runsDir(), traceId);
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, 'trace.json'), JSON.stringify(trace, null, 2));
 }
@@ -38,7 +41,7 @@ export async function persistCode(
   usage: unknown,
 ): Promise<void> {
   const { bundle, report } = artifact;
-  const gameDir = join(RUNS_ROOT, traceId, 'game');
+  const gameDir = join(runsDir(), traceId, 'game');
   await mkdir(gameDir, { recursive: true });
   await Promise.all(bundle.files.map((f) => writeFile(join(gameDir, f.path), f.contents)));
   await writeTrace(traceId, {

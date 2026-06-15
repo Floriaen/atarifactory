@@ -1,4 +1,4 @@
-import type { ArtSource, DesignSource, Models, StreamEvent } from './types';
+import type { ArtSource, CachedRunMeta, DesignSource, Models, RunArtifacts, StreamEvent } from './types';
 
 export async function getModels(): Promise<Models> {
   const r = await fetch('/api/models');
@@ -26,6 +26,23 @@ export async function postRun(path: string, body: unknown): Promise<{ traceId: s
     throw new Error((msg as { error?: string }).error ?? r.statusText);
   }
   return r.json();
+}
+
+// ── Cache Manager ──────────────────────────────────────────────────────────
+export async function listRuns(): Promise<CachedRunMeta[]> {
+  const r = await fetch('/api/runs');
+  return r.json();
+}
+
+export async function getRun(traceId: string): Promise<RunArtifacts> {
+  const r = await fetch(`/api/runs/${traceId}`);
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? r.statusText);
+  return r.json();
+}
+
+export async function deleteRun(traceId: string): Promise<void> {
+  const r = await fetch(`/api/runs/${traceId}`, { method: 'DELETE' });
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? r.statusText);
 }
 
 /** Subscribe to a run's SSE stream. Returns a close fn; auto-closes on done/error. */
