@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { compileSprite } from '../../src/art/compiler.js';
-import type { SpriteDsl } from '../../src/contracts/artSchemas.js';
+import type { SpriteDsl } from '@game-factory/contracts';
 
 /** Compile one frame of ops at a given grid size and return the mask. */
 function frame(ops: string[], gridSize = 12): boolean[][] {

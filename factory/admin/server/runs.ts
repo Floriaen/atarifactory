@@ -1,28 +1,36 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+/**
+ * The admin's orchestration layer — now a pure REST client of the pipeline service.
+ * It mints the run identity, POSTs one phase to the pipeline, relays the NDJSON stream
+ * verbatim into the per-run {@link RunBus}, and on the terminal `done` persists the
+ * artifact (admin-owned) and updates the session registries. It imports NO factory
+ * `src/` code — only `@game-factory/contracts` for the wire types.
+ */
 import {
-  createRunContext,
-  DEFAULT_MODEL,
-  OPUS_MODEL,
-  SONNET_MODEL,
-  runArtPhase,
-  runCodePhase,
-  runDesignPhase,
+  parseGameDefinition,
+  parseSpritePack,
+  type GameBundle,
   type GameDefinition,
-  type Logger,
-  type LLMProvider,
-  type ModelConfig,
+  type ModelTier,
   type SpritePack,
-} from '../../src/api.js';
+  type StreamEvent,
+} from '@game-factory/contracts';
 import { createBus, type RunBus } from './bus.js';
-import { buildStreamingObserver } from './observer.js';
+import { persistArt, persistCode, persistDesign } from './store.js';
 
-export type ModelTier = 'default' | 'opus' | 'sonnet';
+export type { ModelTier };
 
-export function tierToOverride(tier: ModelTier | undefined): Partial<ModelConfig> | undefined {
-  if (tier === 'opus') return { model: OPUS_MODEL };
-  if (tier === 'sonnet') return { model: SONNET_MODEL };
-  return undefined;
+// Read per-call (not at module load) so the process can be configured after import.
+function pipelineUrl(): string {
+  return (process.env.PIPELINE_URL ?? 'http://127.0.0.1:8910').replace(/\/$/, '');
+}
+function authHeader(): Record<string, string> {
+  return process.env.PIPELINE_TOKEN ? { authorization: `Bearer ${process.env.PIPELINE_TOKEN}` } : {};
+}
+
+let counter = 0;
+/** The admin owns run identity (it owns the registry); the id flows to the pipeline as `x-run-id`. */
+function mintRunId(now: number): string {
+  return `run_${now.toString(36)}_${(counter++).toString(36)}`;
 }
 
 /**
@@ -51,127 +59,141 @@ export function getResult(traceId: string) {
 }
 
 interface BaseOpts {
-  provider: LLMProvider;
-  modelOverride?: Partial<ModelConfig>;
-  logger: Logger;
+  provider?: string;
+  modelTier?: ModelTier;
   now: number;
 }
 
-export function startDesign(opts: BaseOpts & { numSeeds?: number }): { traceId: string; bus: RunBus } {
-  const ctx = createRunContext({ model: DEFAULT_MODEL });
-  const bus = createBus(ctx.traceId, opts.now);
-  const { observer, usage, store } = buildStreamingObserver(ctx, bus, opts.logger);
-
-  void (async () => {
-    try {
-      const result = await runDesignPhase({
-        provider: opts.provider,
-        observer,
-        modelOverride: opts.modelOverride,
-        ...(opts.numSeeds ? { numSeeds: opts.numSeeds } : {}),
-      });
-      const totals = usage.totals();
-      await store.finalize({
-        traceId: ctx.traceId,
-        game: result.game,
-        critique: result.critique,
-        iterations: result.iterations,
-        timings: observer.timings,
-        usage: { totals, perModel: usage.perModel() },
-      });
-      designs.set(ctx.traceId, { traceId: ctx.traceId, title: result.game.title, game: result.game });
-      results.set(ctx.traceId, { kind: 'design', artifact: result.game, usage: totals });
-      bus.emit({ type: 'done', traceId: ctx.traceId, kind: 'design', artifact: result.game, usage: totals });
-    } catch (err) {
-      bus.emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });
-    }
-  })();
-
-  return { traceId: ctx.traceId, bus };
-}
-
-export function startArt(opts: BaseOpts & { game: GameDefinition }): { traceId: string; bus: RunBus } {
-  const ctx = createRunContext({ model: DEFAULT_MODEL });
-  const bus = createBus(ctx.traceId, opts.now);
-  const { observer, usage, store } = buildStreamingObserver(ctx, bus, opts.logger);
-
-  void (async () => {
-    try {
-      const { pack } = await runArtPhase(opts.game, {
-        provider: opts.provider,
-        observer,
-        modelOverride: opts.modelOverride,
-      });
-      const totals = usage.totals();
-      // Persist the game alongside the pack so a later code run can chain off this trace on disk.
-      await store.finalize({
-        traceId: ctx.traceId,
-        source: { title: opts.game.title },
-        game: opts.game,
-        pack,
-        timings: observer.timings,
-        usage: { totals, perModel: usage.perModel() },
-      });
-      arts.set(ctx.traceId, { traceId: ctx.traceId, title: opts.game.title, game: opts.game, pack });
-      results.set(ctx.traceId, { kind: 'art', artifact: pack, usage: totals });
-      bus.emit({ type: 'done', traceId: ctx.traceId, kind: 'art', artifact: pack, usage: totals });
-    } catch (err) {
-      bus.emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });
-    }
-  })();
-
-  return { traceId: ctx.traceId, bus };
+function selectors(opts: BaseOpts): Record<string, unknown> {
+  return {
+    ...(opts.provider ? { provider: opts.provider } : {}),
+    ...(opts.modelTier ? { modelTier: opts.modelTier } : {}),
+  };
 }
 
 /**
- * The coding phase (M3): from a `game` plus its sprites, author + gate a playable bundle. The
- * `pack` may be supplied (chaining off an art result) OR omitted (chaining straight off a design —
- * the art phase then runs inline first, streaming into the same observer). Writes the bundle under
- * `runs/<traceId>/game/` so `make play TRACE=<id>` works on admin runs too, and emits a `done`
- * whose artifact is `{ report, bundle }`.
+ * POST one phase to the pipeline and relay its NDJSON stream line-by-line to `onEvent`.
+ * A non-2xx (e.g. a 400 from body validation, or the pipeline being down) is surfaced as a
+ * terminal `error` event — the same shape a mid-run failure takes — so callers handle one path.
  */
-export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: SpritePack }): { traceId: string; bus: RunBus } {
-  const ctx = createRunContext({ model: DEFAULT_MODEL });
-  const bus = createBus(ctx.traceId, opts.now);
-  const { observer, usage, store } = buildStreamingObserver(ctx, bus, opts.logger);
+async function streamPipeline(
+  path: string,
+  body: unknown,
+  runId: string,
+  onEvent: (e: StreamEvent) => void | Promise<void>,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${pipelineUrl()}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-run-id': runId, ...authHeader() },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    await onEvent({ type: 'error', message: `pipeline unreachable at ${pipelineUrl()}: ${err instanceof Error ? err.message : String(err)}` });
+    return;
+  }
 
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => '');
+    let message = `pipeline ${path} returned ${res.status}`;
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      if (parsed.error) message = parsed.error;
+    } catch {
+      /* non-JSON body */
+    }
+    await onEvent({ type: 'error', message });
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const flush = async (chunk: string): Promise<void> => {
+    buffer += chunk;
+    let nl: number;
+    while ((nl = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (line) await onEvent(JSON.parse(line) as StreamEvent);
+    }
+  };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    await flush(decoder.decode(value, { stream: true }));
+  }
+  const tail = buffer.trim();
+  if (tail) await onEvent(JSON.parse(tail) as StreamEvent);
+}
+
+/** Run a phase in the background, persisting + registering on `done`, error-safe throughout. */
+function launch(
+  runId: string,
+  bus: RunBus,
+  path: string,
+  body: unknown,
+  onDone: (event: Extract<StreamEvent, { type: 'done' }>) => Promise<void>,
+): void {
   void (async () => {
     try {
-      let pack = opts.pack;
-      if (!pack) {
-        ({ pack } = await runArtPhase(opts.game, {
-          provider: opts.provider,
-          observer,
-          modelOverride: opts.modelOverride,
-        }));
-      }
-      const { bundle, report } = await runCodePhase(opts.game, pack, {
-        provider: opts.provider,
-        observer,
-        modelOverride: opts.modelOverride,
+      await streamPipeline(path, body, runId, async (event) => {
+        if (event.type === 'done') await onDone(event);
+        bus.emit(event);
       });
-      const totals = usage.totals();
-
-      const gameDir = `runs/${ctx.traceId}/game`;
-      await mkdir(gameDir, { recursive: true });
-      await Promise.all(bundle.files.map((f) => writeFile(join(gameDir, f.path), f.contents)));
-
-      // The report rides the trace, NOT the bundle's files[].
-      await store.finalize({
-        traceId: ctx.traceId,
-        source: { title: opts.game.title },
-        gameId: bundle.gameId,
-        entry: bundle.entry,
-        report,
-        timings: observer.timings,
-        usage: { totals, perModel: usage.perModel() },
-      });
-      results.set(ctx.traceId, { kind: 'code', artifact: { report, bundle }, usage: totals });
-      bus.emit({ type: 'done', traceId: ctx.traceId, kind: 'code', artifact: { report, bundle }, usage: totals });
     } catch (err) {
-      bus.emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });
+      if (!bus.isClosed) bus.emit({ type: 'error', message: err instanceof Error ? err.message : String(err) });
     }
   })();
+}
 
-  return { traceId: ctx.traceId, bus };
+export function startDesign(opts: BaseOpts & { numSeeds?: number }): { traceId: string; bus: RunBus } {
+  const traceId = mintRunId(opts.now);
+  const bus = createBus(traceId, opts.now);
+  const body = { ...selectors(opts), ...(opts.numSeeds ? { numSeeds: opts.numSeeds } : {}) };
+
+  launch(traceId, bus, '/v1/design', body, async (event) => {
+    const game = parseGameDefinition(event.artifact);
+    designs.set(traceId, { traceId, title: game.title, game });
+    results.set(traceId, { kind: 'design', artifact: game, usage: event.usage });
+    await persistDesign(traceId, game, event.usage);
+  });
+
+  return { traceId, bus };
+}
+
+export function startArt(opts: BaseOpts & { game: GameDefinition }): { traceId: string; bus: RunBus } {
+  const traceId = mintRunId(opts.now);
+  const bus = createBus(traceId, opts.now);
+  const body = { ...selectors(opts), game: opts.game };
+
+  launch(traceId, bus, '/v1/art', body, async (event) => {
+    const pack = parseSpritePack(event.artifact);
+    arts.set(traceId, { traceId, title: opts.game.title, game: opts.game, pack });
+    results.set(traceId, { kind: 'art', artifact: pack, usage: event.usage });
+    await persistArt(traceId, opts.game, pack, event.usage);
+  });
+
+  return { traceId, bus };
+}
+
+/**
+ * The coding phase (M3): the `pack` may be supplied (chaining off an art result) OR omitted
+ * (chaining straight off a design — the pipeline runs the art phase inline first, into the same
+ * stream). The `done` artifact is `{ report, bundle }`; the admin writes the bundle to disk so
+ * `make play TRACE=<id>` works on admin runs too.
+ */
+export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: SpritePack }): { traceId: string; bus: RunBus } {
+  const traceId = mintRunId(opts.now);
+  const bus = createBus(traceId, opts.now);
+  const body = { ...selectors(opts), game: opts.game, ...(opts.pack ? { pack: opts.pack } : {}) };
+
+  launch(traceId, bus, '/v1/code', body, async (event) => {
+    const artifact = event.artifact as { report: unknown; bundle: GameBundle };
+    results.set(traceId, { kind: 'code', artifact, usage: event.usage });
+    await persistCode(traceId, opts.game, artifact, event.usage);
+  });
+
+  return { traceId, bus };
 }

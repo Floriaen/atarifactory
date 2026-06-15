@@ -23,14 +23,16 @@ export { runCodePhase } from './coding/runCodePhase.js';
 export type { CodeDeps, CodeResult } from './coding/runCodePhase.js';
 
 // ── Contracts (the data crossing boundaries) ────────────────────────────────
-export { GameDefinitionV1, parseGameDefinition } from './contracts/gameDefinition.js';
-export type { GameDefinition } from './contracts/gameDefinition.js';
-export { SpritePackV1, parseSpritePack } from './contracts/spritePack.js';
-export type { SpritePack, SpriteItem, SpriteMask } from './contracts/spritePack.js';
-export type { SpriteDsl } from './contracts/artSchemas.js';
-export { GameBundleV1, parseGameBundle } from './contracts/gameBundle.js';
-export type { GameBundle, GameFile } from './contracts/gameBundle.js';
-export type { CodeReport, CodeChecks } from './contracts/codeSchemas.js';
+// The wire shapes live in `@game-factory/contracts` (their own zero-dep package);
+// the core re-exports them so in-process hosts keep a single import surface.
+export { GameDefinitionV1, parseGameDefinition } from '@game-factory/contracts';
+export type { GameDefinition } from '@game-factory/contracts';
+export { SpritePackV1, parseSpritePack } from '@game-factory/contracts';
+export type { SpritePack, SpriteItem, SpriteMask } from '@game-factory/contracts';
+export type { SpriteDsl } from '@game-factory/contracts';
+export { GameBundleV1, parseGameBundle } from '@game-factory/contracts';
+export type { GameBundle, GameFile } from '@game-factory/contracts';
+export type { CodeReport, CodeChecks } from '@game-factory/contracts';
 
 // ── Provider seam (which backend runs) ──────────────────────────────────────
 export { selectProvider } from './llm/selectProvider.js';

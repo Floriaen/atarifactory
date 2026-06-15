@@ -1,4 +1,4 @@
-import { parseSpritePack, type SpriteItem, type SpritePack } from '../contracts/spritePack.js';
+import { parseSpritePack, type SpriteItem, type SpritePack } from '@game-factory/contracts';
 
 /**
  * The WRITE boundary: deterministic, no LLM. Normalization already happened in

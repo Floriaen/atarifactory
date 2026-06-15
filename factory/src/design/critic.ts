@@ -1,4 +1,4 @@
-import type { Critique, GameDraft } from '../contracts/phaseSchemas.js';
+import type { Critique, GameDraft } from '@game-factory/contracts';
 
 /**
  * Deterministic hard rules merged over the LLM critique. The model names the

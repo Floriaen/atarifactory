@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseGameBundle } from '../../src/contracts/gameBundle.js';
-import { GameCode } from '../../src/contracts/codeSchemas.js';
+import { parseGameBundle } from '@game-factory/contracts';
+import { GameCode } from '@game-factory/contracts';
 import { gameBundleFixture, gameCodeFixture } from '../helpers/fixtures.js';
 
 describe('GameBundleV1 contract', () => {

@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { GameDefinitionV1 } from '../../contracts/gameDefinition.js';
+import { GameDefinitionV1 } from '@game-factory/contracts';
 
 /**
  * Chain inputs for the coding phase. The typed `game` is passed through; the prompt

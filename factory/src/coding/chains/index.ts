@@ -1,5 +1,5 @@
 import { defineChain } from '../../llm/chain.js';
-import { GameCode, CodeReview } from '../../contracts/codeSchemas.js';
+import { GameCode, CodeReview } from '@game-factory/contracts';
 import { CodeGenInput, CodeFixInput, CodeReviewInput } from './types.js';
 
 const DIR = 'prompts/coding';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { fromMap } from '../../src/llm/providers/mock.js';
 import { runCodePhase } from '../../src/coding/runCodePhase.js';
-import { parseGameBundle } from '../../src/contracts/gameBundle.js';
+import { parseGameBundle } from '@game-factory/contracts';
 import { testObserver } from '../helpers/observer.js';
 import {
   codeReviewPass,

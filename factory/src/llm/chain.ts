@@ -21,6 +21,8 @@ export interface ChainDeps {
   provider: LLMProvider;
   observer: Observer;
   modelOverride?: Partial<ModelConfig>;
+  /** Host-driven cancellation: aborting it cancels the in-flight LLM call (e.g. on a dropped HTTP connection). */
+  signal?: AbortSignal;
 }
 
 export interface Chain<I, O> {
@@ -50,6 +52,7 @@ export function defineChain<I, O>(def: ChainDef<I, O>): (deps: ChainDeps) => Cha
         maxTokens: cfg.maxTokens,
         effort: cfg.effort,
         toolName: def.name,
+        ...(deps.signal ? { signal: deps.signal } : {}),
       });
       const latencyMs = Date.now() - started;
 

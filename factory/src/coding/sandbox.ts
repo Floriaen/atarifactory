@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import { chromium, type Browser, type Page } from 'playwright';
-import type { GameBundle } from '../contracts/gameBundle.js';
+import type { GameBundle } from '@game-factory/contracts';
 
 /**
  * The functions below run INSIDE the page (serialized by Playwright) in a DOM realm this

@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { GameDraft, Seed } from '../../contracts/phaseSchemas.js';
+import { GameDraft, Seed } from '@game-factory/contracts';
 
 /** Input to one persona seed generator. The factory invents from scratch — no theme. */
 export const SeedGenInput = z

@@ -2,10 +2,10 @@ import type { LLMProvider } from '../llm/provider.js';
 import type { Observer } from '../observability/observer.js';
 import { withNode } from '../observability/withNode.js';
 import type { ModelConfig } from '../llm/models.js';
-import { parseGameDefinition, type GameDefinition } from '../contracts/gameDefinition.js';
-import { parseSpritePack, type SpritePack } from '../contracts/spritePack.js';
-import type { GameBundle } from '../contracts/gameBundle.js';
-import type { CodeReport } from '../contracts/codeSchemas.js';
+import { parseGameDefinition, type GameDefinition } from '@game-factory/contracts';
+import { parseSpritePack, type SpritePack } from '@game-factory/contracts';
+import type { GameBundle } from '@game-factory/contracts';
+import type { CodeReport } from '@game-factory/contracts';
 import { codeGenChain, codeFixChain } from './chains/index.js';
 import { assembleGameBundle } from './assembleGameBundle.js';
 import { gate, type GateDeps } from './gate.js';
@@ -16,6 +16,8 @@ export interface CodeDeps {
   observer: Observer;
   /** Generic, host-driven model override applied to every coding chain. */
   modelOverride?: Partial<ModelConfig>;
+  /** Host cancellation, threaded into every coding/gate chain's LLM call (abort-on-disconnect). */
+  signal?: AbortSignal;
   /** Repair attempts after the first generation (default 3). */
   maxIterations?: number;
 }
@@ -62,13 +64,13 @@ export async function runCodePhase(game: GameDefinition, pack: SpritePack, deps:
   const sprites = parseSpritePack(pack); // read guard
   const maxIterations = deps.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 
-  const gateDeps: GateDeps = { provider: deps.provider, observer: deps.observer, modelOverride: deps.modelOverride };
+  const gateDeps: GateDeps = { provider: deps.provider, observer: deps.observer, modelOverride: deps.modelOverride, signal: deps.signal };
   // A whole `game.js` is far longer than a sprite/draft: the `structured` preset's 2048-token cap
   // truncates it mid-string (Unterminated JSON). Raise the authoring/repair output budget; an
   // explicit host modelOverride still wins (spread last).
   const authoring: Partial<ModelConfig> = { maxTokens: CODE_MAX_TOKENS, ...deps.modelOverride };
-  const gen = codeGenChain({ provider: deps.provider, observer: deps.observer, modelOverride: authoring });
-  const fix = codeFixChain({ provider: deps.provider, observer: deps.observer, modelOverride: authoring });
+  const gen = codeGenChain({ provider: deps.provider, observer: deps.observer, modelOverride: authoring, signal: deps.signal });
+  const fix = codeFixChain({ provider: deps.provider, observer: deps.observer, modelOverride: authoring, signal: deps.signal });
   const spriteNames = def.entities.map((e) => e.id);
 
   const evaluate = async (js: string): Promise<Candidate> => {

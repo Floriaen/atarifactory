@@ -1,5 +1,5 @@
-import type { GameDraft } from '../contracts/phaseSchemas.js';
-import { parseGameDefinition, type GameDefinition } from '../contracts/gameDefinition.js';
+import type { GameDraft } from '@game-factory/contracts';
+import { parseGameDefinition, type GameDefinition } from '@game-factory/contracts';
 
 /**
  * The WRITE boundary: deterministic, no LLM. All normalization happens here,

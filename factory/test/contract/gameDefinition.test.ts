@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGameDefinition } from '../../src/contracts/gameDefinition.js';
+import { parseGameDefinition } from '@game-factory/contracts';
 import { validGame } from '../helpers/fixtures.js';
 
 describe('GameDefinitionV1 contract', () => {

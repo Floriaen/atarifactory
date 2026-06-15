@@ -1,8 +1,8 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { Observer } from '../observability/observer.js';
 import { withNode } from '../observability/withNode.js';
-import { type GameDefinition } from '../contracts/gameDefinition.js';
-import type { Critique, GameDraft, Seed } from '../contracts/phaseSchemas.js';
+import { type GameDefinition } from '@game-factory/contracts';
+import type { Critique, GameDraft, Seed } from '@game-factory/contracts';
 import { PERSONAS, samplePersonas, type Persona } from './personas.js';
 import { criticChain, elaborateChain, seedGeneratorChain, seedSelectorChain } from './chains/index.js';
 import { OPUS_MODEL, type ModelConfig } from '../llm/models.js';
@@ -19,6 +19,8 @@ export interface DesignDeps {
   loop?: Partial<LoopConfig>;
   /** Generic, host-driven model override applied to every chain (e.g. force a tier). */
   modelOverride?: Partial<ModelConfig>;
+  /** Host cancellation, threaded into every chain's LLM call (abort-on-disconnect). */
+  signal?: AbortSignal;
 }
 
 export interface DesignResult {
@@ -34,12 +36,13 @@ export async function runDesignPhase(deps: DesignDeps): Promise<DesignResult> {
   const loop: LoopConfig = { ...DEFAULT_LOOP, ...deps.loop };
 
   const mo = deps.modelOverride;
-  const seedGen = seedGeneratorChain({ provider, observer, modelOverride: mo });
-  const selector = seedSelectorChain({ provider, observer, modelOverride: mo });
-  const elaborate = elaborateChain({ provider, observer, modelOverride: mo });
+  const signal = deps.signal;
+  const seedGen = seedGeneratorChain({ provider, observer, modelOverride: mo, signal });
+  const selector = seedSelectorChain({ provider, observer, modelOverride: mo, signal });
+  const elaborate = elaborateChain({ provider, observer, modelOverride: mo, signal });
   // Judgment quality matters most here — default the (Sonnet) validation preset to Opus,
   // unless the host has explicitly chosen a model tier (its choice wins).
-  const critic = criticChain({ provider, observer, modelOverride: mo ?? { model: OPUS_MODEL, effort: 'medium' } });
+  const critic = criticChain({ provider, observer, modelOverride: mo ?? { model: OPUS_MODEL, effort: 'medium' }, signal });
 
   // 1 — DIVERGE (parallel persona generators)
   const seeds: Seed[] = await withNode(observer, 'diverge', () =>

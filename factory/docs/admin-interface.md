@@ -1,5 +1,20 @@
 # Admin Interface — Run the Factory Phases from a Browser
 
+> **Update (pipeline decoupled — network boundary):** the admin no longer links the factory
+> in-process. It is now a pure **REST client** of a standalone, **stateless pipeline service**
+> (`server/`, host `bin/serve.ts`) that exposes the phases over HTTP/NDJSON:
+> `admin/web ─/api─► admin/server (BFF) ─HTTP─► pipeline service ─► src/api.ts`. The admin keeps
+> the cache, session registries, on-disk persistence (now its own [`store.ts`](../admin/server/store.ts),
+> replacing `RunStore` + the deleted `observer.ts`), and the SSE replay bus; the pipeline runs one
+> phase per request and forgets it. Shared wire shapes moved to the zero-dep package
+> [`@game-factory/contracts`](../contracts) — the **only** thing `admin/**` may import (enforced by
+> `no-restricted-imports`: no `src/**`, `server/**`, or `@anthropic-ai/**`). `/api/models` now
+> **proxies** the pipeline's `GET /v1/models`; `/api/health` surfaces pipeline reachability; the admin
+> needs **no** `ANTHROPIC_API_KEY` (only `PIPELINE_URL`/`PIPELINE_TOKEN`). `make admin` launches three
+> processes (pipeline :8910 + admin API :8787 + Vite :5173). Run topology and the full REST surface live
+> in [pipeline-service-decoupling.md](./pipeline-service-decoupling.md). The web hop and the
+> `/api/*` shapes below are unchanged; everything from here down describes the original in-process design.
+>
 > **Update (M3 landed):** the admin now has a **third panel, Code** (`runCodePhase` →
 > `GameBundle` + gate `report`), so the full **design → art → code** pipeline runs from the
 > browser. Each phase runs off a fresh result **or a previously cached/persisted one**: art from a

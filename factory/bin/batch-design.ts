@@ -19,8 +19,8 @@ import { createLogger, withTrace } from '../src/observability/logger.js';
 import { createRunContext } from '../src/observability/runContext.js';
 import { RunStore } from '../src/observability/runStore.js';
 import { DEFAULT_MODEL } from '../src/llm/models.js';
-import type { GameDefinition } from '../src/contracts/gameDefinition.js';
-import type { Critique, Seed } from '../src/contracts/phaseSchemas.js';
+import type { GameDefinition } from '@game-factory/contracts';
+import type { Critique, Seed } from '@game-factory/contracts';
 
 if (process.env.PROVIDER !== 'claude-code' && !process.env.ANTHROPIC_API_KEY) {
   console.error('[batch] ANTHROPIC_API_KEY is not set. Add it to factory/.env (or set PROVIDER=claude-code), then re-run.');

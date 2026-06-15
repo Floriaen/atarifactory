@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=20"
   },
+  "workspaces": [
+    "contracts"
+  ],
   "scripts": {
     "dev": "tsx src/index.ts",
     "test": "vitest run",
@@ -17,12 +20,14 @@
     "art": "tsx bin/art.ts",
     "code": "tsx bin/code.ts",
     "play": "tsx bin/play.ts",
+    "serve": "tsx bin/serve.ts",
     "admin:server": "tsx admin/server/index.ts",
     "admin:web": "vite admin/web",
     "admin:build": "vite build admin/web"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
+    "@game-factory/contracts": "*",
     "pino": "^9.5.0",
     "zod": "^3.23.8"
   },

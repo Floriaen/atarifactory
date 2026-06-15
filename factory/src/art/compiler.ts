@@ -1,4 +1,4 @@
-import type { SpriteDsl } from '../contracts/artSchemas.js';
+import type { SpriteDsl } from '@game-factory/contracts';
 
 /**
  * The art analogue of `assembleGameDefinition`: pure, deterministic, no LLM.

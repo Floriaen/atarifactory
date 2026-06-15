@@ -1,5 +1,5 @@
 import { defineChain } from '../../llm/chain.js';
-import { SpriteDsl } from '../../contracts/artSchemas.js';
+import { SpriteDsl } from '@game-factory/contracts';
 import { SpriteGenInput } from './types.js';
 
 /**

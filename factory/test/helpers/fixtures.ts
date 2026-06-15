@@ -1,9 +1,9 @@
-import type { Critique, GameDraft, Seed, Selection } from '../../src/contracts/phaseSchemas.js';
-import type { GameDefinition } from '../../src/contracts/gameDefinition.js';
-import type { SpriteDsl } from '../../src/contracts/artSchemas.js';
-import type { SpritePack } from '../../src/contracts/spritePack.js';
-import type { GameCode, CodeReview } from '../../src/contracts/codeSchemas.js';
-import type { GameBundle } from '../../src/contracts/gameBundle.js';
+import type { Critique, GameDraft, Seed, Selection } from '@game-factory/contracts';
+import type { GameDefinition } from '@game-factory/contracts';
+import type { SpriteDsl } from '@game-factory/contracts';
+import type { SpritePack } from '@game-factory/contracts';
+import type { GameCode, CodeReview } from '@game-factory/contracts';
+import type { GameBundle } from '@game-factory/contracts';
 import { compileSprite } from '../../src/art/compiler.js';
 
 export const validGame: GameDefinition = {

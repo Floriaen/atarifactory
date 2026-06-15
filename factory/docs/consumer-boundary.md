@@ -37,10 +37,34 @@ Logs (pino) stay for humans; the sink is for machines. One generic interface, ev
 host reuses it.
 
 ## What this buys the admin UI
-The admin server builds an `Observer` with a `sink` that forwards `FactoryEvent`s to
-its SSE stream, picks a provider/tier via the existing seams, and renders the typed
-contracts — **adding nothing to `src/`**. If the admin is deleted tomorrow, the
-factory is untouched. See [admin-interface.md](./admin-interface.md).
+A host that builds an `Observer` with a `sink` forwarding `FactoryEvent`s, picks a
+provider/tier via the existing seams, and renders the typed contracts adds **nothing
+to `src/`**. If a consumer is deleted tomorrow, the factory is untouched.
+
+## The boundary is now a *network* boundary (admin only)
+The admin no longer links the factory in-process. The same seams above are exposed
+over HTTP by the **pipeline service** (`server/`, host `bin/serve.ts`) — a thin,
+**stateless** shell over `api.ts`:
+
+```
+admin/web (React) ──/api──► admin/server (BFF) ──HTTP/NDJSON──► pipeline service ──► src/api.ts
+   cache · registries · persistence · SSE replay bus            stateless: provider/model + stream only
+```
+
+- The shared wire shapes live in their own zero-dep package,
+  [`@game-factory/contracts`](../contracts) (Zod schemas + types + parse guards + the
+  stream protocol). `src/api.ts` re-exports it; the admin imports **only** it.
+- The pipeline runs **one phase per request** and forgets it — no `RunStore`, no
+  registries, no replay. The admin owns all state and mints run identity (`x-run-id`).
+- A dropped admin connection aborts the run: the `…Deps.signal?: AbortSignal` seam
+  threads cancellation through the phase → provider (abort-on-disconnect).
+- This is enforced in CI by `no-restricted-imports` (see `eslint.config.js`):
+  `admin/**` may import `@game-factory/contracts` only — never `src/**`, `server/**`,
+  or `@anthropic-ai/**`.
+
+The CLIs in `bin/` stay **in-process** library hosts; the network boundary is the
+admin's alone. See [pipeline-service-decoupling.md](./pipeline-service-decoupling.md)
+and [admin-interface.md](./admin-interface.md).
 
 ## Checklist when adding a host feature
 1. Can it be expressed through an existing seam (provider, `modelOverride`, `sink`,

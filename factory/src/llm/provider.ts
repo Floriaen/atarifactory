@@ -1,4 +1,5 @@
 import type { ZodType } from 'zod/v4';
+import type { Usage } from '@game-factory/contracts';
 
 export type Role = 'user' | 'assistant';
 
@@ -7,13 +8,8 @@ export interface LLMMessage {
   content: string;
 }
 
-/** Token usage, read from the provider response — never estimated. */
-export interface Usage {
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadInputTokens?: number;
-  cacheCreationInputTokens?: number;
-}
+/** Token usage, read from the provider response — never estimated. Defined once as the wire shape in the contracts package. */
+export type { Usage };
 
 export interface StructuredResult<T> {
   data: T;

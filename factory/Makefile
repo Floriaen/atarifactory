@@ -30,9 +30,16 @@ code: ## build a playable game from a cached design:  make code [I=0 | TRACE=<id
 play: ## serve a built bundle in the browser:  make play TRACE=<id>
 	npm run play -- TRACE=$(TRACE)
 
-admin: ## run the admin UI (API :8787 + web :5173)
-	@echo "[admin] API http://127.0.0.1:8787  ·  web http://127.0.0.1:5173"
-	npm run admin:server & SVR=$$!; trap 'kill $$SVR 2>/dev/null' INT TERM EXIT; npm run admin:web
+serve: ## run the pipeline service alone (REST API :8910 — needs ANTHROPIC_API_KEY)
+	@echo "[pipeline] http://127.0.0.1:8910"
+	npm run serve
+
+admin: ## run the full stack: pipeline :8910 + admin API :8787 + web :5173
+	@echo "[pipeline] :8910  ·  [admin] API :8787  ·  web :5173"
+	npm run serve & PIPE=$$!; \
+	npm run admin:server & SVR=$$!; \
+	trap 'kill $$PIPE $$SVR 2>/dev/null' INT TERM EXIT; \
+	npm run admin:web
 
 test: ## tiers 1–3 (deterministic, no network)
 	npm test
@@ -49,4 +56,4 @@ lint: ## eslint
 clean: ## remove build + run artifacts + deps
 	rm -rf dist runs node_modules
 
-.PHONY: help setup run start batch art code play admin test test-e2e view lint clean
+.PHONY: help setup run start batch art code play serve admin test test-e2e view lint clean

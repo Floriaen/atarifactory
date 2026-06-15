@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseSpritePack, type SpriteItem } from '../../src/contracts/spritePack.js';
-import { SpriteDsl } from '../../src/contracts/artSchemas.js';
+import { parseSpritePack, type SpriteItem } from '@game-factory/contracts';
+import { SpriteDsl } from '@game-factory/contracts';
 import { spritePackFixture } from '../helpers/fixtures.js';
 
 const item = (): SpriteItem => structuredClone(spritePackFixture.items.player!);

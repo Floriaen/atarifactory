@@ -1,4 +1,4 @@
-import type { Critique, GameDraft } from '../contracts/phaseSchemas.js';
+import type { Critique, GameDraft } from '@game-factory/contracts';
 
 export interface LoopConfig {
   /** Refinement attempts on a single seed before giving up on it. */

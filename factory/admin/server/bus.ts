@@ -1,11 +1,11 @@
-import type { FactoryEvent } from '../../src/api.js';
+import type { StreamEvent } from '@game-factory/contracts';
 
-/** A server-minted terminal event, added on top of the factory's stream. */
-export type TerminalEvent =
-  | { type: 'done'; traceId: string; kind: 'design' | 'art' | 'code'; artifact: unknown; usage: unknown }
-  | { type: 'error'; message: string };
-
-export type BusEvent = FactoryEvent | TerminalEvent;
+/**
+ * The bus carries the pipeline's full wire protocol verbatim — the factory events
+ * plus the service-minted `done`/`error` terminal. The shape lives once in
+ * `@game-factory/contracts` ({@link StreamEvent}); no admin-local re-definition.
+ */
+export type BusEvent = StreamEvent;
 
 const isTerminal = (e: BusEvent): boolean => e.type === 'done' || e.type === 'error';
 
@@ -25,7 +25,17 @@ export class RunBus {
 
   emit(e: BusEvent): void {
     this.buffer.push(e);
-    for (const fn of this.subs) fn(e);
+    // Isolate subscriber faults: a dead SSE socket whose `res.write` throws ("write after end")
+    // must NOT bubble up to the caller — that caller is the pipeline NDJSON reader, and an
+    // exception there abandons the upstream response, which makes the stateless pipeline abort
+    // the in-flight LLM calls ("Request was aborted"). Drop the broken subscriber; keep the run.
+    for (const fn of [...this.subs]) {
+      try {
+        fn(e);
+      } catch {
+        this.subs.delete(fn);
+      }
+    }
     if (isTerminal(e)) {
       this.closed = true;
       this.subs.clear();

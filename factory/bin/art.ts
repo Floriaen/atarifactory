@@ -13,7 +13,7 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 import { selectProvider } from '../src/llm/selectProvider.js';
 import { runArtPhase } from '../src/art/runArtPhase.js';
 import { maskToAscii } from '../src/art/asciiPreview.js';
-import { parseGameDefinition } from '../src/contracts/gameDefinition.js';
+import { parseGameDefinition } from '@game-factory/contracts';
 import { Observer } from '../src/observability/observer.js';
 import { UsageAggregator } from '../src/observability/usage.js';
 import { createLogger, withTrace } from '../src/observability/logger.js';

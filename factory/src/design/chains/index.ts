@@ -1,5 +1,5 @@
 import { defineChain } from '../../llm/chain.js';
-import { Critique, GameDraft, Seed, Selection } from '../../contracts/phaseSchemas.js';
+import { Critique, GameDraft, Seed, Selection } from '@game-factory/contracts';
 import { CriticInput, ElaborateInput, SeedGenInput, SelectInput } from './types.js';
 
 const DIR = 'prompts/design';

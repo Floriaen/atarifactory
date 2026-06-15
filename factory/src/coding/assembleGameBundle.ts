@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { parseGameBundle, type GameBundle, GAME_JS_FILE, SPRITE_DATA_FILE, ENTRY_FILE } from '../contracts/gameBundle.js';
-import type { GameDefinition } from '../contracts/gameDefinition.js';
-import type { SpritePack } from '../contracts/spritePack.js';
+import { parseGameBundle, type GameBundle, GAME_JS_FILE, SPRITE_DATA_FILE, ENTRY_FILE } from '@game-factory/contracts';
+import type { GameDefinition } from '@game-factory/contracts';
+import type { SpritePack } from '@game-factory/contracts';
 
 /** Static runtime files copied into every bundle verbatim (index.html is templated separately). */
 const STATIC_FILES = ['controlBar.css', 'spriteRuntime.js', 'controlBar.js', 'background.js'] as const;

@@ -1,9 +1,9 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { Observer } from '../observability/observer.js';
 import { OPUS_MODEL, type ModelConfig } from '../llm/models.js';
-import type { GameDefinition } from '../contracts/gameDefinition.js';
-import type { GameBundle } from '../contracts/gameBundle.js';
-import type { CodeReport } from '../contracts/codeSchemas.js';
+import type { GameDefinition } from '@game-factory/contracts';
+import type { GameBundle } from '@game-factory/contracts';
+import type { CodeReport } from '@game-factory/contracts';
 import { codeReviewChain } from './chains/index.js';
 import { runSandbox, type SandboxResult } from './sandbox.js';
 
@@ -11,6 +11,8 @@ export interface GateDeps {
   provider: LLMProvider;
   observer: Observer;
   modelOverride?: Partial<ModelConfig>;
+  /** Host cancellation, threaded into the faithfulness-review LLM call (abort-on-disconnect). */
+  signal?: AbortSignal;
 }
 
 /** Compile `game.js` (no execution) — true unless it throws a SyntaxError. */
@@ -116,6 +118,7 @@ export async function gate(input: GateInput, deps: GateDeps): Promise<CodeReport
       observer: deps.observer,
       // Judgement quality, like the design critic — Opus unless the host forced a tier.
       modelOverride: deps.modelOverride ?? { model: OPUS_MODEL, effort: 'medium' },
+      signal: deps.signal,
     });
     const { data } = await review.run({ game, js });
     faithful = data.verdict === 'pass';
