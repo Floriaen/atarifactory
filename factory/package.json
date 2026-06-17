@@ -20,8 +20,8 @@
     "art": "tsx bin/art.ts",
     "code": "tsx bin/code.ts",
     "play": "tsx bin/play.ts",
-    "serve": "tsx bin/serve.ts",
-    "admin:server": "tsx admin/server/index.ts",
+    "serve": "tsx watch bin/serve.ts",
+    "admin:server": "tsx watch admin/server/index.ts",
     "admin:web": "vite admin/web",
     "admin:build": "vite build admin/web"
   },

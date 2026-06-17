@@ -15,7 +15,7 @@ import {
   type StreamEvent,
 } from '@game-factory/contracts';
 import { createBus, type RunBus } from './bus.js';
-import { persistArt, persistCode, persistDesign } from './store.js';
+import { accumulateUsage, persistArt, persistCode, persistDesign } from './store.js';
 
 export type { ModelTier };
 
@@ -149,6 +149,7 @@ export function startDesign(opts: BaseOpts & { numSeeds?: number }): { traceId: 
     const game = parseGameDefinition(event.artifact);
     results.set(traceId, { kind: 'design', artifact: game, usage: event.usage });
     await persistDesign(traceId, game); // gameId = traceId
+    await accumulateUsage(traceId, event.usage, Date.now() - opts.now);
   });
 
   return { traceId, bus };
@@ -163,6 +164,7 @@ export function startArt(opts: BaseOpts & { game: GameDefinition; gameId: string
     const pack = parseSpritePack(event.artifact);
     results.set(traceId, { kind: 'art', artifact: pack, usage: event.usage });
     await persistArt(opts.gameId, opts.game, pack); // into the design's game dir
+    await accumulateUsage(opts.gameId, event.usage, Date.now() - opts.now);
   });
 
   return { traceId, bus };
@@ -183,6 +185,7 @@ export function startCode(opts: BaseOpts & { game: GameDefinition; pack?: Sprite
     const artifact = event.artifact as { report: unknown; bundle: GameBundle };
     results.set(traceId, { kind: 'code', artifact, usage: event.usage });
     await persistCode(opts.gameId, opts.game, artifact); // into the game's dir
+    await accumulateUsage(opts.gameId, event.usage, Date.now() - opts.now);
   });
 
   return { traceId, bus };

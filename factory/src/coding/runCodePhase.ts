@@ -28,8 +28,12 @@ export interface CodeResult {
 }
 
 const DEFAULT_MAX_ITERATIONS = 3;
-/** Output-token budget for authoring/repairing `game.js` (a full file, not a sprite/draft). */
-const CODE_MAX_TOKENS = 16000;
+/**
+ * Output-token budget for authoring/repairing `game.js` (a full file, not a sprite/draft). Sized
+ * for a complex game: at 16k, large games (e.g. multi-level ones) truncated mid-string →
+ * Unterminated → SyntaxError on every attempt. Cost only rises when the output is actually large.
+ */
+const CODE_MAX_TOKENS = 32000;
 
 interface Candidate {
   js: string;
@@ -79,10 +83,13 @@ export async function runCodePhase(game: GameDefinition, pack: SpritePack, deps:
     return { js, bundle, report };
   };
 
-  let current = await withNode(deps.observer, 'code:generate', async () => {
+  // The node wraps only the authoring LLM call; the gate then runs OUTSIDE it, so its slow steps
+  // (code:smoke, code:review) emit as sibling progress nodes rather than nesting under generate.
+  const genJs = await withNode(deps.observer, 'code:generate', async () => {
     const { data } = await gen.run({ game: def, spriteNames, runtimeContract: RUNTIME_CONTRACT });
-    return evaluate(data.js);
+    return data.js;
   });
+  let current = await evaluate(genJs);
   let best = current;
 
   for (let iteration = 1; !current.report.passed && iteration <= maxIterations; iteration++) {
@@ -90,10 +97,11 @@ export async function runCodePhase(game: GameDefinition, pack: SpritePack, deps:
     const issues = current.report.issues.length
       ? current.report.issues.join('\n')
       : 'the game did not pass the quality gate';
-    current = await withNode(deps.observer, `code:fix#${iteration}`, async () => {
+    const fixJs = await withNode(deps.observer, `code:fix#${iteration}`, async () => {
       const { data } = await fix.run({ game: def, priorJs, issues });
-      return evaluate(data.js);
+      return data.js;
     });
+    current = await evaluate(fixJs);
     if (candidateScore(current.report) > candidateScore(best.report)) best = current;
   }
 

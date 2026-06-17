@@ -91,6 +91,9 @@ export interface GameMeta {
   hasGame: boolean;
   passed?: boolean;
   updatedAt?: number;
+  costUsd?: number;
+  tokens?: number;
+  durationMs?: number;
 }
 
 /** A game's combined artifacts for review/play (from GET /api/runs/:gameId). */

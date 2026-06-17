@@ -35,7 +35,7 @@
       key.type = 'button';
       key.className = 'gp-key gp-' + input;
       key.textContent = LABELS[input];
-      key.setAttribute('aria-label', input);
+      key.setAttribute('aria-label', LABELS[input] || input);
 
       var press = function (ev) {
         ev.preventDefault();
@@ -58,6 +58,40 @@
     bar.appendChild(dpad);
     bar.appendChild(buttons);
   }
+
+  // Keyboard maps onto the same gamepad events. `e.code` (physical key) keeps it layout-independent:
+  // Z/X sit next to each other regardless of QWERTY/AZERTY. `held` dedupes OS key auto-repeat.
+  var KEY_MAP = {
+    ArrowUp: 'up',
+    ArrowDown: 'down',
+    ArrowLeft: 'left',
+    ArrowRight: 'right',
+    KeyZ: 'btn1',
+    KeyX: 'btn2',
+  };
+  var held = {};
+
+  function setKey(input, on) {
+    var key = document.querySelector('.gp-' + input);
+    if (key) key.classList.toggle('on', on);
+    fire(on ? 'gamepad-press' : 'gamepad-release', input);
+  }
+
+  window.addEventListener('keydown', function (e) {
+    var input = KEY_MAP[e.code];
+    if (!input) return;
+    e.preventDefault(); // stop arrow/space from scrolling the host page
+    if (held[input]) return;
+    held[input] = true;
+    setKey(input, true);
+  });
+  window.addEventListener('keyup', function (e) {
+    var input = KEY_MAP[e.code];
+    if (!input || !held[input]) return;
+    e.preventDefault();
+    held[input] = false;
+    setKey(input, false);
+  });
 
   // The #control-bar div precedes this script in the body, so it already exists — build now.
   build();

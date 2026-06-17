@@ -8,8 +8,11 @@
  *   runs/<gameId>/report.json   the gate CodeReport (written by code)
  *   runs/<gameId>/game/         the playable bundle (written by code) — make play TRACE=<gameId>
  *
+ *   runs/<gameId>/usage.json    tokens/cost/time, accumulated across the game's phases
+ *
  * Re-running a phase overwrites its file (latest wins). Imports ONLY `@game-factory/contracts`.
  */
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { GameBundle, GameDefinition, SpritePack } from '@game-factory/contracts';
@@ -34,6 +37,47 @@ export async function persistDesign(gameId: string, game: GameDefinition): Promi
 export async function persistArt(gameId: string, game: GameDefinition, pack: SpritePack): Promise<void> {
   await writeJson(gameId, 'game.json', game);
   await writeJson(gameId, 'art.json', pack);
+}
+
+/** Per-game tokens/cost/time, summed across whatever phases ran into the dir. */
+export interface RunUsage {
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  calls: number;
+  durationMs: number;
+}
+
+const ZERO_USAGE: RunUsage = { inputTokens: 0, outputTokens: 0, costUsd: 0, calls: 0, durationMs: 0 };
+
+function num(v: unknown): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * Add one phase's usage totals (`done.usage`, untyped on the wire) + its wall-clock to the game's
+ * running tally. ponytail: this accumulates across phase re-runs — design mints a fresh gameId so
+ * it's safe, but re-running art/code into the same dir double-counts. Acceptable for a cost display.
+ */
+export async function accumulateUsage(gameId: string, usage: unknown, durationMs: number): Promise<void> {
+  const file = join(runsDir(), gameId, 'usage.json');
+  let prev = ZERO_USAGE;
+  if (existsSync(file)) {
+    try {
+      prev = { ...ZERO_USAGE, ...(JSON.parse(readFileSync(file, 'utf8')) as Partial<RunUsage>) };
+    } catch {
+      /* corrupt tally — start fresh */
+    }
+  }
+  const u = usage as Partial<RunUsage> | undefined;
+  const next: RunUsage = {
+    inputTokens: prev.inputTokens + num(u?.inputTokens),
+    outputTokens: prev.outputTokens + num(u?.outputTokens),
+    costUsd: prev.costUsd + num(u?.costUsd),
+    calls: prev.calls + num(u?.calls),
+    durationMs: prev.durationMs + num(durationMs),
+  };
+  await writeJson(gameId, 'usage.json', next);
 }
 
 /** Code writes the report + the playable bundle under the same game dir. */

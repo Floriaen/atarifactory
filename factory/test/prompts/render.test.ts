@@ -51,4 +51,9 @@ describe('prompt rendering', () => {
   it('throws on a missing variable', () => {
     expect(() => renderPrompt('hello {{missing}}', {})).toThrow(/missing/);
   });
+
+  it('the runtime contract names the on-screen button labels A and B (so HUD text uses them, not btn1/btn2)', () => {
+    expect(RUNTIME_CONTRACT).toMatch(/\bA\b.*\bbtn1\b|\bbtn1\b.*\bA\b/);
+    expect(RUNTIME_CONTRACT).toMatch(/\bB\b.*\bbtn2\b|\bbtn2\b.*\bB\b/);
+  });
 });

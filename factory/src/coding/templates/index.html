@@ -39,10 +39,13 @@
     <script src="controlBar.js"></script>
     <script src="background.js"></script>
 
-    <!-- The shell owns canvas sizing; game.js only reads canvas.width/height. -->
+    <!-- The shell owns canvas sizing and hands game.js the ready-to-use canvas + 2D context as
+         globals, so game.js never resolves the element itself (a wrong id = a blank screen). -->
     <script>
       (function () {
         var canvas = document.getElementById('game-canvas');
+        window.canvas = canvas;
+        window.ctx = canvas.getContext('2d');
         function resize() {
           var bar = document.getElementById('control-bar');
           var barH = bar ? bar.offsetHeight : 0;

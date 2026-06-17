@@ -6,6 +6,13 @@ import { ArtPreview } from './ArtPreview';
 import { CodePreview } from './CodePreview';
 
 const fmtDate = (ms?: number) => (ms ? new Date(ms).toLocaleString() : '');
+const fmtDuration = (ms?: number) => {
+  if (ms == null) return '';
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(1)}s`;
+  return `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, '0')}s`;
+};
+const fmtTokens = (n?: number) => (n == null ? '' : n >= 1000 ? `${(n / 1000).toFixed(1)}k tok` : `${n} tok`);
 
 /**
  * The Library: one card per game (its design, art, and playable build live in one runs/<gameId>/
@@ -79,6 +86,9 @@ export function CacheManager({ reloadSignal }: { reloadSignal: number }) {
                   {g.hasGame && <span className={`tag ${g.passed ? 'ok' : 'bad'}`}>{g.passed ? 'game ✓' : 'game · sub-bar'}</span>}
                   <span className="tag source">{g.source}</span>
                   <span className="muted cache-date">{fmtDate(g.updatedAt)}</span>
+                  {g.costUsd != null && <span className="muted">${g.costUsd.toFixed(2)}</span>}
+                  {g.durationMs != null && <span className="muted">{fmtDuration(g.durationMs)}</span>}
+                  {g.tokens != null && <span className="muted">{fmtTokens(g.tokens)}</span>}
                 </div>
                 <div className="cache-actions">
                   <button onClick={() => void open(g)}>{isOpen ? 'Close' : g.hasGame ? 'Open / Play' : 'Open'}</button>

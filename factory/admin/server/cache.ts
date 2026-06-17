@@ -28,6 +28,9 @@ export interface GameMeta {
   hasGame: boolean; // a playable build exists
   passed?: boolean; // the gate verdict, if built
   updatedAt?: number;
+  costUsd?: number; // total $ across the game's phases (from usage.json)
+  tokens?: number; // total input+output tokens
+  durationMs?: number; // total wall-clock to generate
 }
 
 /** A game's combined artifacts for review/play. */
@@ -75,6 +78,9 @@ export function listRuns(): GameMeta[] {
       if (!game) continue; // a game dir is defined by game.json
       const report = readJson<{ passed?: boolean }>(gamePath(id, 'report.json'));
       const hasGame = existsSync(gamePath(id, 'game', 'index.html'));
+      const usage = readJson<{ inputTokens?: number; outputTokens?: number; costUsd?: number; durationMs?: number }>(
+        gamePath(id, 'usage.json'),
+      );
       out.push({
         gameId: id,
         source: 'disk',
@@ -83,6 +89,13 @@ export function listRuns(): GameMeta[] {
         hasGame,
         ...(report ? { passed: !!report.passed } : {}),
         updatedAt: statSync(gamePath(id)).mtimeMs,
+        ...(usage
+          ? {
+              costUsd: usage.costUsd,
+              tokens: (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0),
+              durationMs: usage.durationMs,
+            }
+          : {}),
       });
       seen.add(id);
     }

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseGameBundle } from '../../src/api.js';
 import { listRuns, readRun, deleteRun } from '../../admin/server/cache.js';
+import { accumulateUsage } from '../../admin/server/store.js';
 import { validGame, validSpritePack } from '../helpers/fixtures.js';
 
 /**
@@ -72,6 +73,21 @@ describe('admin cache manager (one directory per game)', () => {
     expect(readRun('cache_1')).toMatchObject({ source: 'cache' });
     expect(readRun('cache_1')?.game.title).toBe(validGame.title);
     expect(readRun('nope')).toBeUndefined();
+  });
+
+  it('listRuns surfaces accumulated usage (cost/tokens/time) summed across phases', async () => {
+    // game_d has a game.json; record two phases of usage into its dir.
+    await accumulateUsage('game_d', { inputTokens: 10, outputTokens: 5, costUsd: 0.1, calls: 2 }, 1000);
+    await accumulateUsage('game_d', { inputTokens: 20, outputTokens: 10, costUsd: 0.25, calls: 3 }, 2500);
+
+    const byId = Object.fromEntries(listRuns().map((g) => [g.gameId, g]));
+    expect(byId['game_d']).toMatchObject({ tokens: 45, durationMs: 3500 });
+    expect(byId['game_d']!.costUsd).toBeCloseTo(0.35, 5);
+
+    // a game with no usage.json leaves the fields undefined
+    expect(byId['game_a']!.costUsd).toBeUndefined();
+    expect(byId['game_a']!.tokens).toBeUndefined();
+    expect(byId['game_a']!.durationMs).toBeUndefined();
   });
 
   it('deleteRun removes the whole game dir and cache entries; rejects traversal/unknowns', () => {

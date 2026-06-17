@@ -1,5 +1,6 @@
 import type { LLMProvider } from '../llm/provider.js';
 import type { Observer } from '../observability/observer.js';
+import { withNode } from '../observability/withNode.js';
 import { OPUS_MODEL, type ModelConfig } from '../llm/models.js';
 import type { GameDefinition } from '@game-factory/contracts';
 import type { GameBundle } from '@game-factory/contracts';
@@ -15,14 +16,19 @@ export interface GateDeps {
   signal?: AbortSignal;
 }
 
-/** Compile `game.js` (no execution) — true unless it throws a SyntaxError. */
-export function checkSyntax(js: string): boolean {
+/** Compile `game.js` (no execution). Returns the SyntaxError message, or null if it compiles. */
+export function syntaxError(js: string): string | null {
   try {
     new Function(js);
-    return true;
-  } catch {
-    return false;
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
   }
+}
+
+/** Compile `game.js` (no execution) — true unless it throws a SyntaxError. */
+export function checkSyntax(js: string): boolean {
+  return syntaxError(js) === null;
 }
 
 const FORBIDDEN: Array<{ re: RegExp; msg: string }> = [
@@ -91,17 +97,27 @@ export async function gate(input: GateInput, deps: GateDeps): Promise<CodeReport
   const issues: string[] = [];
 
   // ── Hard floor ────────────────────────────────────────────────────────────
-  const syntax = checkSyntax(js);
-  if (!syntax) issues.push('syntax: game.js does not compile (SyntaxError)');
+  const synErr = syntaxError(js);
+  const syntax = synErr === null;
+  // Keep the compiler message — an "Unterminated string" here usually means the LLM output was
+  // truncated (hit the token cap), which the repair loop can only fix if it's told what broke.
+  if (!syntax) issues.push(`syntax: game.js does not compile — ${synErr}`);
 
   const lintIssues = lintGameJs(js, entityIds);
   const lint = lintIssues.length === 0;
   issues.push(...lintIssues);
 
   let sandbox: SandboxResult | undefined;
-  if (syntax) sandbox = await runSandbox(bundle);
-  const smoke = !!sandbox?.ok;
-  if (syntax && !smoke) issues.push(`smoke: game threw while loading/running idle frames (${sandbox?.error ?? 'unknown'})`);
+  if (syntax) sandbox = await withNode(deps.observer, 'code:smoke', () => runSandbox(bundle));
+  // The floor requires the game to actually render — a game that loads cleanly but never draws
+  // (e.g. wrong canvas id → early return) is a blank screen, not a pass.
+  const smoke = !!sandbox?.ok && (sandbox?.idleDraws ?? 0) > 0;
+  if (syntax && !smoke) {
+    const reason = !sandbox?.ok
+      ? `threw while loading/running idle frames (${sandbox?.error ?? 'unknown'})`
+      : 'loaded but drew nothing (blank screen — check the canvas is found and the render loop runs)';
+    issues.push(`smoke: game ${reason}`);
+  }
 
   // ── Soft signals ──────────────────────────────────────────────────────────
   const interaction = !!sandbox && (sandbox.interacted || sandbox.idleDraws !== sandbox.inputDraws);
@@ -120,7 +136,7 @@ export async function gate(input: GateInput, deps: GateDeps): Promise<CodeReport
       modelOverride: deps.modelOverride ?? { model: OPUS_MODEL, effort: 'medium' },
       signal: deps.signal,
     });
-    const { data } = await review.run({ game, js });
+    const { data } = await withNode(deps.observer, 'code:review', () => review.run({ game, js }));
     faithful = data.verdict === 'pass';
     if (!faithful) {
       for (const i of data.issues) issues.push(`faithfulness: ${i.target}: ${i.note}`);

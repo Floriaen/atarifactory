@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkSyntax, lintGameJs, gate } from '../../src/coding/gate.js';
+import { checkSyntax, syntaxError, lintGameJs, gate } from '../../src/coding/gate.js';
 import { assembleGameBundle } from '../../src/coding/assembleGameBundle.js';
 import { fromMap } from '../../src/llm/providers/mock.js';
 import { testObserver } from '../helpers/observer.js';
@@ -12,6 +12,13 @@ describe('gate static checks (no browser)', () => {
   it('checkSyntax accepts valid code and rejects a SyntaxError', () => {
     expect(checkSyntax(gameCodeFixture.js)).toBe(true);
     expect(checkSyntax('const a = (;')).toBe(false);
+  });
+
+  it('syntaxError returns the compiler message for broken code (e.g. truncation), null when valid', () => {
+    expect(syntaxError(gameCodeFixture.js)).toBeNull();
+    const msg = syntaxError("const s = 'unterminated"); // a truncated string literal
+    expect(typeof msg).toBe('string');
+    expect(msg).toBeTruthy();
   });
 
   it('passes a clean, contract-respecting game.js', () => {
@@ -60,6 +67,25 @@ browser('gate full report (real Chromium)', () => {
     expect(report.checks.faithful).toBe(true);
     expect(report.passed).toBe(true);
     expect(report.issues).toEqual([]);
+  }, 30000);
+
+  it('a game that loads but draws nothing fails the floor (blank screen, like the canvas-id bug)', async () => {
+    // Passes lint (mentions gamepadState + renderEntity) and never throws, but schedules no frame
+    // and runs no draw op — the Apogee failure mode: wrong canvas id, early return, blank screen.
+    const blankJs = "const gp = window.gamepadState;\nif (false) { renderEntity(ctx, 'player', 0, 0, 1, '#fff', 0); }\n";
+    const bundle = await assembleGameBundle(validGame, validSpritePack, blankJs);
+    let reviewed = false;
+    const provider = fromMap({ codeReview: () => { reviewed = true; return codeReviewPass; } });
+    const { observer } = testObserver();
+
+    const report = await gate({ game: validGame, js: blankJs, bundle }, { provider, observer });
+
+    expect(report.checks.syntax).toBe(true);
+    expect(report.checks.lint).toBe(true);
+    expect(report.checks.smoke).toBe(false); // loaded fine, but rendered nothing
+    expect(report.passed).toBe(false);
+    expect(report.issues.some((i) => /drew nothing|blank|no.*draw/i.test(i))).toBe(true);
+    expect(reviewed).toBe(false); // floor failed → no Opus review
   }, 30000);
 
   it('a forbidden-API game fails the hard floor and never reaches the review', async () => {

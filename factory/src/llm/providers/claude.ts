@@ -5,10 +5,15 @@ import type { LLMMessage, LLMProvider, StructuredOptions, StructuredResult, Usag
 import { MissingUsageError, ProviderError, SchemaValidationError } from '../errors.js';
 
 /**
- * Anthropic implementation. Uses structured outputs (`output_config.format` via
- * messages.parse) on Opus 4.8 — never temperature/top_p/budget_tokens (those 400
- * on 4.8). Depth is set with `effort`. Output is re-validated through the SAME
- * Zod schema, and usage is read from the response (fail loud if absent).
+ * Anthropic implementation. Uses structured outputs (`output_config.format`) on Opus 4.8 — never
+ * temperature/top_p/budget_tokens (those 400 on 4.8). Depth is set with `effort`. Output is
+ * re-validated through the SAME Zod schema, and usage is read from the response (fail loud if absent).
+ *
+ * We STREAM and await `finalMessage()` rather than call `messages.parse()`: a whole `game.js`
+ * authored at a large `max_tokens` can run past the SDK's ~10-minute non-streaming idle-drop guard,
+ * which throws before the call ("Streaming is required for operations that may take longer than 10
+ * minutes"). Streaming has no such ceiling. `output_config.format` guarantees the first text block is
+ * schema-valid JSON, so we parse it ourselves (no `parsed_output` helper on the stream path).
  */
 export class ClaudeProvider implements LLMProvider {
   readonly name = 'claude';
@@ -26,7 +31,7 @@ export class ClaudeProvider implements LLMProvider {
   ): Promise<StructuredResult<T>> {
     let res;
     try {
-      res = await this.client.messages.parse(
+      const stream = this.client.messages.stream(
         {
           model: opts.model,
           max_tokens: opts.maxTokens,
@@ -39,6 +44,7 @@ export class ClaudeProvider implements LLMProvider {
         },
         opts.signal ? { signal: opts.signal } : undefined,
       );
+      res = await stream.finalMessage();
     } catch (err) {
       throw new ProviderError(
         `Claude request failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -48,14 +54,24 @@ export class ClaudeProvider implements LLMProvider {
 
     const usage = extractUsage(res.usage);
 
-    if (res.parsed_output == null) {
+    // `output_config.format` makes the first text block the structured JSON payload.
+    const textBlock = res.content.find((b) => b.type === 'text');
+    if (textBlock?.type !== 'text') {
       throw new SchemaValidationError(
-        `Claude returned no schema-valid output (stop_reason=${res.stop_reason ?? 'unknown'})`,
+        `Claude returned no text output (stop_reason=${res.stop_reason ?? 'unknown'})`,
+      );
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(textBlock.text);
+    } catch {
+      throw new SchemaValidationError(
+        `Claude output was not valid JSON, likely truncated (stop_reason=${res.stop_reason ?? 'unknown'})`,
       );
     }
 
     // Re-validate through the same Zod path as the mock provider — single source of truth.
-    const data = schema.parse(res.parsed_output);
+    const data = schema.parse(parsed);
     return { data, usage, model: res.model, stopReason: res.stop_reason ?? undefined, raw: res };
   }
 }

@@ -60,6 +60,9 @@ browser('runCodePhase (mock) — real gate', () => {
     const nodes = observer.timings.map((t) => t.node);
     expect(nodes.filter((n) => n === 'code:generate')).toHaveLength(1);
     expect(fixNodes(observer)).toHaveLength(0);
+    // the gate's slow steps now emit their own progress nodes
+    expect(nodes).toContain('code:smoke');
+    expect(nodes).toContain('code:review');
   }, 60000);
 
   it('a dead-on-input first cut is fixed once, then passes; keep-best returns the good one', async () => {

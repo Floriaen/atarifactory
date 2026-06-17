@@ -6,11 +6,15 @@
  */
 export const RUNTIME_CONTRACT = `Globals available before \`game.js\` runs:
 
-- \`canvas\` is \`document.getElementById('game-canvas')\`. Get a 2D context with
-  \`canvas.getContext('2d')\`. The shell sizes the canvas; read \`canvas.width\` and
-  \`canvas.height\`, but never assign them.
+- \`canvas\` and \`ctx\` are provided globals — the shell already resolved the canvas and its 2D
+  context. Use them directly; do NOT call \`document.getElementById\` or \`getContext\` yourself.
+  The shell sizes the canvas; read \`canvas.width\` and \`canvas.height\`, but never assign them.
 - \`window.gamepadState\` — a live object \`{ up, down, left, right, btn1, btn2 }\` of booleans,
   kept current from the on-screen gamepad. Poll it each frame. This is the ONLY input.
+  The two action buttons are LABELLED **A** (\`btn1\`) and **B** (\`btn2\`) on screen, and the D-pad is
+  the arrows ▲▼◀▶. Keep reading \`gamepadState.btn1\`/\`btn2\` in code, but in any text you draw for the
+  player (instructions, HUD, prompts) refer to the buttons by their on-screen labels — "A" and "B",
+  and the arrows — NEVER the raw ids \`btn1\`/\`btn2\`.
 - \`renderEntity(ctx, id, x, y, scale, color, frame)\` — draws an entity's pixel sprite at
   top-left \`(x, y)\`, each sprite pixel a \`scale\`×\`scale\` block in CSS \`color\`. \`frame\` selects
   an animation frame (wraps automatically; use \`0\` if you only need one).

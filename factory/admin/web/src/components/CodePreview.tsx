@@ -51,8 +51,15 @@ export function CodePreview({ artifact }: { artifact: CodeArtifact }) {
         </details>
       )}
 
-      <div className="game-frame-wrap">
-        <iframe className="game-frame" title="game preview" sandbox="allow-scripts" srcDoc={srcDoc} />
+      <div className="game-frame-wrap" onMouseEnter={(e) => e.currentTarget.querySelector('iframe')?.focus()}>
+        <iframe
+          className="game-frame"
+          title="game preview"
+          sandbox="allow-scripts"
+          srcDoc={srcDoc}
+          tabIndex={0}
+          onLoad={(e) => e.currentTarget.focus()}
+        />
       </div>
     </div>
   );
